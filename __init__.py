@@ -70,17 +70,21 @@ class DatabaseAddOn(SmartPlugin):
 
         # define properties
         self._item_dict = {}                        # dict to hold all items {item1: ('_database_addon_fct', '_database_item'), item2: ('_database_addon_fct', '_database_item')...}
-        self._item_itemid = set()                   # set of tuples for [(item, itemid1), (item2, itemid2), ...]
         self._daily_items = set()                   # set of items, for which the _database_addon_fct shall be executed daily
         self._weekly_items = set()                  # set of items, for which the _database_addon_fct shall be executed weekly
         self._monthly_items = set()                 # set of items, for which the _database_addon_fct shall be executed monthly
         self._yearly_items = set()                  # set of items, for which the _database_addon_fct shall be executed yearly
-        self._db_plugin = None
+        self._live_items = set()                    # set of items, for which the _database_addon_fct shall be executed on the fly
+        self._meter_items = set()                   # set of items, for which the _database_addon_fct shall be executed separatly (get create db entry short before midnight)
+        self._startup_items = set()                 # set of items, for which the _database_addon_fct shall be executed on startup
+        self._database_items = set()                # set of items with database attribut, relevant for plugin
+        self._static_items = set()                  #
         self._itemid_dict = {}
         self._oldest_log_dict = {}
         self._oldest_entry_dict = {}
         self._todo_items = set()
         self._todo_tasks = []
+        self._db_plugin = None
         self._db_host = None
         self._db_user = None
         self._db_pw = None
@@ -104,8 +108,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug("Run method called")
         self.alive = True
         self.scheduler_add('daily', self.execute_due_items, prio=3, cron='1 0 0 * * *', cycle=None, value=None, offset=None, next=None)
-
-        self.execute_items(list(self._item_dict.keys()))
+        self.execute_items(self._startup_items)
 
     def stop(self):
         """
@@ -133,7 +136,13 @@ class DatabaseAddOn(SmartPlugin):
             
             # get attribut value
             _database_addon_fct = self.get_iattr_value(item.conf, 'database_addon_fct').lower()
-            
+
+            # get attribut if item should be calculated at plugin startup
+            if self.has_iattr(item.conf, 'database_addon_startup'):
+                _database_addon_startup = self.get_iattr_value(item.conf, 'database_addon_startup')
+            else:
+                _database_addon_startup = None
+
             # get database item
             _database_item = None
             _lookup_item = item
@@ -145,20 +154,54 @@ class DatabaseAddOn(SmartPlugin):
                     # self.logger.debug(f"Attribut 'database' is not found for item={item} at _lookup_item={_lookup_item}")
                     _lookup_item = _lookup_item.return_parent()
 
-            if _database_addon_fct and _database_item is not None:
+            # create items sets
+            if _database_item is not None:
                 # add item to item dict
                 self.logger.debug(f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item}")
                 self._item_dict[item] = (_database_addon_fct, _database_item)
                 
                 # add item to set of items for time of execution
-                if _database_addon_fct in wertehistorie_total_daily:
+                if _database_addon_fct.startswith('zaehlerstand'):
+                    self._meter_items.add(item)
+                elif 'heute_minus' in _database_addon_fct:
                     self._daily_items.add(item)
-                elif _database_addon_fct in wertehistorie_total_weekly:
+                elif 'woche_minus' in _database_addon_fct:
                     self._weekly_items.add(item)
-                elif _database_addon_fct in wertehistorie_total_monthly:
+                elif 'monat_minus' in _database_addon_fct:
                     self._monthly_items.add(item)
-                elif _database_addon_fct in wertehistorie_total_yearly:
+                elif 'jahr_minus' in _database_addon_fct:
                     self._yearly_items.add(item)
+                elif _database_addon_fct.startswith('oldest'):
+                    self._static_items.add(item)
+                else:
+                    self._live_items.add(item)
+                    self._database_items.add(_database_item)
+
+            if _database_addon_startup is not None and _database_item is not None:
+                self.logger.debug(f"Item '{item.id()}' added to be run on startup")
+                self._startup_items.add(item)
+
+        # Callback mit 'update_item' für alle Items mit Attribut 'database', um die live Items zu berechnen
+        elif self.has_iattr(item.conf, 'database'):
+            return self.update_item
+
+    def update_item(self, item, caller=None, source=None, dest=None):
+        """
+        Item has been updated
+
+        This method is called, if the value of an item has been updated by SmartHomeNG.
+        It should write the changed value out to the device (hardware/interface) that
+        is managed by this plugin.
+
+        :param item: item to be updated towards the plugin
+        :param caller: if given it represents the callers name
+        :param source: if given it represents the source
+        :param dest: if given it represents the dest
+        """
+        if self.alive and caller != self.get_shortname():
+            # self.logger.info(f"Update item: {item.property.path}, item has been changed outside this plugin")
+            if item in self._database_items:
+                self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
 
     def execute_due_items(self):
         """
@@ -182,8 +225,11 @@ class DatabaseAddOn(SmartPlugin):
         for item in item_list:
             _database_addon_fct = self._item_dict[item][0]
             _database_item = self._item_dict[item][1]
+            _time_str_1 = None
+            _time_str_2 = None
+            _result = None
 
-            self.logger.debug(f"item '{item}' is due with _database_addon_fct={_database_addon_fct} _database_item={_database_item}")
+            self.logger.debug(f"execute_items: item '{item}' is due with _database_addon_fct={_database_addon_fct} _database_item={_database_item}")
 
             if _database_addon_fct == 'oldest_value':
                 _result = self._get_oldest_value(_database_item)
@@ -191,15 +237,70 @@ class DatabaseAddOn(SmartPlugin):
             elif _database_addon_fct == 'oldest_log':
                 _result = self._get_oldest_log(_database_item)
 
+            elif _database_addon_fct == 'zaehlerstand_heute':
+                _result = _database_item.property.value
+
+            # get all functions ending of _max, _min, _avg
+            elif _database_addon_fct[-3:] in ['max', 'min', 'avg']:
+                left, sep, func = _database_addon_fct.rpartition('_')
+                self.logger.debug(f"execute_items: _database_addon_fct={func} detected; left={left}, last_char={left[-1]}")
+                last_char = left[-1]
+                try:
+                    x = int(last_char)
+                except:
+                    pass
+                else:
+                    _time_str_1, _time_str_2 = self._get_time_strs(left, x)
+                    if _time_str_1 is not None and _time_str_2 is not None:
+                        _result = self._value_of_db_function(_database_item, func, _time_str_1, _time_str_2)
+
+            # get all wertehistorie total functions
+            elif _database_addon_fct[:-1].endswith('minus'):
+                self.logger.debug(f"execute_items: normal 'wertehistorie total' function detected")
+                last_char = _database_addon_fct[-1]
+                try:
+                    x = int(last_char)
+                except:
+                    pass
+                else:
+                    if _database_addon_fct.startswith('zaehlerstand_'):
+                        _time_str_1, _time_str_2 = self._get_time_strs(_database_addon_fct, x)
+                        if _time_str_1 is not None:
+                            _result = self._single_value(_database_item, _time_str_1)
+                    elif _database_addon_fct.startswith('rolling_'):
+                        if 'woche' in _database_addon_fct:
+                            _time_str_1 = self._time_str_heute_minus_x(0)
+                            _time_str_2 = self._time_str_heute_minus_x(365)
+                        elif 'monat' in _database_addon_fct:
+                            _time_str_1 = self._time_str_monat_minus_x(0)
+                            _time_str_2 = self._time_str_monat_minus_x(12)
+                        elif 'jahr' in _database_addon_fct:
+                            _time_str_1 = self._time_str_jahr_minus_x(0)
+                            _time_str_2 = self._time_str_jahr_minus_x(1)
+
+                        if _time_str_1 is not None and _time_str_2 is not None:
+                            value = self._delta_value(_database_item, _time_str_1, _time_str_2)
+                    else:
+                        _time_str_1, _time_str_2 = self._get_time_strs(_database_addon_fct, x)
+                        if _time_str_1 is not None and _time_str_1 is not None:
+                            _result = self._delta_value(_database_item, _time_str_2, _time_str_1)
             else:
                 _result = 'No function defined or found'
 
-            self.logger.debug(f"result is {_result} for item '{item}' with _database_addon_fct={_database_addon_fct} _database_item={_database_item}")
+            self.logger.debug(f"execute_items: result is {_result} for item '{item}' with _database_addon_fct={_database_addon_fct} _database_item={_database_item}")
 
-    def _get_itemid_from_item(self, item):
-        """ get item_id from am item; uses list of tuples for [(device1, uuid1), (device2, uuid2), ...]"""
+            # set item value
+            if _result is not None:
+                item(_result, self.get_shortname())
 
-        return dict(self._item_itemid).get(item, None)
+    def _get_itemid(self, item):
+
+        _item_id = self._itemid_dict.get(item, None)
+        if _item_id is None:
+            _item_id = self._db_plugin.id(item)
+            self._itemid_dict[item] = _item_id
+
+        return _item_id
         
     def _create_due_items(self):
         """
@@ -234,8 +335,8 @@ class DatabaseAddOn(SmartPlugin):
         # check if database plugin is loaded
         try:
             _db_plugin = self.plugins.return_plugin('database')
-        except:
-            self.logger.error(f"Database plugin not loaded; No need for DatabaseAddOn Plugin.")
+        except Exception as e:
+            self.logger.error(f"Database plugin not loaded, Error was {e}. No need for DatabaseAddOn Plugin.")
             return False
 
         # get driver of database and check if it is PyMySql to ensure existence of MySql DB
@@ -266,7 +367,7 @@ class DatabaseAddOn(SmartPlugin):
                 db = connection_data[3].split(':', 1)[1]
                 # port = connection_data[4].split(':', 1)[1]
             except Exception as e:
-                self.logger.error(f"Not able to get Database parameters. DatabaseAddOn Plugin not loaded.")
+                self.logger.error(f"Not able to get Database parameters, Error was {e}. DatabaseAddOn Plugin not loaded.")
                 return False
 
         # do connection check
@@ -302,7 +403,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             return connection
 
-    def _get_oldest_log(self, item, item_id=None):
+    def _get_oldest_log(self, item):
         """
         Ermittlung des Zeitpunktes des ältesten Eintrags eines Items in der DB
 
@@ -310,18 +411,13 @@ class DatabaseAddOn(SmartPlugin):
         :return: timestamp des ältesten Eintrags für das Item aus der DB
         """
 
-        if item_id is None:
-            if item in self._itemid_dict:
-                item_id = self._itemid_dict[item]
-            else:
-                item_id = self._db_plugin.id(item)
-
         # Zwischenspeicher des oldest_log, zur Reduktion der DB Zugriffe
-        if item not in self._oldest_log_dict:
+        if item in self._oldest_log_dict:
+            oldest_log = self._oldest_log_dict[item]
+        else:
+            item_id = self._get_itemid(item)
             oldest_log = self._db_plugin.readOldestLog(item_id)
             self._oldest_log_dict[item] = oldest_log
-        else:
-            oldest_log = self._oldest_log_dict[item]
 
         self.logger.debug(f"_get_oldest_log for item {item.id()} = {oldest_log}")
         return oldest_log
@@ -334,26 +430,14 @@ class DatabaseAddOn(SmartPlugin):
         :return: ältester Wert für das Item aus der DB oder None bei Fehler
         """
 
-        if item not in self._itemid_dict:
-            item_id = self._db_plugin.id(item)
-            self._itemid_dict[item] = item_id
-        else:
-            item_id = self._itemid_dict[item]
-        self.logger.debug(f'itemid_dict: {self._itemid_dict}')
-
-        if item not in self._oldest_entry_dict:
-            oldest_entry = self._db_plugin.readLog(item_id, self._get_oldest_log(item, item_id))
-            if len(oldest_entry) == 1:
-                if len(oldest_entry[0]) == 7:
-                    self._oldest_entry_dict[item] = oldest_entry
-                else:
-                    return
-            else:
-                return
-        else:
+        if item in self._oldest_entry_dict:
             oldest_entry = self._oldest_entry_dict[item]
+        else:
+            item_id = self._get_itemid(item)
+            oldest_entry = self._db_plugin.readLog(item_id, self._get_oldest_log(item))
+            self._oldest_entry_dict[item] = oldest_entry
 
-        self.logger.debug(f"_get_oldest_value for item {item.id()} = {oldest_entry[0][4]}")
+        self.logger.debug(f"_get_oldest_value for item {item.id()} = {self._oldest_entry_dict[item][0][4]}")
         return oldest_entry[0][4]
 
     def _time_since_oldest_log(self, item):
@@ -364,32 +448,110 @@ class DatabaseAddOn(SmartPlugin):
         :return: Zeit seit dem ältesten Eintrag in der DB in ganzen Minuten
         """
 
-        timestamp = self._oldest_log(item)
-        oldest_log_dt = datetime.datetime.fromtimestamp(int(timestamp) / 1000,datetime.timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S %Z%z')
-        time_since_oldest_log = self.shtime.time_since(oldest_log_dt, resulttype='im')
-        return time_since_oldest_log
+        _timestamp = self._get_oldest_log(item)
+        _oldest_log_dt = datetime.datetime.fromtimestamp(int(_timestamp) / 1000, datetime.timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S %Z%z')
+        return self.shtime.time_since(_oldest_log_dt, resulttype='im')
+
+    def _delta_value(self, item, time_str_1, time_str_2):
+        """
+        Berechnung einer Zählerdifferenz eines Items zwischen 2 Zeitpunkten auf Basis der DB Einträge
+
+        :param item: Item, für das die Zählerdifferenz ermittelt werden soll
+        :param time_str_1: Zeitstring gemäß database-Plugin für den jüngeren Eintrag (bspw: 200i)
+        :param time_str_2: Zeitstring gemäß database-Plugin für den älteren Eintrag (bspw: 400i)
+        """
+
+        # value_1 = value_2 = value = None
+        time_since_oldest_log = self._time_since_oldest_log(item)
+        end = int(time_str_1[0:len(time_str_1) - 1])
+
+        if time_since_oldest_log > end:
+            self.logger.debug(f'_delta_value: fetch DB with {item.id()}.db(max, {time_str_1}, {time_str_1})')
+            value_1 = item.db('max', time_str_1, time_str_1)
+            self.logger.debug(f'_delta_value: fetch DB with {item.id()}.db(max, {time_str_2}, {time_str_2})')
+            value_2 = item.db('max', time_str_2, time_str_2)
+            if value_1 is not None:
+                if value_2 is None:
+                    self.logger.info(f'No entries for Item {item.id()} in DB found for requested enddate {time_str_1}; try to use oldest entry instead')
+                    value_2 = self._oldest_value(item)
+                if value_2 is not None:
+                    value = round(value_1 - value_2, 2)
+                    self.logger.debug(f'_delta_value for item={item.id()} with time_str_1={time_str_1} and time_str_2={time_str_2} is {value}')
+                    return value
+        else:
+            self.logger.debug(f'_delta_value for item={item.id()} using time_str_1={time_str_1} is older as oldest_entry. Therefore no DB request initiated.')
+
+    def _single_value(self, item, time_str_1, func='max'):
+        """
+        Abfrage der DB nach dem Wert eines Items zum entsprechenden Zeitpunkt
+
+        :param item: Item, für das der DB-Wert ermittelt werden soll
+        :param time_str_1: Zeitstring gemäß database-Plugin für den Abfragezeitpunkt (bspw: 200i)
+        :param func: DB function
+        """
+
+        # value = None
+        value = item.db(func, time_str_1, time_str_1)
+        if value is None:
+            self.logger.info(f'No entries for Item {item.id()} in DB found for requested end {time_str_1}; try to use oldest entry instead')
+            value = int(self._oldest_value(item))
+        self.logger.debug(f'_single_value for item={item.id()} with time_str_1={time_str_1} is {value}')
+        return value
+
+    def _value_of_db_function(self, item, func, time_str_1, time_str_2):
+        """
+        Abfrage der DB mit einer DB-Funktion und Start und Ende des Betrachtungszeitraumes
+
+        :param item: Item, für das die Zählerdifferenz ermittelt werden soll
+        :param func: Funktion, mit der die Zählerdifferenz ermittelt werden soll (bspw max)
+        :param time_str_1: Zeitstring gemäß database-Plugin für den Start es Betrachtungszeitraumes (bspw: 400i)
+        :param time_str_2: Zeitstring gemäß database-Plugin für das Ende des Betrachtungszeitraumes (bspw: 200i)
+        """
+        self.logger.debug(f"_value_of_db_function called with item={item.id()}, func={func}, time_str_1={time_str_1} and time_str_2={time_str_2}")
+        value = item.db(func, time_str_1, time_str_2)
+        if value is None:
+            self.logger.info(f'_value_of_db_function: No entries for Item {item} in DB found for requested startdate {time_str_1}; try to use oldest entry instead')
+            time_since_oldest_log = self._time_since_oldest_log(self._oldest_log(item))
+            end = int(time_str_2[0:len(time_str_2) - 1])
+            if time_since_oldest_log > end:
+                time_str_1 = f"{self._time_since_oldest_log(self._oldest_log(item))}i"
+                value = item.db(func, time_str_1, time_str_2)
+            else:
+                self.logger.info(f"_value_of_db_function for item={item.id()}: 'time_since_oldest_log' <= 'end'")
+        self.logger.debug(f'_value_of_db_function for item={item.id()} with function={func}, time_str_1={time_str_1}, time_str_2={time_str_2} is {value}')
+        return value
+
+    def _get_time_strs(self, key, x):
+        if 'heute_' in key:
+            _time_str_1 = self._time_str_heute_minus_x(x)
+            _time_str_2 = self._time_str_heute_minus_x(x - 1)
+        elif 'woche_' in key:
+            _time_str_1 = self._time_str_woche_minus_x(x)
+            _time_str_2 = self._time_str_woche_minus_x(x - 1)
+        elif 'monat_' in key:
+            _time_str_1 = self._time_str_monat_minus_x(x)
+            _time_str_2 = self._time_str_monat_minus_x(x - 1)
+        elif 'jahr_' in key:
+            _time_str_1 = self._time_str_jahr_minus_x(x)
+            _time_str_2 = self._time_str_jahr_minus_x(x - 1)
+        else:
+            _time_str_1 = None
+            _time_str_2 = None
+        # self.logger.debug(f"_time_str_1={_time_str_1}, _time_str_2={_time_str_2}")
+        return _time_str_1, _time_str_2
 
     def _time_str_heute_minus_x(self, x=0):
         """creates an str for db request in min from now x days ago"""
         return f"{self.shtime.time_since(self.shtime.today(-x), 'im')}i"
 
-    def _time_str_vorwoche_minus_x(self, x=0):
+    def _time_str_woche_minus_x(self, x=0):
         """creates an str for db request in min from now x weeks ago"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_week(self.shtime.calendar_week(), None, -x), 'im')}i"
 
-    def _time_str_vormonat_minus_x(self, x=0):
+    def _time_str_monat_minus_x(self, x=0):
         """creates an str for db request in min from now x month ago"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_month(None, None, -x), 'im')}i"
 
-    def _time_str_vorjahr_minus_x(self, x=0):
+    def _time_str_jahr_minus_x(self, x=0):
         """creates an str for db request in min from now x month ago"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_year(None, -x), 'im')}i"
-
-
-# define global defaults
-wertehistorie_total_live =     ['heute', 'woche', 'monat', 'jahr']
-wertehistorie_total_daily =    ['gestern', 'gestern_minus1', 'gestern_minus2', 'gestern_minus3', 'gestern_minus4', 'gestern_minus5', 'gestern_minus6']
-wertehistorie_total_weekly =   ['vorwoche', 'vorwoche_minus1', 'vorwoche_minus2', 'vorwoche_minus3']
-wertehistorie_total_monthly =  ['vormonat', 'vormonat_minus1', 'vormonat_minus2', 'vormonat_minus3', 'vormonat_minus12']
-wertehistorie_total_yearly =   ['vorjahr', 'vorjahr_minus1']
-wertehistorie_total_endofday = ['zaehlerstand_tagesende', 'vormonat_zaehlerstand', 'vormonat_minus1_zaehlerstand', 'vormonat_minus2_zaehlerstand']
