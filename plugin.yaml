@@ -73,12 +73,12 @@ item_attributes:
             - 'zaehlerstand_jahr_minus2'
             - 'zaehlerstand_jahr_minus3'
             # Wertehistorie min/max
-            - 'last24h_min'
-            - 'last24h_max'
-            - 'last24h_avg'
-            - 'last7d_min'
-            - 'last7d_max'
-            - 'last7d_avg'
+            - 'last_24h_min'
+            - 'last_24h_max'
+            - 'last_24h_avg'
+            - 'last_7d_min'
+            - 'last_7d_max'
+            - 'last_7d_avg'
             - 'heute_min'
             - 'heute_max'
             # - 'heute_avg'
@@ -115,6 +115,16 @@ item_attributes:
             # general
             - 'oldest_value'
             - 'oldest_log'
+            - 'db_version'
+            - 'kaeltesumme'
+            - 'waermesumme'
+            - 'gruendlandtempsumme'
+
+    database_addon_params:
+        type: str
+        description:
+            de: "Parameter für eine Funktion des AddonPlugins im Format **kwargs ('keyword'='argument', 'keyword'='argument', ...)"
+            en: ''
 
     database_addon_startup:
         type: bool
