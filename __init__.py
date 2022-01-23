@@ -175,7 +175,7 @@ class DatabaseAddOn(SmartPlugin):
                 # add item to set of items for time of execution
                 if _database_addon_fct.startswith('zaehlerstand'):
                     self._meter_items.add(item)
-                elif 'heute_minus' in _database_addon_fct or 'summe' in _database_addon_fct:
+                elif 'heute_minus' in _database_addon_fct or 'summe' in _database_addon_fct or _database_addon_fct.startswith('last'):
                     self._daily_items.add(item)
                 elif 'woche_minus' in _database_addon_fct:
                     self._weekly_items.add(item)
@@ -239,28 +239,31 @@ class DatabaseAddOn(SmartPlugin):
                 _var = _database_addon_fct.split('_')
 
                 # handle heute_max, heute_min, woche_max, woche_min.....
-                if len(_var) == 2 and _var[1] in ['min', 'max']:
+                if len(_var) == 2 and _var[1] in ['min', 'max', 'avg']:
                     _timeframe = _var[0]
                     _func = _var[1]
                     _cache_dict, _time_str = map_dict[_timeframe]
 
-                    # update cache dicts
-                    if _database_item not in _cache_dict:
-                        _cache_dict[_database_item] = {}
-                    if not _cache_dict[_database_item].get(_func, None):
-                        _cache_dict[_database_item][_func] = _database_item.db(_func, _time_str)
+                    if _func == 'avg':
+                        self.logger.warning(f"{_database_addon_fct} called but 'avg' not implemented yet.")
                     else:
-                        _update = False
-                        if _func == 'min' and value < _cache_dict[_database_item][_func]:
-                            _update = True
-                        elif _func == 'max' and value > _cache_dict[_database_item][_func]:
-                            _update = True
-                        if _update:
-                            _cache_dict[_database_item][_func] = value
+                        # update cache dicts
+                        if _database_item not in _cache_dict:
+                            _cache_dict[_database_item] = {}
+                        if not _cache_dict[_database_item].get(_func, None):
+                            _cache_dict[_database_item][_func] = _database_item.db(_func, _time_str)
+                        else:
+                            _update = False
+                            if _func == 'min' and value < _cache_dict[_database_item][_func]:
+                                _update = True
+                            elif _func == 'max' and value > _cache_dict[_database_item][_func]:
+                                _update = True
+                            if _update:
+                                _cache_dict[_database_item][_func] = value
 
-                    # set item value
-                    if value != item():
-                        item(value, self.get_shortname())
+                        # set item value
+                        if value != item():
+                            item(value, self.get_shortname())
 
                 # handle heute, woche, monat, jahr
                 elif len(_var) == 1:
@@ -377,43 +380,43 @@ class DatabaseAddOn(SmartPlugin):
             elif len(_var) == 3 and _var[2] in ['min', 'max']:
                 _timeframe = _var[0]
                 _timedelta = _var[1][-1]
-                if not isinstance(_timedelta, int):
-                    _timedelta = int(_timedelta)
                 _func = _var[2]
 
                 self.logger.debug(f"execute_items: _database_addon_fct={_func} detected; _timeframe={_timeframe}, _timedelta={_timedelta}")
 
-                _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
-                if _time_str_1 is not None and _time_str_2 is not None:
-                    _result = self._value_of_db_function(_database_item, _func, _time_str_1, _time_str_2)
+                if _timedelta.isdigit():
+                    _timedelta = int(_timedelta)
+                    _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
+                    if _time_str_1 is not None and _time_str_2 is not None:
+                        _result = self._value_of_db_function(_database_item, _func, _time_str_1, _time_str_2)
 
             # handle all functions 'wertehistorie total' in format 'timeframe_timedelta' like 'heute_minus2'
             elif len(_var) == 2 and _var[1].startswith('minus'):
                 _timeframe = _var[0]
                 _timedelta = _var[1][-1]
-                if not isinstance(_timedelta, int):
-                    _timedelta = int(_timedelta)
 
                 self.logger.debug(f"execute_items: 'wertehistorie total' function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
 
-                _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
-                if _time_str_1 is not None and _time_str_1 is not None:
-                    _result = self._delta_value(_database_item, _time_str_2, _time_str_1)
+                if _timedelta.isdigit():
+                    _timedelta = int(_timedelta)
+                    _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
+                    if _time_str_1 is not None and _time_str_1 is not None:
+                        _result = self._delta_value(_database_item, _time_str_2, _time_str_1)
 
             # handle all functions of format 'function_timeframe_timedelta' like 'zaehlerstand_woche_minus1'
             elif len(_var) == 3 and _var[2].startswith('minus'):
                 _func = _var[0]
                 _timeframe = _var[1]
                 _timedelta = _var[2][-1]
-                if not isinstance(_timedelta, int):
-                    _timedelta = int(_timedelta)
 
                 self.logger.debug(f"execute_items: {_func} function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
 
-                if _func == 'zaehlerstand':
-                    _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
-                    if _time_str_1 is not None:
-                        _result = self._single_value(_database_item, _time_str_1)
+                if _timedelta.isdigit():
+                    _timedelta = int(_timedelta)
+                    if _func == 'zaehlerstand':
+                        _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
+                        if _time_str_1 is not None:
+                            _result = self._single_value(_database_item, _time_str_1)
 
             # handle all functions of format 'function_window_timeframe_timedelta' like 'rolling_12m_woche_minus1'
             elif len(_var) == 4 and _var[3].startswith('minus'):
@@ -421,26 +424,23 @@ class DatabaseAddOn(SmartPlugin):
                 _window = _var[1]
                 _timeframe = _var[2]
                 _timedelta = _var[3][-1]
-                if not isinstance(_timedelta, int):
+
+                self.logger.debug(f"execute_items: {_func} function detected. _window={_window}  _timeframe={_timeframe}, _timedelta={_timedelta}")
+
+                if _timedelta.isdigit():
                     _timedelta = int(_timedelta)
-
-                self.logger.debug(
-                    f"execute_items: {_func} function detected. _window={_window}  _timeframe={_timeframe}, _timedelta={_timedelta}")
-
-                if _func == 'rolling':
-                    if _timeframe == 'woche':
-                        _time_str_1 = self._time_str_heute_minus_x(0)
-                        _time_str_2 = self._time_str_heute_minus_x(365)
-                    elif _timeframe == 'monat':
-                        _time_str_1 = self._time_str_monat_minus_x(0)
-                        _time_str_2 = self._time_str_monat_minus_x(12)
-                    elif _timeframe == 'jahr':
-                        _time_str_1 = self._time_str_jahr_minus_x(0)
-                        _time_str_2 = self._time_str_jahr_minus_x(1)
-
-                    if _time_str_1 is not None and _time_str_2 is not None:
-                        _result = self._delta_value(_database_item, _time_str_1, _time_str_2)
-
+                    if _func == 'rolling':
+                        if _timeframe == 'woche':
+                            _time_str_1 = self._time_str_heute_minus_x(0)
+                            _time_str_2 = self._time_str_heute_minus_x(365)
+                        elif _timeframe == 'monat':
+                            _time_str_1 = self._time_str_monat_minus_x(0)
+                            _time_str_2 = self._time_str_monat_minus_x(12)
+                        elif _timeframe == 'jahr':
+                            _time_str_1 = self._time_str_jahr_minus_x(0)
+                            _time_str_2 = self._time_str_jahr_minus_x(1)
+                        if _time_str_1 is not None and _time_str_2 is not None:
+                            _result = self._delta_value(_database_item, _time_str_1, _time_str_2)
             else:
                 self.logger.warning(f"execute_items: No function defined or found")
 
@@ -748,14 +748,11 @@ class DatabaseAddOn(SmartPlugin):
         if isinstance(item, Item):
             query = f"SELECT {columns} FROM item WHERE name = '{str(item.id())}'"
             return self._execute_query_one(query)
-        else:
-            try:
-                item = int(item)
-            except:
-                pass
-            else:
-                query = f"SELECT {columns} FROM item WHERE id = {item}"
-                return self._execute_query_one(query)
+
+        elif item.isdigit() or isinstance(item, int):
+            item = int(item)
+            query = f"SELECT {columns} FROM item WHERE id = {item}"
+            return self._execute_query_one(query)
 
     def _get_item_id(self, item):
         """
@@ -781,16 +778,15 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug(f"'_fetch_all' has been called for item={item}")
         if isinstance(item, Item):
             item_id = self._get_item_id(item)
-        else:
+        elif item.isdigit() or isinstance(item, int):
             item_id = int(item)
-        if not item_id:
-            return
-
-        query = "select * from log where (item_id=%s) AND (time = None OR 1 = 1)"
-        param_dict = {'item_id': item_id}
-
-        result = self._execute_query(query, param_dict)
-        return result
+        else:
+            item_id = None
+        if item_id:
+            query = "select * from log where (item_id=%s) AND (time = None OR 1 = 1)"
+            param_dict = {'item_id': item_id}
+            result = self._execute_query(query, param_dict)
+            return result
 
     def _get_db_version(self):
 
@@ -822,8 +818,11 @@ class DatabaseAddOn(SmartPlugin):
 
         if isinstance(item, Item):
             item_id = self._get_item_id(item)
-        else:
+        elif item.isdigit() or isinstance(item, int):
             item_id = int(item)
+        else:
+            item_id = None
+
         if not item_id:
             return
 
@@ -956,11 +955,11 @@ class DatabaseAddOn(SmartPlugin):
         result = self.fetch_log(func='max', item=item, timespan='year', start=year_delta, end=year_delta, group='day')
         gts = 0
         for entry in result:
-            dt = datetime.datetime.fromtimestamp(entry[0] / 1000)
+            dt = datetime.datetime.fromtimestamp(int(entry[0]) / 1000)
             if dt.month == 1:
-                gts += entry[1] * 0.5
+                gts += float(entry[1]) * 0.5
             elif dt.month == 2:
-                gts += entry[1] * 0.75
+                gts += float(entry[1]) * 0.75
             else:
                 gts += entry[1]
         return int(round(gts, 0))
@@ -1014,17 +1013,15 @@ def parse_params_to_dict(string):
     """parse a string with named arguments and comma sparation to dict; string = 'year=2022, month=12'"""
 
     try:
-        res_dict = dict((a.strip(), b.strip())
-        for a, b in (element.split('=')
-            for element in string.split(', ')))
-    except:
+        res_dict = dict((a.strip(), b.strip()) for a, b in (element.split('=') for element in string.split(', ')))
+    except Exception:
         return None
     else:
         return res_dict
 
 
 ##############################
-##### Backup
+#           Backup
 ##############################
 
 """
