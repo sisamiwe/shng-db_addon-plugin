@@ -3,8 +3,8 @@ plugin:
     # Global plugin attributes
     type: system                   # plugin type (gateway, interface, protocol, system, web)
     description:
-        de: 'AddOn für DB-Plugin mit mysql driver für Datenauswertung'
-        en: 'AddOn for DB-Plugin using mysql driver for data evaluation'
+        de: 'AddOn für Database-Plugin mit mysql driver für Datenauswertung'
+        en: 'AddOn for Database-Plugin using mysql driver for data evaluation'
     maintainer: sisamiwe
 #    tester:                         # Who tests this plugin?
     state: develop                  # change to ready when done with development
@@ -37,94 +37,96 @@ item_attributes:
             en: ''
         valid_list:
             # Wertehistorie total
-            - 'heute'
-            - 'woche'
-            - 'monat'
-            - 'jahr'
-            - 'heute_minus1'
-            - 'heute_minus2'
-            - 'heute_minus3'
-            - 'heute_minus4'
-            - 'heute_minus5'
-            - 'heute_minus6'
-            - 'heute_minus7'
-            - 'woche_minus1'
-            - 'woche_minus2'
-            - 'woche_minus3'
-            - 'woche_minus4'
-            - 'monat_minus1'
-            - 'monat_minus2'
-            - 'monat_minus3'
-            - 'monat_minus4'
-            - 'monat_minus12'
-            - 'jahr_minus1'
-            - 'jahr_minus2'
-            - 'rolling_12m_woche_minus1'                       # Verbrauch der letzten 12 Monate ausgehend im Ende der letzten Woche
-            - 'rolling_12m_monat_minus1'                       # Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats
-            - 'rolling_12m_jahr_minus1'                        # Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Jahres
-            - 'zaehlerstand_heute'
-            - 'zaehlerstand_woche_minus1'
-            - 'zaehlerstand_woche_minus2'
-            - 'zaehlerstand_woche_minus3'
-            - 'zaehlerstand_monat_minus1'
-            - 'zaehlerstand_monat_minus2'
-            - 'zaehlerstand_monat_minus3'
-            - 'zaehlerstand_jahr_minus1'
-            - 'zaehlerstand_jahr_minus2'
-            - 'zaehlerstand_jahr_minus3'
+            - 'heute'                                       #num    onchange    Verbrauch am heutigen Tag (Differenz zwischen aktuellem Wert und den Wert am Ende des vorherigen Tages)
+            - 'woche'                                       #num    onchange    Verbrauch in der aktuellen Woche
+            - 'monat'                                       #num    onchange    Verbrauch im aktuellen Monat
+            - 'jahr'                                        #num    onchange    Verbrauch im aktuellen Jahr
+            - 'heute_minus1'                                #num    daily       Verbrauch gestern (heute -1 Tag) (Differenz zwischen Wert am Ende des gestrigen Tages und dem Wert am Ende des Tages danach)
+            - 'heute_minus2'                                #num    daily       Verbrauch vorgestern (heute -2 Tage)
+            - 'heute_minus3'                                #num    daily       Verbrauch heute -3 Tage
+            - 'heute_minus4'                                #num    daily       Verbrauch heute -4 Tage
+            - 'heute_minus5'                                #num    daily       Verbrauch heute -5 Tage
+            - 'heute_minus6'                                #num    daily       Verbrauch heute -6 Tage
+            - 'heute_minus7'                                #num    daily       Verbrauch heute -7 Tage
+            - 'woche_minus1'                                #num    weekly      Verbrauch Vorwoche (aktuelle Woche -1)
+            - 'woche_minus2'                                #num    weekly      Verbrauch aktuelle Woche -2 Wochen
+            - 'woche_minus3'                                #num    weekly      Verbrauch aktuelle Woche -3 Wochen
+            - 'woche_minus4'                                #num    weekly      Verbrauch aktuelle Woche -4 Wochen
+            - 'monat_minus1'                                #num    monthly     Verbrauch Vormonat (aktueller Monat -1)
+            - 'monat_minus2'                                #num    monthly     Verbrauch aktueller Monat -2 Monate
+            - 'monat_minus3'                                #num    monthly     Verbrauch aktueller Monat -3 Monate
+            - 'monat_minus4'                                #num    monthly     Verbrauch aktueller Monat -4 Monate
+            - 'monat_minus12'                               #num    monthly     Verbrauch aktueller Monat -12 Monate
+            - 'jahr_minus1'                                 #num    yearly      Verbrauch Vorjahr (aktuelles Jahr -1 Jahr)
+            - 'jahr_minus2'                                 #num    yearly      Verbrauch aktuelles Jahr -2 Jahre
+            - 'rolling_12m_woche_minus1'                    #num    weekly      Verbrauch der letzten 12 Monate ausgehend im Ende der letzten Woche
+            - 'rolling_12m_monat_minus1'                    #num    montly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats
+            - 'rolling_12m_jahr_minus1'                     #num    yearly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Jahres
+            - 'zaehlerstand_heute'                          #num        
+            - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
+            - 'zaehlerstand_woche_minus2'                   #num    weekly      Zählerstand / Wert am Ende der vorletzten Woche (aktuelle Woche -2 Woche)        
+            - 'zaehlerstand_woche_minus3'                   #num    weekly      Zählerstand / Wert am Ende der aktuelle Woche -3 Woche
+            - 'zaehlerstand_monat_minus1'                   #num    monthly     Zählerstand / Wert am Ende des letzten Monates (aktueller Monat -1 Monat)   
+            - 'zaehlerstand_monat_minus2'                   #num    monthly     Zählerstand / Wert am Ende des vorletzten Monates (aktueller Monat -2 Monate)   
+            - 'zaehlerstand_monat_minus3'                   #num    monthly     Zählerstand / Wert am Ende des aktueller Monat -3 Monate   
+            - 'zaehlerstand_jahr_minus1'                    #num    yearly      Zählerstand / Wert am Ende des letzten Jahres (aktuelles Jahr -1 Jahr)   
+            - 'zaehlerstand_jahr_minus2'                    #num    yearly      Zählerstand / Wert am Ende des vorletzten Jahres (aktuelles Jahr -2 Jahre)   
+            - 'zaehlerstand_jahr_minus3'                    #num    yearly      Zählerstand / Wert am Ende des aktuellen Jahres -3 Jahre
             # Wertehistorie min/max
-            - 'last_24h_min'
-            - 'last_24h_max'
-            - 'last_24h_avg'
-            - 'last_7d_min'
-            - 'last_7d_max'
-            - 'last_7d_avg'
-            - 'heute_min'
-            - 'heute_max'
-            - 'heute_avg'
-            - 'woche_min'
-            - 'woche_max'
-            - 'woche_avg'
-            - 'heute_minus1_min'
-            - 'heute_minus1_max'
-            - 'heute_minus1_avg'
-            - 'heute_minus2_min'
-            - 'heute_minus2_max'
-            - 'heute_minus2_avg'
-            - 'woche_minus1_min'
-            - 'woche_minus1_max'
-            - 'woche_minus1_avg'
-            - 'woche_minus2_min'
-            - 'woche_minus2_max'
-            - 'woche_minus2_avg'
-            - 'monat_min'
-            - 'monat_max'
-            - 'monat_avg'
-            - 'monat_minus1_min'
-            - 'monat_minus1_min'
-            - 'monat_minus1_min'
-            - 'monat_minus2_min'
-            - 'monat_minus2_min'
-            - 'monat_minus2_min'
-            - 'jahr_min'
-            - 'jahr_max'
-            - 'jahr_avg'
-            - 'jahr_minus1_min'
-            - 'jahr_minus1_max'
-            - 'jahr_minus1_avg'
+            - 'last_24h_min'                                #num    daily       minimaler Wert der letzten 24h
+            - 'last_24h_max'                                #num    daily       maximaler Wert der letzten 24h
+            - 'last_24h_avg'                                #num    daily       durchschnittlicher Wert der letzten 24h
+            - 'last_7d_min'                                 #num    daily       minimaler Wert der letzten 7 Tage
+            - 'last_7d_max'                                 #num    daily       maximaler Wert der letzten 7 Tage
+            - 'last_7d_avg'                                 #num    daily       durchschnittlicher Wert der letzten 7 Tage
+            - 'heute_min'                                   #num    onchange    Minimalwert seit Tagesbeginn
+            - 'heute_max'                                   #num    onchange    Maximalwert seit Tagesbeginn
+            - 'heute_avg'                                   #num    onchange    Durchschnittswert seit Tagesbeginn
+            - 'heute_minus1_min'                            #num    daily       Minimalwert gestern (heute -1 Tag) 
+            - 'heute_minus1_max'                            #num    daily       Maximalwert gestern (heute -1 Tag) 
+            - 'heute_minus1_avg'                            #num    daily       Durchschnittswert gestern (heute -1 Tag) 
+            - 'heute_minus2_min'                            #num    daily       Minimalwert vorgestern (heute -2 Tage)
+            - 'heute_minus2_max'                            #num    daily       Maximalwert vorgestern (heute -2 Tage)
+            - 'heute_minus2_avg'                            #num    daily       Durchschnittswert vorgestern (heute -2 Tage)
+            - 'woche_min'                                   #num    onchange    Minimalwert seit Wochenbeginn    
+            - 'woche_max'                                   #num    onchange    Maximalwert seit Wochenbeginn
+            - 'woche_avg'                                   #num    onchange    Durchschnittswert seit Wochenbeginn
+            - 'woche_minus1_min'                            #num    weekly      Minimalwert Vorwoche (aktuelle Woche -1)
+            - 'woche_minus1_max'                            #num    weekly      Maximalwert Vorwoche (aktuelle Woche -1)
+            - 'woche_minus1_avg'                            #num    weekly      Durchschnittswert Vorwoche (aktuelle Woche -1)
+            - 'woche_minus2_min'                            #num    weekly      Minimalwert aktuelle Woche -2 Wochen
+            - 'woche_minus2_max'                            #num    weekly      Maximalwert aktuelle Woche -2 Wochen
+            - 'woche_minus2_avg'                            #num    weekly      Durchschnittswert aktuelle Woche -2 Wochen
+            - 'monat_min'                                   #num    onchange    Minimalwert seit Monatsbeginn 
+            - 'monat_max'                                   #num    onchange    Maximalwert seit Monatsbeginn
+            - 'monat_avg'                                   #num    onchange    Durchschnittswert seit Monatsbeginn
+            - 'monat_minus1_min'                            #num    monthly     Minimalwert Vormonat (aktueller Monat -1)
+            - 'monat_minus1_max'                            #num    monthly     Maximalwert Vormonat (aktueller Monat -1)
+            - 'monat_minus1_avg'                            #num    monthly     Durchschnittswert Vormonat (aktueller Monat -1)
+            - 'monat_minus2_min'                            #num    monthly     Minimalwert aktueller Monat -2 Monate
+            - 'monat_minus2_max'                            #num    monthly     Maximalwert aktueller Monat -2 Monate
+            - 'monat_minus2_avg'                            #num    monthly     Durchschnittswert aktueller Monat -2 Monate
+            - 'jahr_min'                                    #num    onchange    Minimalwert seit Jahresbeginn 
+            - 'jahr_max'                                    #num    onchange    Maximalwert seit Jahresbeginn    
+            - 'jahr_avg'                                    #num    onchange    Durchschnittswert seit Jahresbeginn   
+            - 'jahr_minus1_min'                             #num    yearly      Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)           
+            - 'jahr_minus1_max'                             #num    yearly      Maximalwert Vorjahr (aktuelles Jahr -1 Jahr)
+            - 'jahr_minus1_avg'                             #num    yearly      Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr)
             # general
-            - 'oldest_value'
-            - 'oldest_log'
-            - 'db_version'
-            - 'kaeltesumme'
-            - 'waermesumme'
-            - 'gruendlandtempsumme'
+            - 'oldest_value'                                #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
+            - 'oldest_log'                                  #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
+            - 'db_version'                                  #str    ------      Ausgabe der verwendeten DB-Version
+            # complex
+            - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
+            - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
+            - 'gruendlandtempsumme'                         #num    daily       Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params: (year=mandatory)
+            - 'db_request'                                  #div    'group'     Abfrage der DB: database_addon_params: (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional):
 
     database_addon_params:
         type: str
         description:
-            de: "Parameter für eine Funktion des AddonPlugins im Format **kwargs ('keyword'='argument', 'keyword'='argument', ...)"
-            en: ''
+            de: "Parameter für eine Funktion des AddonPlugins im Format 'kwargs' ('keyword'='argument', 'keyword'='argument', ...)"
+            en: ""
 
     database_addon_startup:
         type: bool
@@ -136,6 +138,83 @@ item_structs: NONE
 
 item_attribute_prefixes: NONE
 
-plugin_functions: NONE
+plugin_functions:
+    db_request:
+        type: list
+        description:
+            de: 'Liefert für das angegebene Item und die Parameter das Abfrageergebnis zurück'
+            en: 'Return the database request result for the given item and parameters'
+            # mit dieser Funktion ist es möglich, eine Liste der "func" Werte pro "group" / "group2" eines "item" von "start""timespan" bis "end""timespan" oder von "start""timespan" bis "count" ausgegeben zu lassen
+            # bspw: minimale Tagestemperatur vom Item "outdoor.temp" der letzten 10 Tage startend von gestern davor --> func=min, item=outdoor.temp, timespan=day, start=1, count=10, group=day
+            # bspw: maximal Tagestemperatur vom Item "outdoor.temp" von jetzt bis 2 Monate davor --> func=max, item=outdoor.temp, timespan=month, start=0, end=2, group=day
+        parameters:
+            func:
+                type: str
+                description:
+                    de: "zu verwendende Abfragefunktion"
+                    en: ""
+                mandatory: True
+                valid_list:
+                  - min                 # Minimalwerte
+                  - max                 # Maximalwerte
+                  - sum                 # Summe
+                  - on
+                  - integrate
+                  - sum_max
+                  - sum_avg
+                  - sum_min_neg
+                  - diff_max
+            item:
+                type: foo
+                description:
+                    de: "Das Item-Objekt oder die Item_ID der DB"
+                    en: "An item object"
+                mandatory: True
+            timespan:
+                type: str
+                description:
+                    de: "Zeitinkrement für die DB-Abfrage"
+                    en: ""
+                mandatory: True
+                valid_list:
+                  - day
+                  - week
+                  - month
+                  - year
+            start:
+                type: int
+                description:
+                    de: "Zeitlicher Beginn der DB-Abfrage: x Zeitinkrementen von jetzt in die Verangenheit"
+                    en: ""
+            end:
+                type: int
+                description:
+                    de: "Zeitliches Ende der DB-Abfrage: x Zeitinkrementen von jetzt in die Verangenheit"
+                    en: ""
+            count:
+                type: int
+                description:
+                    de: "Anzahl der Zeitinkremente, vom Start in die Vergangenheit abzufragen sind. Alternative zu 'end'"
+                    en: ""
+            group:
+                type: str
+                description:
+                    de: "erste Gruppierung der DB-Abfrage"
+                    en: ""
+                valid_list:
+                  - day
+                  - week
+                  - month
+                  - year
+            group2:
+                type: str
+                description:
+                    de: "zweite Gruppierung der DB-Abfrage"
+                    en: ""
+                valid_list:
+                  - day
+                  - week
+                  - month
+                  - year
 
 logic_parameters: NONE
