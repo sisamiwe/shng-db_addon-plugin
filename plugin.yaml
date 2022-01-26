@@ -22,19 +22,26 @@ plugin:
     classname: DatabaseAddOn        # class containing the plugin
 
 parameters:
-    # Definition of parameters to be configured in etc/plugin.yaml (enter 'parameters: NONE', if section should be empty)
-    param1:
+    startup_run_delay:
+        type: num
+        mandatory: false
+        default: 0
+        description:
+            de: 'Zeitlicher Abstand in Sekunden, mit der die Funktionen, die bei Startup ausgeführt werden sollen, ausgeführt werden'
+            en: 'Delay in seconds, after which the startup functions will be run'
+            
+    db_instance:
         type: str
         description:
-            de: 'Demo Parameter'
-            en: 'Parameter for demonstration purposes'
+            de: 'Instanz of mysql-DB, die verwendet werden soll'
+            en: 'Instance of mysql-DB to be used'
 
 item_attributes:
     database_addon_fct:
         type: str
         description:
-            de: 'Funktion des AddonPlugins'
-            en: ''
+            de: 'Funktion des DB-Addon Plugins'
+            en: 'Function of DB-Addon Plugins'
         valid_list:
             # Wertehistorie total
             - 'heute'                                       #num    onchange    Verbrauch am heutigen Tag (Differenz zwischen aktuellem Wert und den Wert am Ende des vorherigen Tages)
@@ -125,14 +132,14 @@ item_attributes:
     database_addon_params:
         type: str
         description:
-            de: "Parameter für eine Funktion des AddonPlugins im Format 'kwargs' ('keyword'='argument', 'keyword'='argument', ...)"
-            en: ""
+            de: "Parameter für eine Funktion des DB-Addon Plugins im Format 'kwargs' enclosed in quotes like 'keyword=argument, keyword=argument'"
+            en: "Parameters of a DB-Addon Plugin function. Need to have foramt of 'kwargs' enclosed in quotes like 'keyword=argument, keyword=argument'"
 
     database_addon_startup:
         type: bool
         description:
-            de: 'Ausführen der Berechung bei PluginStart (delay)'
-            en: ''
+            de: 'Ausführen der Berechung bei Plugin Start (mit zeitlichem Abstand, wie in den Plugin Parametern definiert)'
+            en: 'Run function in startup of plugin (with delay, set in plugin parameters)'
 
 item_structs: NONE
 
