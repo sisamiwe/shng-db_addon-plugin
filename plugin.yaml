@@ -127,7 +127,8 @@ item_attributes:
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'gruendlandtempsumme'                         #num    daily       Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params: (year=mandatory)
-            - 'db_request'                                  #div    'group'     Abfrage der DB: database_addon_params: (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional):
+            - 'tagesmitteltemperatur'                       #list   daily       Berechnet die Tagesmitteltemperatur auf basis der stündlichen Durchschnittswerte eines Tages für die angegbene Anzahl von Tagen (days=optional)
+            - 'db_request'                                  #list  'group'      Abfrage der DB: database_addon_params: (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional):
 
     database_addon_params:
         type: str

@@ -55,17 +55,22 @@ class DatabaseAddOn(SmartPlugin):
         'max_daily_30d': {'func': 'max', 'timespan': 'day', 'count': 30, 'group': 'day'},
         'avg_daily_30d': {'func': 'avg', 'timespan': 'day', 'count': 30, 'group': 'day'},
         'tagesmittelwert': {'func': 'max', 'timespan': 'year', 'start': 0, 'end': 0, 'group': 'day'},
+        'tagesmittelwert_hour': {'func': 'avg1', 'timespan': 'day', 'start': 0, 'end': 0, 'group': 'hour', 'group2': 'day'},
+        'tagesmittelwert_hour_days': {'func': 'avg1', 'timespan': 'day', 'count': 30, 'group': 'hour', 'group2': 'day'},
         'waermesumme_monthly_24m': {'func': 'sum_max', 'timespan': 'month', 'start': 24, 'end': 0, 'group': 'day', 'group2': 'month'},
+        'waermesumme_year_month': {'func': 'sum_max', 'timespan': 'day', 'start': None, 'end': None, 'group': 'day', 'group2': None},
         'kaeltesumme_monthly_24m': {'func': 'sum_max', 'timespan': 'month', 'start': 24, 'end': 0, 'group': 'day', 'group2': 'month'},
+        'kaltesumme_year_month': {'func': 'sum_min_neg', 'timespan': 'day', 'start': None, 'end': None, 'group': 'day', 'group2': None},
         'verbrauch_daily_30d': {'func': 'diff_max', 'timespan': 'day', 'count': 30, 'group': 'day'},
         'verbrauch_week_30w': {'func': 'diff_max', 'timespan': 'week', 'count': 30, 'group': 'week'},
         'verbrauch_month_18m': {'func': 'diff_max', 'timespan': 'month', 'count': 18, 'group': 'month'},
         'zaehler_daily_30d': {'func': 'max', 'timespan': 'day', 'count': 30, 'group': 'day'},
         'zaehler_week_30w': {'func': 'max', 'timespan': 'week', 'count': 30, 'group': 'week'},
         'zaehler_month_18m': {'func': 'max', 'timespan': 'month', 'count': 18, 'group': 'month'},
+        'gts': {'func': 'max', 'timespan': 'year', 'start': None, 'end': None, 'group': 'day'},
     }
 
-    PLUGIN_VERSION = '1.0.0'    # (must match the version specified in plugin.yaml), use '1.0.0' for your initial plugin Release
+    PLUGIN_VERSION = '1.0.0'
 
     def __init__(self, sh):
         """ Initializes the plugin.
@@ -104,7 +109,7 @@ class DatabaseAddOn(SmartPlugin):
         self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
         self._db = None                             # object of database
-        self.connection_data = None                 # connection data to database
+        self.connection_data = None                 # connection data list to database
         self.db_driver = None                       # driver for database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
         self.alive = None
@@ -228,11 +233,20 @@ class DatabaseAddOn(SmartPlugin):
                         else:
                             if 'year' in _database_addon_params:
                                 _database_addon_params['item'] = _database_item
-                                # self._item_params_dict[item] = _database_addon_params
                                 self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
                                 self._daily_items.add(item)
                             else:
                                 self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_params}. Item will  be ignored")
+                    else:
+                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+
+                # handle tagesmitteltemperatur
+                elif _database_addon_fct == 'tagesmitteltemperatur':
+                    if self.has_iattr(item.conf, 'database_addon_params'):
+                        _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                        _database_addon_params['item'] = _database_item
+                        self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                        self._daily_items.add(item)
                     else:
                         self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
@@ -245,12 +259,11 @@ class DatabaseAddOn(SmartPlugin):
                         elif '=' in _database_addon_params:
                             _database_addon_params = parse_params_to_dict(_database_addon_params)
                         if _database_addon_params is None:
-                            self.logger.warning(f"Error accured during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                            self.logger.warning(f"Error occured during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
                         else:
                             self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
                             if any(k in _database_addon_params for k in ('func', 'timespan')):
                                 _database_addon_params['item'] = _database_item
-                                # self._item_params_dict[item] = _database_addon_params
                                 self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
                                 _timespan = _database_addon_params.get('group', None)
                                 if not _timespan:
@@ -355,7 +368,6 @@ class DatabaseAddOn(SmartPlugin):
 
             # handle kaeltesumme, waermesumme, gruendlandtempsumme
             elif 'summe' in _database_addon_fct:
-                # _database_addon_params = self._item_params_dict.get('item', None)
                 _database_addon_params = self._item_dict[item][2]
                 if _database_addon_params.keys() & {'item', 'year'}:
                     if _database_addon_fct == 'kaeltesumme':
@@ -366,6 +378,12 @@ class DatabaseAddOn(SmartPlugin):
                         _result = self.gruenlandtemperatursumme(**_database_addon_params)
                 else:
                     self.logger.warning(f"Attribute 'database_addon_params' for item {item_id()} not containing needed params for Item {item.id} with _database_addon_fct={_database_addon_fct}.")
+
+            # handle tagesmitteltemperatur
+            elif _database_addon_fct == 'tagesmitteltemperatur':
+                _database_addon_params = self._item_dict[item][2]
+                if _database_addon_params.keys() & {'item'}:
+                    _result = self.tagesmitteltemperatur(**_database_addon_params)
 
             # handle db_request
             elif _database_addon_fct == 'db_request':
@@ -481,11 +499,20 @@ class DatabaseAddOn(SmartPlugin):
     def gruenlandtemperatursumme(self, item, year):
         """ Calculates the Grünlandtemperatursumme for given item and year
         """
-
+        if not valid_year(year):
+            return
+        
         year = int(year)
         current_year = datetime.date.today().year
         year_delta = current_year - year
-        result = self.fetch_log(func='max', item=item, timespan='year', start=year_delta, end=year_delta, group='day')
+
+        _database_addon_params = self.std_req_dict.get('gts', None)
+        _database_addon_params['start'] = year_delta
+        _database_addon_params['end'] = year_delta
+        _database_addon_params['item'] = item
+
+        result = self.fetch_log(**_database_addon_params)
+
         gts = 0
         for entry in result:
             dt = datetime.datetime.fromtimestamp(int(entry[0]) / 1000)
@@ -500,21 +527,32 @@ class DatabaseAddOn(SmartPlugin):
     def waermesumme(self, item, year, month=None):
         """ Calculates the Wärmesumme for given item, year and month
         """
+        if not valid_year(year):
+            return
 
         if month is None:
             start_date = datetime.date(int(year), 3, 20)
             end_date = datetime.date(int(year), 9, 21)
             group2 = 'year'
-        else:
+        elif valid_month(month):
             start_date = datetime.date(int(year), int(month), 1)
             end_date = start_date + relativedelta(months=+1) - datetime.timedelta(days=1)
             group2 = 'month'
-
+        else:
+            return
         today = datetime.date.today()
         start = (today - start_date).days
         end = (today - end_date).days if end_date < today else 0
 
-        result = self.fetch_log(func='sum_max', item=item, timespan='day', start=start, end=end, group='day', group2=group2)
+        _database_addon_params = self.std_req_dict.get('waermesumme_year_month', None)
+        _database_addon_params['start'] = start
+        _database_addon_params['end'] = end
+        if group2:
+            _database_addon_params['group2'] = group2
+        _database_addon_params['item'] = item
+
+        result = self.fetch_log(**_database_addon_params)
+
         if result:
             if month is None:
                 result = result[0][1]
@@ -523,28 +561,48 @@ class DatabaseAddOn(SmartPlugin):
     def kaeltesumme(self, item, year, month=None):
         """ Calculates the Kältesumme for given item, year and month
         """
-
+        if not valid_year(year):
+            return
+        
         if month is None:
             start_date = datetime.date(int(year), 9, 21)
             end_date = datetime.date(int(year) + 1, 3, 22)
             group2 = None
-        else:
+        elif valid_month(month):
             start_date = datetime.date(int(year), int(month), 1)
             end_date = start_date + relativedelta(months=+1) - datetime.timedelta(days=1)
             group2 = 'month'
+        else:
+            return
 
         today = datetime.date.today()
         start = (today - start_date).days
         end = (today - end_date).days if end_date < today else 0
 
-        result = self.fetch_log(func='sum_min_neg', item=item, timespan='day', start=start, end=end, group='day', group2=group2)
+        _database_addon_params = self.std_req_dict.get('kaltesumme_year_month', None)
+        _database_addon_params['start'] = start
+        _database_addon_params['end'] = end
+        if group2:
+            _database_addon_params['group2'] = group2
+        _database_addon_params['item'] = item
+
+        result = self.fetch_log(**_database_addon_params)
+
         if result:
             if month is None:
                 result = result[0][1]
             return result
 
-    def tagesmitteltemperatur(self):
-        return
+    def tagesmitteltemperatur(self, item, count=None):
+        
+        _database_addon_params = self.std_req_dict.get('tagesmittelwert_hour_days', None)
+        if count:
+            _database_addon_params['count'] = count
+        _database_addon_params['item'] = item
+
+        result = self.fetch_log(**_database_addon_params)
+        
+        return result
 
     def fetch_log(self, func, item, timespan, start=None, end=0, count=None, group=None, group2=None):
         """ Create a mysql query str and param dict based on given paramaters, get query response, and transfer response to list
@@ -598,6 +656,7 @@ class DatabaseAddOn(SmartPlugin):
 
         select = {
             'avg': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value',
+            'avg1': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(AVG(value), 2) as value FROM (SELECT time, ROUND(AVG(val_num), 2) as value',
             'min': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, MIN(val_num) as value',
             'max': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, MAX(val_num) as value',
             'sum': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, SUM(val_num) as value',
@@ -630,11 +689,13 @@ class DatabaseAddOn(SmartPlugin):
                     'month': 'GROUP BY YEAR(FROM_UNIXTIME(time/1000)), MONTH(FROM_UNIXTIME(time/1000))',
                     'week': 'GROUP BY YEARWEEK(FROM_UNIXTIME(time/1000), 5)',
                     'day': 'GROUP BY DATE(FROM_UNIXTIME(time/1000))',
+                    'hour': 'GROUP BY DATE(FROM_UNIXTIME(time/1000)), HOUR(FROM_UNIXTIME(time/1000))',
                     None: ''
                     }
 
         table_alias = {
                     'avg': '',
+                    'avg1': ') AS table1',
                     'min': '',
                     'max': '',
                     'sum': '',
@@ -1028,6 +1089,10 @@ class DatabaseAddOn(SmartPlugin):
 
         return self._fetchone(query)
 
+    @property
+    def db_version(self):
+        return self._get_db_version()
+
     ##############################
     #  Database specific stuff
     ##############################
@@ -1065,10 +1130,6 @@ class DatabaseAddOn(SmartPlugin):
         finally:
             if cur is None:
                 self._db.release()
-
-    @property
-    def db_version(self):
-        return self._get_db_version()
 
     ##############################
     #           Backup
@@ -1133,7 +1194,8 @@ class DatabaseAddOn(SmartPlugin):
                     self._itemid_dict[item] = _item_id
         return _item_id
 
-    def _get_dbtimestamp_from_date(self, date):
+    @staticmethod
+    def _get_dbtimestamp_from_date(date):
         """ Comupute a timestamp for database entry from given date
 
         :param date: datetime object / string of format 'yyyy-mm'
@@ -1182,12 +1244,26 @@ def parse_params_to_dict(string):
             elif key in ('start', 'end', 'count') and not isinstance(res_dict[key], int):
                 return None
             elif key in 'year':
-                if not (isinstance(res_dict[key], int) and (1980 <= res_dict[key] <= datetime.date.today().year)):
+                if not valid_year(res_dict[key]):
                     return None
             elif key in 'month':
-                if not (isinstance(res_dict[key], int) and (1 <= res_dict[key] <= 12)):
+                if not valid_month(res_dict[key]):
                     return None
         return res_dict
+
+
+def valid_year(year):
+    if (isinstance(year, int) or (isinstance(year, str) and year.isdigit())) and (1980 <= year <= datetime.date.today().year):
+        return True
+    else:
+        return False
+
+
+def valid_month(month):
+    if (isinstance(month, int) or (isinstance(month, str) and month.isdigit())) and (1 <= month <= 12):
+        return True
+    else:
+        return False
 
 ##############################
 #           Backup
