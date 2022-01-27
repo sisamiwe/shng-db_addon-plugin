@@ -37,6 +37,7 @@ import pymysql.cursors
 import datetime
 from dateutil.relativedelta import *
 import time
+import re
 
 
 class DatabaseAddOn(SmartPlugin):
@@ -102,17 +103,32 @@ class DatabaseAddOn(SmartPlugin):
         self.jahreswert_dict = {}                   # dict to hold min and max value of current year for items
         self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
-        self._db_connection = {}                    # dict to hold parameters for database connection
+        self._db = None                             # object of database
+        self.connection_data = None                 # connection data to database
+        self.db_driver = None                       # driver for database
+        self.last_connect_time = 0                  # mechanism for limiting db connection requests
         self.alive = None
         
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.db_instance = self.get_parameter_value('db_instance')
 
-        # check existance of db-plugin, get parameters
+        # check existance of db-plugin, get parameters, and init connection to db
         if not self._check_db_existance():
             self.logger.error(f"Check of existence of database plugin incl connection check failed. Plugin not loaded")
             self._init_complete = False
+        else:
+            #  init connection to db
+            self._db = lib.db.Database("DatabaseAddOn", self.db_driver, self.connection_data)
+            if not self._db.api_initialized:
+                self.logger.error("Initialization of database API failed")
+                self._init_complete = False
+            else:
+                self.logger.debug("Initialization of database API successful")
+
+        if not self._initialize_db():
+            self._init_complete = False
+            # pass
 
         # init webinterface
         if not self.init_webinterface(WebInterface):
@@ -125,6 +141,9 @@ class DatabaseAddOn(SmartPlugin):
 
         self.logger.debug("Run method called")
         self.alive = True
+
+        # init db
+        # self._initialize_db()
         
         # add scheduler for cyclic trigger item calculation
         self.scheduler_add('cyclic', self.execute_due_items, prio=3, cron='5 0 0 * * *', cycle=None, value=None, offset=None, next=None)
@@ -290,7 +309,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug("execute_due_items called")
 
         _todo_items = self._create_due_items()
-        self.logger.debug(f"execute_fcts: Following items will be calculated: {_todo_items}")
+        self.logger.info(f"execute_due_items: Following items will be calculated: {_todo_items}")
 
         self.execute_items(_todo_items)
         
@@ -455,6 +474,10 @@ class DatabaseAddOn(SmartPlugin):
                 else:
                     item(_result, self.get_shortname())
 
+    ##############################
+    #       Public functions
+    ##############################
+
     def gruenlandtemperatursumme(self, item, year):
         """ Calculates the Grünlandtemperatursumme for given item and year
         """
@@ -558,7 +581,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # create item_id from item or string input of item_id,
         if isinstance(item, Item):
-            item_id = self._get_itemid_direct(item)
+            item_id = self._get_itemid(item)
         elif item.isdigit() or isinstance(item, int):
             item_id = int(item)
         else:
@@ -589,17 +612,17 @@ class DatabaseAddOn(SmartPlugin):
         # if query is from now (end == 0) until end of database (start is None)
         if start is None and end == 0:
             where = {
-                    'month': 'item_id = %(item)s',
-                    'week': 'item_id = %(item)s',
-                    'day': 'item_id = %(item)s'
+                    'month': 'item_id = :item',
+                    'week': 'item_id = :item',
+                    'day': 'item_id = :item'
                     }
         # query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past
         else:
             where = {
-                    'year': 'item_id = %(item)s AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN MAKEDATE(year(now()-interval %(start)s year),1) AND DATE_SUB(CURRENT_DATE, INTERVAL %(end)s YEAR)',
-                    'month': 'item_id = %(item)s AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATE_ADD(MAKEDATE(YEAR(CURRENT_DATE), 1), INTERVAL MONTH(CURRENT_DATE)-1 MONTH), INTERVAL %(start)s MONTH) AND DATE_SUB(CURRENT_DATE, INTERVAL %(end)s MONTH)',
-                    'week': 'item_id = %(item)s AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATE_ADD(CURRENT_DATE, INTERVAL -WEEKDAY(CURRENT_DATE) DAY), INTERVAL %(start)s WEEK) AND DATE_SUB(CURRENT_DATE, INTERVAL %(end)s WEEK)',
-                    'day': 'item_id = %(item)s AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(CURDATE(), INTERVAL %(start)s DAY) AND DATE_SUB(CURDATE(), INTERVAL %(end)s DAY)'
+                    'year': 'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN MAKEDATE(year(now()-interval :start year),1) AND DATE_SUB(CURRENT_DATE, INTERVAL :end YEAR)',
+                    'month': 'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATE_ADD(MAKEDATE(YEAR(CURRENT_DATE), 1), INTERVAL MONTH(CURRENT_DATE)-1 MONTH), INTERVAL :start MONTH) AND DATE_SUB(CURRENT_DATE, INTERVAL :end MONTH)',
+                    'week': 'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATE_ADD(CURRENT_DATE, INTERVAL -WEEKDAY(CURRENT_DATE) DAY), INTERVAL :start WEEK) AND DATE_SUB(CURRENT_DATE, INTERVAL :end WEEK)',
+                    'day': 'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(CURDATE(), INTERVAL :start DAY) AND DATE_SUB(CURDATE(), INTERVAL :end DAY)'
                     }
 
         group_by = {
@@ -638,16 +661,20 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug(f"fetch_log: query={query}, param_dict={param_dict}")
 
         # reqeust database
-        result = self._fetch_all(query, param_dict)
+        result = self._fetchall(query, param_dict)
 
         # handle result
         value = []
         for element in result:
-            value.append([element['time1'], element['value']])
+            value.append([element[0], element[1]])
         if func == 'diff_max':
             value.pop(0)
         self.logger.debug(f"fetch_log: value for item={item} with timespan={timespan}, func={func}: {value}")
         return value
+
+    ##############################
+    #        Support stuff
+    ##############################
 
     def _fill_cache_dicts(self, updated_item, value):
         """ Get item and item value for which an update has been detected, fill cache dicts and set item value.
@@ -696,6 +723,10 @@ class DatabaseAddOn(SmartPlugin):
                             if _update:
                                 _cache_dict[_database_item][_func] = value
 
+                        # check value is float ending of .0 and convert to int
+                        if value.is_integer()
+                            value = int(value)
+
                         # set item value
                         if value != item():
                             item(value, self.get_shortname())
@@ -711,6 +742,10 @@ class DatabaseAddOn(SmartPlugin):
 
                     # calculate value
                     delta_value = round(value - _cache_dict[_database_item], 2)
+
+                    # check value is float ending of .0 and convert to int
+                    if delta_value.is_integer()
+                        delta_value = int(delta_value)
 
                     # set item value
                     if delta_value != item():
@@ -758,7 +793,6 @@ class DatabaseAddOn(SmartPlugin):
 
          - Checks if DB Plugin is loaded and if driver is PyMySql
          - Gets database plugin parameters
-         - Does connection test
          - Puts database connection parameters to plugin properties
         """
 
@@ -768,6 +802,8 @@ class DatabaseAddOn(SmartPlugin):
         except Exception as e:
             self.logger.error(f"Database plugin not loaded, Error was {e}. No need for DatabaseAddOn Plugin.")
             return False
+        else:
+            self._db_plugin = _db_plugin
 
         # get driver of database and check if it is PyMySql to ensure existence of MySql DB
         try:
@@ -777,72 +813,39 @@ class DatabaseAddOn(SmartPlugin):
             return False
         else:
             if db_driver.lower() != 'pymysql':
-                self.logger.error(
-                    f"Database plugin not loaded, but driver ist not 'PyMySql'. DatabaseAddOn Plugin not loaded.")
+                self.logger.error(f"Database plugin not loaded, but driver ist not 'PyMySql'. DatabaseAddOn Plugin not loaded.")
                 return False
+            else:
+                self.db_driver = db_driver
 
         # get database plugin parameters
         try:
             db_instance = _db_plugin.get_parameter_value('instance')
-            connection_data = _db_plugin.get_parameter_value('connect')  # ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
-            self.logger.debug(f"Database Plugin available with instance={db_instance} and connection={connection_data}")
+            self.connection_data = _db_plugin.get_parameter_value('connect')  # ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
+            self.logger.debug(f"Database Plugin available with instance={db_instance} and connection={self.connection_data}")
         except Exception as e:
             self.logger.error(f"Error {e} occured during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
             return False
         else:
-            try:
-                host = connection_data[0].split(':', 1)[1]
-                user = connection_data[1].split(':', 1)[1]
-                password = connection_data[2].split(':', 1)[1]
-                db = connection_data[3].split(':', 1)[1]
-                port = connection_data[4].split(':', 1)[1]
-            except Exception as e:
-                self.logger.error(f"Not able to get Database parameters, Error was {e}. DatabaseAddOn Plugin not loaded.")
-                return False
-
-        # do connection check
-        try:
-            _db_connection = self._connect_to_db(host=host, user=user, password=password, db=db)
-        except Exception as e:
-            self.logger.error(f"Connection to mysql database failed with error {e}. DatabaseAddOn Plugin not loaded.")
-            return False
-
-        if _db_connection:
-            self._db_plugin = _db_plugin
-            self.logger.debug(f"Connection check to mysql database successfull.")
-            _db_connection.close()
-            
-            self._db_connection['host'] = host
-            self._db_connection['user'] = user
-            self._db_connection['password'] = password
-            self._db_connection['db'] = db
-            self._db_connection['port'] = port
-
             return True
-        else:
-            self.logger.error(f"Connection to mysql database not possible. DatabaseAddOn Plugin not loaded.")
-            return False
 
-    def _connect_to_db(self, host=None, user=None, password=None, db=None):
-        """ Connect to DB via pymysql
-        """
-        
-        if not host:
-            host = self._db_connection['host']
-        if not user:
-            user = self._db_connection['user']
-        if not password:
-            password = self._db_connection['password']
-        if not db:
-            db = self._db_connection['db']
-
+    def _initialize_db(self):
         try:
-            connection = pymysql.connect(host=host, user=user, password=password, db=db, charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
+            if not self._db.connected():
+                # limit connection requests to 20 seconds.
+                current_time = time.time()
+                time_delta_last_connect = current_time - self.last_connect_time
+                # self.logger.debug(f"DEBUG: delta {time_delta_last_connect}")
+                if time_delta_last_connect > 20:
+                    self.last_connect_time = time.time()
+                    self._db.connect()
+                else:
+                    self.logger.error(f"_initialize_db: Database reconnect supressed: Delta time: {time_delta_last_connect}")
+                    return False
         except Exception as e:
-            self.logger.error(f"Connection to Database failed with error {e}!.")
-            return
+            self.logger.critical(f"_initialize_db: Database: Initialization failed: {e}")
         else:
-            return connection
+            return True
 
     def _get_oldest_log(self, item):
         """ Get timestamp of oldest entry of item from cache dict or get value from db and put it to cache dict
@@ -998,8 +1001,140 @@ class DatabaseAddOn(SmartPlugin):
         """ Creates an str for db request in min from now x month ago"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_year(None, -x), 'im')}i"
 
+    def _fetch_all_item(self, item):
+        """ Query the database version and provide result
+        The fetchAll method retrieves all (remaining) rows of a query result, returning them as a sequence of sequences.
+        
+        """
+
+        self.logger.debug(f"_fetch_all_item: Called for item={item}")
+        if isinstance(item, Item):
+            item_id = self._get_itemid(item)
+        elif item.isdigit() or isinstance(item, int):
+            item_id = int(item)
+        else:
+            item_id = None
+            
+        if item_id:
+            query = "select * from log where (item_id=%s) AND (time = None OR 1 = 1)"
+            param_dict = {'item_id': item_id}
+            result = self._fetchall(query, param_dict)
+            return result
+
+    def _get_db_version(self):
+        """ Query the database version and provide result
+        """
+        query = 'SELECT VERSION()'
+
+        return self._fetchone(query)
+
+    ##############################
+    #  Database specific stuff
+    ##############################
+
+    def _execute(self, query, params, cur=None):
+        self._query(self._db.execute, query, params, cur)
+
+    def _fetchone(self, query, params={}, cur=None):
+        self.logger.debug(f"_fetchone: Called with query={query}, param_dict={params}")
+        return self._query(self._db.fetchone, query, params, cur)
+
+    def _fetchall(self, query, params={}, cur=None):
+        tuples = self._query(self._db.fetchall, query, params, cur)
+        return None if tuples is None else list(tuples)
+
+    def _query(self, func, query, params, cur=None):
+        if not self._initialize_db():
+            return None
+        if cur is None:
+            if self._db.verify(5) == 0:
+                self.logger.error("_query: Database: Connection not recovered")
+                return None
+            if not self._db.lock(300):
+                self.logger.error("_query: Database: Can't query due to fail to acquire lock")
+                return None
+        query_readable = re.sub(r':([a-z_]+)', r'{\1}', query).format(**params)
+        try:
+            tuples = func(query, params, cur=cur)
+        except Exception as e:
+            self.logger.error(f"_query: Database: Error for query {query_readable}: {e}")
+            raise e
+        else:
+            self.logger.debug(f"_query: Database: Fetch {query_readable}: {tuples}")
+            return tuples
+        finally:
+            if cur is None:
+                self._db.release()
+
+    @property
+    def db_version(self):
+        return self._get_db_version()
+
+    ##############################
+    #           Backup
+    ##############################
+
+    def _connect_to_db(self, host=None, user=None, password=None, db=None):
+        """ Connect to DB via pymysql
+        """
+
+        if not host:
+            host = self.connection_data[0].split(':', 1)[1]
+        if not user:
+            user = self.connection_data[1].split(':', 1)[1]
+        if not password:
+            password = self.connection_data[2].split(':', 1)[1]
+        if not db:
+            db = self.connection_data[3].split(':', 1)[1]
+        port = self.connection_data[4].split(':', 1)[1]
+
+        try:
+            connection = pymysql.connect(host=host, user=user, password=password, db=db, charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
+        except Exception as e:
+            self.logger.error(f"Connection to Database failed with error {e}!.")
+            return
+        else:
+            return connection
+
+    def _read_item_table(self, item):
+        """ Read item table if smarthome database
+
+        :param item: name or Item_id of the item within the database
+        :return: Data for the selected item
+        """
+
+        columns_entries = ('id', 'name', 'time', 'val_str', 'val_num', 'val_bool', 'changed')
+        columns = ", ".join(columns_entries)
+
+        if isinstance(item, Item):
+            query = f"SELECT {columns} FROM item WHERE name = '{str(item.id())}'"
+            return self._fetchone(query)
+
+        elif item.isdigit() or isinstance(item, int):
+            item = int(item)
+            query = f"SELECT {columns} FROM item WHERE id = {item}"
+            return self._fetchone(query)
+
+    def _get_itemid_direct(self, item):
+        """ Returns the ID of the given item from cache dict or request it directly from database
+
+        :param item: Item to get the ID for
+        :return: id of the item within the database
+        :rtype: int | None
+        """
+        self.logger.debug(f"_get_itemid_direct: Called with item={item.id()}")
+
+        _item_id = self._itemid_dict.get(item, None)
+        if _item_id is None:
+            row = self._read_item_table(item)
+            if row:
+                if len(row) > 0:
+                    _item_id = int(row[0])
+                    self._itemid_dict[item] = _item_id
+        return _item_id
+
     def _get_dbtimestamp_from_date(self, date):
-        """ Comupute a timestamp for database enty from given date
+        """ Comupute a timestamp for database entry from given date
 
         :param date: datetime object / string of format 'yyyy-mm'
         """
@@ -1018,134 +1153,9 @@ class DatabaseAddOn(SmartPlugin):
         if d:
             return int(time.mktime(d.timetuple()) * 1000)
 
-    def _read_item_table(self, item):
-        """ Read item table if smarthome database
-
-        :param item: name or Item_id of the item within the database
-        :return: Data for the selected item
-        """
-
-        columns_entries = ('id', 'name', 'time', 'val_str', 'val_num', 'val_bool', 'changed')
-        columns = ", ".join(columns_entries)
-
-        if isinstance(item, Item):
-            query = f"SELECT {columns} FROM item WHERE name = '{str(item.id())}'"
-            return self._fetch_one(query)
-
-        elif item.isdigit() or isinstance(item, int):
-            item = int(item)
-            query = f"SELECT {columns} FROM item WHERE id = {item}"
-            return self._fetch_one(query)
-
-    def _get_itemid_direct(self, item):
-        """ Returns the ID of the given item from cache dict or request it directly from database
-
-        :param item: Item to get the ID for
-        :return: id of the item within the database
-        :rtype: int | None
-        """
-        self.logger.debug(f"_get_itemid_direct: Called with item={item.id()}")
-
-        _item_id = self._itemid_dict.get(item, None)
-        if _item_id is None:
-            row = self._read_item_table(item)
-            if row:
-                if len(row) > 0:
-                    _item_id = int(row['id'])
-                    self._itemid_dict[item] = _item_id
-        return _item_id
-
-    def _fetch_all_item(self, item):
-        """ Query the database version and provide result
-        The fetchAll method retrieves all (remaining) rows of a query result, returning them as a sequence of sequences.
-        
-        """
-
-        self.logger.debug(f"_fetch_all_item: Called for item={item}")
-        if isinstance(item, Item):
-            item_id = self._get_itemid_direct(item)
-        elif item.isdigit() or isinstance(item, int):
-            item_id = int(item)
-        else:
-            item_id = None
-            
-        if item_id:
-            query = "select * from log where (item_id=%s) AND (time = None OR 1 = 1)"
-            param_dict = {'item_id': item_id}
-            result = self._fetch_all(query, param_dict)
-            return result
-
-    def _get_db_version(self):
-        """ Query the database version and provide result
-        """
-
-        query = 'SELECT VERSION()'
-                
-        result = self._fetch_one(query)
-        return result
-
-    def _fetch_all(self, query, param_dict=None):
-        """ Execute a database query with cursor.fetchall() with given query in sql format and optional param_dict
-            The fetchAll method retrieves all (remaining) rows of a query result, returning them as a sequence of sequences.
-            
-        """
-
-        self.logger.debug(f"_fetch_all: Called with query={query}, param_dict={param_dict}")
-        connection = self._connect_to_db()
-        if connection:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(query, param_dict)
-                    result = cursor.fetchall()
-            except Exception as e:
-                self.logger.error(f"_fetch_all failed with error={e}")
-            else:
-                self.logger.debug(f'_fetch_all: result={result}')
-                return result
-            finally:
-                connection.close()
-
-    def _fetch_one(self, query, param_dict=None):
-        """ Execute a database query with cursor.fetchone() with given query in sql format and optional param_dict
-        The fetchone function fetches the next row of a query result set, returning a single sequence, or None when no more data is available.
-
-        """
-
-        self.logger.debug(f"_fetch_one: Called with query={query}, param_dict={param_dict}")
-        connection = self._connect_to_db()
-        if connection:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(query, param_dict)
-                    result = cursor.fetchone()
-            except Exception as e:
-                self.logger.error(f"_fetch_one failed with error={e}")
-            else:
-                self.logger.debug(f'_fetch_one result={result}')
-                return result
-            finally:
-                connection.close()
-
-    def _commit(self, query, param_dict=None):
-        """ Execute a database query with commit with given query in sql format and optional param_dict
-
-        """
-
-        self.logger.debug(f"_commit: Called with query={query}, param_dict={param_dict}")
-        connection = self._connect_to_db()
-        if connection:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(query, param_dict)
-                connection.commit()
-            except Exception as e:
-                self.logger.error(f"_commit failed with error={e}")
-            finally:
-                connection.close()
-
-    @property
-    def db_version(self):
-        return self._get_db_version()
+##############################
+#      Helper functions
+##############################
 
 
 def parse_params_to_dict(string):
@@ -1179,10 +1189,10 @@ def parse_params_to_dict(string):
                     return None
         return res_dict
 
-
 ##############################
 #           Backup
 ##############################
+
 
 """
 def fetch_min_monthly_count(sh, item, count=None):

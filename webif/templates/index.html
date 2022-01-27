@@ -31,10 +31,6 @@
     $(document).ready( function () {
 		try 
 			{	
-			$('#<table_id>').DataTable( {
-				"paging": false,
-				fixedHeader: true
-				} );
 			$('#maintable').DataTable( {
 				"paging": false,
 				fixedHeader: true
@@ -53,29 +49,30 @@
 <table class="table table-striped table-hover">
 	<tbody>
 		<tr>
-			<td class="py-1"><strong>Prompt 1</strong></td>
-			<td class="py-1">{% if 1 == 2 %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
-			<td class="py-1" width="50px"></td>
-			<td class="py-1"><strong>Prompt 4</strong></td>
-			<td class="py-1">{{ _('Wert 4') }}</td>
-			<td class="py-1" width="50px"></td>
+			<td class="py-1" width="150px"><strong>{{ _('Verbunden') }}</strong></td>
+			<td class="py-1">{% if p._db._connected %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
+			<td class="py-1" width="150px"><strong>{{ _('Treiber') }}</strong></td>
+			<td class="py-1">{{ p.db_driver }}</td>
+			<td class="py-1"></td>
+			<td class="py-1"></td>
 		</tr>
-		<tr>
-			<td class="py-1"><strong>Prompt 2</strong></td>
-			<td class="py-1">{{ _('Wert 2') }}</td>
-			<td></td>
-			<td class="py-1"><strong>Prompt 5</strong></td>
-			<td class="py-1">-</td>
-			<td></td>
-		</tr>
-		<tr>
-			<td class="py-1"><strong>Prompt 3</strong></td>
-			<td class="py-1">-</td>
-			<td></td>
-			<td class="py-1"><strong>Prompt 6</strong></td>
-			<td class="py-1">-</td>
-			<td></td>
-		</tr>
+		{% set first = True %}
+		{% for key, value in p._db._params.items() %}
+			{% if loop.index % 4 == 0 %}
+				<tr>
+				{% endif %}
+					{% if key != "passwd" %}
+					<td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{{ value }}</td>
+					{% else %}
+					<td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{% for letter in value %}*{% endfor %}</td>
+					{% endif %}
+					{% if loop.index % 3 > 0 and loop.last %}
+						<td class="py-1" colspan="{{ loop.index % 3 }}"></td>
+					{% endif %}
+				{% if loop.index % 4 == 0 and not first %}
+				</tr>
+			{% endif %}
+		{% endfor %}
 	</tbody>
 </table>
 {% endblock headtable %}
@@ -95,14 +92,14 @@
 <!--
 	Define the number of tabs for the body of the web interface (1 - 6)
 -->
-{% set tabcount = 4 %}
+{% set tabcount = 2 %}
 
 
 <!--
 	Set the tab that will be visible on start, if another tab that 1 is wanted (1 - 3)
 -->
 {% if p._item_dict %}
-	{% set start_tab = 3 %}
+	{% set start_tab = 1 %}
 {% endif %}
 
 
@@ -140,16 +137,8 @@
 {% endblock bodytab1 %}
 
 
-<!--
-	Content block for the second tab of the Webinterface
--->
-{% set tab2title = "<strong>" ~ p.get_shortname() ~ " Geräte</strong> " %}
+{% set tab2title = "<strong>" ~ p.get_shortname() ~ " Maintenance</strong>" %}
 {% block bodytab2 %}
-{% endblock bodytab2 %}
-
-
-{% set tab3title = "<strong>" ~ p.get_shortname() ~ " Maintenance</strong>" %}
-{% block bodytab3 %}
 <div class="container-fluid m-2">
     <table id="mtable2" class="table table-striped table-hover pluginList">
         <thead>
@@ -247,15 +236,5 @@
         </tbody>
     </table>
 </div>
-{% endblock bodytab3 %}
+{% endblock bodytab2 %}
 
-
-<!--
-	Content block for the fourth tab of the Webinterface
-	If wanted, a title for the tab can be defined as:
-		{% set tab4title = "<strong>" ~ p.get_shortname() ~ " Geräte</strong>" %}
-
-	It has to be defined before (and outside) the block bodytab4
--->
-{% block bodytab4 %}
-{% endblock bodytab4 %}
