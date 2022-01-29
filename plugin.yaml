@@ -66,10 +66,11 @@ item_attributes:
             - 'monat_minus12'                               #num    monthly     Verbrauch aktueller Monat -12 Monate
             - 'jahr_minus1'                                 #num    yearly      Verbrauch Vorjahr (aktuelles Jahr -1 Jahr)
             - 'jahr_minus2'                                 #num    yearly      Verbrauch aktuelles Jahr -2 Jahre
+            - 'rolling_12m_heute_minus1'                    #num    daily       Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Tages
             - 'rolling_12m_woche_minus1'                    #num    weekly      Verbrauch der letzten 12 Monate ausgehend im Ende der letzten Woche
             - 'rolling_12m_monat_minus1'                    #num    montly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats
             - 'rolling_12m_jahr_minus1'                     #num    yearly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Jahres
-            - 'zaehlerstand_heute'                          #num        
+            - 'zaehlerstand_gestern'                        #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
             - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
             - 'zaehlerstand_woche_minus2'                   #num    weekly      Zählerstand / Wert am Ende der vorletzten Woche (aktuelle Woche -2 Woche)        
             - 'zaehlerstand_woche_minus3'                   #num    weekly      Zählerstand / Wert am Ende der aktuelle Woche -3 Woche
@@ -142,7 +143,290 @@ item_attributes:
             de: 'Ausführen der Berechung bei Plugin Start (mit zeitlichem Abstand, wie in den Plugin Parametern definiert)'
             en: 'Run function in startup of plugin (with delay, set in plugin parameters)'
 
-item_structs: NONE
+item_structs:
+    total_1:
+        name: Struct für Wertehistorie mit dauerhaft ansteigendem Zählerstand
+        heute:
+            name: Verbrauch heute
+            database_addon_fct: heute
+            database_addon_startup: yes
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        woche:
+            name: Verbrauch seit Wochenbeginn
+            database_addon_fct: woche
+            database_addon_startup: yes
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        monat:
+            name: Verbrauch seit Monatsbeginn
+            database_addon_fct: monat
+            database_addon_startup: yes
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        jahr:
+            name: Verbrauch seit Jahresbeginn
+            database_addon_fct: jahr
+            database_addon_startup: yes
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        rolling_12m:
+            name: Verbrauch innerhalb der letzten 12 Monate ausgehend von gestern
+            database_addon_fct: rolling_12m_heute_minus1
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        gestern:
+            name: Verbrauch gestern
+            database_addon_fct: heute_minus1
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        gestern_minus1:
+            name: Verbrauch vorgestern
+            database_addon_fct: heute_minus2
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        gestern_minus2:
+            name: Verbrauch vor 3 Tagen
+            database_addon_fct: heute_minus3
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vorwoche:
+            name: Verbrauch in der Vorwoche
+            database_addon_fct: woche_minus1
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vorwoche_minus1:
+            name: Verbrauch vor 2 Wochen
+            database_addon_fct: woche_minus2
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vormonat:
+            name: Verbrauch im Vormonat
+            database_addon_fct: monat_minus1
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vormonat_minus12:
+            name: Verbrauch vor 12 Monaten
+            database_addon_fct: monat_minus12
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vorjahreszeitraum:
+            name: Verbrauch im Vorjahrzeitraum 1.1. bis jetzt vor einem Jahr
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vormonat_zaehlerstand:
+            name: Zählerstand zum Ende des Vormonates
+            database_addon_fct: zaehlerstand_monat_minus1
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vormonat_minus1_zaehlerstand:
+            name: Zählerstand zum Monatsende vor 2 Monaten
+            database_addon_fct: zaehlerstand_monat_minus2
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        vormonat_minus2_zaehlerstand:
+            name: Zählerstand zum Monatsende vor 3 Monaten
+            database_addon_fct: zaehlerstand_monat_minus3
+            type: num
+            visu_acl: ro
+            cache: yes
+
+        zaehlerstand_tagesende:
+            name: Zählerstand zum Tagesende gestern
+            database_addon_fct: zaehlerstand_gestern
+            type: num
+            visu_acl: ro
+            cache: yes
+
+    minmax_1:
+        name: Struct für Wertehistorie mit min max Auswertung
+
+        heute_min:
+            name: Minimaler Wert seit Tagesbeginn
+            database_addon_fct: heute_min
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        heute_max:
+            name: Maximaler Wert seit Tagesbeginn
+            database_addon_fct: heute_max
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        heute_avg:
+            name: Durchschnittlicher Wert seit Tagesbeginn
+            database_addon_fct: heute_avg
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        last24h_min:
+            name: Minimaler Wert in den letzten 24h (gleitend)
+            database_addon_fct: last_24h_min
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        last24h_max:
+            name: Maximaler Wert in den letzten 24h (gleitend)
+            database_addon_fct: last_24h_max
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        woche_min:
+            name: Minimaler Wert seit Wochenbeginn
+            database_addon_fct: woche_min
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        woche_max:
+            name: Maximaler Wert seit Wochenbeginn
+            database_addon_fct: woche_max
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        woche_avg:
+            name: Durchschnittlicher Wert seit Wochenbeginn
+            database_addon_fct: woche_avg
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        monat_min:
+            name: Minimaler Wert seit Monatsbeginn
+            database_addon_fct: monat_min
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        monat_max:
+            name: Maximaler Wert seit Monatsbeginn
+            database_addon_fct: monat_max
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        monat_avg:
+            name: Durchschnittlicher Wert seit Monatsbeginn
+            database_addon_fct: monat_avg
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        jahr_min:
+            name: Minimaler Wert seit Jahresbeginn
+            database_addon_fct: jahr_min
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        jahr_max:
+            name: Maximaler Wert seit Jahresbeginn
+            database_addon_fct: jahr_max
+            database_addon_startup: yes
+            type: num
+            cache: yes
+
+        gestern_min:
+            name: Minimaler Wert gestern
+            database_addon_fct: heute_minus1_min
+            type: num
+            cache: yes
+
+        gestern_max:
+            name: Maximaler Wert gestern
+            database_addon_fct: heute_minus1_max
+            type: num
+            cache: yes
+
+        gestern_avg:
+            name: Durchschnittlicher Wert gestern
+            database_addon_fct: heute_minus1_avg
+            type: num
+            cache: yes
+
+        vorwoche_min:
+            name: Minimaler Wert in der Vorwoche
+            database_addon_fct: woche_minus1_min
+            type: num
+            cache: yes
+
+        vorwoche_max:
+            name: Maximaler Wert in der Vorwoche
+            database_addon_fct: woche_minus1_max
+            type: num
+            cache: yes
+
+        vorwoche_avg:
+            name: Durchschnittlicher Wert in der Vorwoche
+            database_addon_fct: woche_minus1_mavg
+            type: num
+            cache: yes
+
+        vormonat_min:
+            name: Minimaler Wert im Vormonat
+            database_addon_fct: monat_minus1_min
+            type: num
+            cache: yes
+
+        vormonat_max:
+            name: Maximaler Wert im Vormonat
+            database_addon_fct: monat_minus1_max
+            type: num
+            cache: yes
+
+        vormonat_avg:
+            name: Durchschnittlicher Wert im Vormonat
+            database_addon_fct: monat_minus1_avg
+            type: num
+            cache: yes
+
+        vorjahr_min:
+            name: Minimaler Wert im Vorjahr
+            database_addon_fct: vorjahr_minus1_min
+            type: num
+            cache: yes
+
+        vorjahr_max:
+            name: Maximaler Wert im Vorjahr
+            database_addon_fct: vorjahr_minus1_max
+            type: num
+            cache: yes
 
 item_attribute_prefixes: NONE
 

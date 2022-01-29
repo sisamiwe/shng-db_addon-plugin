@@ -82,11 +82,9 @@
 	Additional buttons for the web interface (if any are needed) - displayed below the headtable-section
 -->
 {% block buttons %}
-{% if 1==2 %}
 	<div>
-		<button id="btn1" class="btn btn-shng btn-sm" name="scan" onclick="shngPost('', {learn: 'on'})"><i class="fas fa-question"></i>&nbsp;&nbsp;&nbsp;{{ _('nach Devices suchen') }}&nbsp;</button>
+		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Recalculation of all items?') }}')) { jQuery.get('recalc_all'); }">{{_('Recalc all')}}</button>
 	</div>
-{% endif %}
 {% endblock %}
 
 <!--

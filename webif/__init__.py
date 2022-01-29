@@ -102,3 +102,7 @@ class WebInterface(SmartPluginWebIf):
             #     self.logger.error("get_data_html exception: {}".format(e))
         return {}
 
+    @cherrypy.expose
+    def recalc_all(self):
+        self.logger.debug(f"recalc_all called")
+        self.plugin.execute_all_items()

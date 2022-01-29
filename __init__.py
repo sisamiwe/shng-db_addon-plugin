@@ -33,11 +33,18 @@ from lib.plugin import Plugins
 from .webif import WebInterface
 import lib.db
 
+import sqlvalidator
 import pymysql.cursors
 import datetime
 from dateutil.relativedelta import *
 import time
 import re
+
+########################################
+# ToDo
+#     'avg'
+#     'vorjahreszeitraum'
+########################################
 
 
 class DatabaseAddOn(SmartPlugin):
@@ -91,9 +98,9 @@ class DatabaseAddOn(SmartPlugin):
         self._monthly_items = set()                 # set of items, for which the _database_addon_fct shall be executed monthly
         self._yearly_items = set()                  # set of items, for which the _database_addon_fct shall be executed yearly
         self._live_items = set()                    # set of items, for which the _database_addon_fct shall be executed on the fly
-        self._meter_items = set()                   # set of items, for which the _database_addon_fct shall be executed separatly (get create db entry short before midnight)
+        self._meter_items = set()                   # set of items, for which the _database_addon_fct shall be executed separately (get create db entry short before midnight)
         self._startup_items = set()                 # set of items, for which the _database_addon_fct shall be executed on startup
-        self._database_items = set()                # set of items with database attribut, relevant for plugin
+        self._database_items = set()                # set of items with database attribute, relevant for plugin
         self._static_items = set()                  # set of items, for which the _database_addon_fct shall be executed just on startup
         self._itemid_dict = {}                      # dict to hold item_id for items
         self._oldest_log_dict = {}                  # dict to hold oldest_log for items
@@ -118,8 +125,8 @@ class DatabaseAddOn(SmartPlugin):
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.db_instance = self.get_parameter_value('db_instance')
 
-        # check existance of db-plugin, get parameters, and init connection to db
-        if not self._check_db_existance():
+        # check existence of db-plugin, get parameters, and init connection to db
+        if not self._check_db_existence():
             self.logger.error(f"Check of existence of database plugin incl connection check failed. Plugin not loaded")
             self._init_complete = False
         else:
@@ -128,8 +135,8 @@ class DatabaseAddOn(SmartPlugin):
             if not self._db.api_initialized:
                 self.logger.error("Initialization of database API failed")
                 self._init_complete = False
-            else:
-                self.logger.debug("Initialization of database API successful")
+            # else:
+                # self.logger.debug("Initialization of database API successful")
 
         if not self._initialize_db():
             self._init_complete = False
@@ -184,10 +191,10 @@ class DatabaseAddOn(SmartPlugin):
         if self.has_iattr(item.conf, 'database_addon_fct'):
             self.logger.debug(f"parse item: {item.id()}")
 
-            # get attribut value
+            # get attribute value
             _database_addon_fct = self.get_iattr_value(item.conf, 'database_addon_fct').lower()
 
-            # get attribut if item should be calculated at plugin startup
+            # get attribute if item should be calculated at plugin startup
             if self.has_iattr(item.conf, 'database_addon_startup'):
                 _database_addon_startup = self.get_iattr_value(item.conf, 'database_addon_startup')
             else:
@@ -229,7 +236,7 @@ class DatabaseAddOn(SmartPlugin):
                     if self.has_iattr(item.conf, 'database_addon_params'):
                         _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
                         if _database_addon_params is None:
-                            self.logger.warning(f"Error occured during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
                         else:
                             if 'year' in _database_addon_params:
                                 _database_addon_params['item'] = _database_item
@@ -259,7 +266,7 @@ class DatabaseAddOn(SmartPlugin):
                         elif '=' in _database_addon_params:
                             _database_addon_params = parse_params_to_dict(_database_addon_params)
                         if _database_addon_params is None:
-                            self.logger.warning(f"Error occured during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
                         else:
                             self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
                             if any(k in _database_addon_params for k in ('func', 'timespan')):
@@ -316,7 +323,7 @@ class DatabaseAddOn(SmartPlugin):
                 self._fill_cache_dicts(item, item())
 
     def execute_due_items(self):
-        """ Handle scheduleer call, ask for due items and start execute_items
+        """ Handle scheduler call, ask for due items and start execute_items
         """
 
         self.logger.debug("execute_due_items called")
@@ -327,11 +334,18 @@ class DatabaseAddOn(SmartPlugin):
         self.execute_items(_todo_items)
         
     def execute_startup_items(self):
-        """ Handle scheduleer call to execute startup items
+        """ Handle scheduler call to execute startup items
         """
 
         self.logger.debug("execute_startup_items called")
         self.execute_items(self._startup_items)
+        
+    def execute_all_items(self):
+        """ Handle scheduler call to execute all items
+        """
+
+        self.logger.debug("execute_all_items called")
+        self.execute_items(list(self._item_dict.keys()))
 
     def execute_items(self, item_list):
         """ Execute functions per item based on given item list
@@ -635,7 +649,7 @@ class DatabaseAddOn(SmartPlugin):
         if start is None and count is not None:
             start = int(end) + int(count)
             if not start:
-                return ['<ERROR>: Error occured during handling of count.']
+                return ['<ERROR>: Error occurred during handling of count.']
 
         # create item_id from item or string input of item_id,
         if isinstance(item, Item):
@@ -671,10 +685,12 @@ class DatabaseAddOn(SmartPlugin):
         # if query is from now (end == 0) until end of database (start is None)
         if start is None and end == 0:
             where = {
+                    'year': 'item_id = :item',
                     'month': 'item_id = :item',
                     'week': 'item_id = :item',
                     'day': 'item_id = :item'
                     }
+
         # query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past
         else:
             where = {
@@ -715,13 +731,13 @@ class DatabaseAddOn(SmartPlugin):
         if func not in select:
             return ['<ERROR>: Requested function is not defined.']
 
-        # compile query
+        # create query
         query = f"SELECT {select[func]} FROM log WHERE {where[timespan]} {group_by[group]} ORDER BY time ASC {table_alias[func]} {group_by[group2]}"
 
         # do log
         self.logger.debug(f"fetch_log: query={query}, param_dict={param_dict}")
 
-        # reqeust database
+        # request database
         result = self._fetchall(query, param_dict)
 
         # handle result
@@ -732,6 +748,20 @@ class DatabaseAddOn(SmartPlugin):
             value.pop(0)
         self.logger.debug(f"fetch_log: value for item={item} with timespan={timespan}, func={func}: {value}")
         return value
+
+    def fetch_log_raw(self, query, param_dict=None):
+
+        formatted_sql = sqlvalidator.format_sql(query)
+        sql_query = sqlvalidator.parse(formatted_sql)
+
+        if not sql_query.is_valid():
+            self.logger.error(f"fetch_log_raw: Validation of query failed with error: {sql_query.errors}")
+            return
+
+        # request database
+        result = self._fetchall(query, param_dict)
+
+        return result
 
     ##############################
     #        Support stuff
@@ -753,7 +783,7 @@ class DatabaseAddOn(SmartPlugin):
             'woche': (self.vorwochenendwert_dict, self._time_str_woche_minus_x()),
             'monat': (self.vormonatsendwert_dict, self._time_str_monat_minus_x()),
             'jahr': (self.vorjahresendwert_dict, self._time_str_jahr_minus_x())
-        }
+            }
 
         for item in self._live_items:
             _database_item = self._item_dict[item][1]
@@ -768,7 +798,7 @@ class DatabaseAddOn(SmartPlugin):
                     _cache_dict, _time_str = map_dict[_timeframe]
 
                     if _func == 'avg':
-                        self.logger.warning(f"{_database_addon_fct} called but 'avg' not implemented yet.")
+                        self.logger.info(f"{_database_addon_fct} function called but 'avg' not implemented yet.")
                     else:
                         # update cache dicts
                         if _database_item not in _cache_dict:
@@ -785,7 +815,7 @@ class DatabaseAddOn(SmartPlugin):
                                 _cache_dict[_database_item][_func] = value
 
                         # check value is float ending of .0 and convert to int
-                        if value.is_integer():
+                        if isinstance(value, str) and value.is_integer():
                             value = int(value)
 
                         # set item value
@@ -805,7 +835,7 @@ class DatabaseAddOn(SmartPlugin):
                     delta_value = round(value - _cache_dict[_database_item], 2)
 
                     # check value is float ending of .0 and convert to int
-                    if delta_value.is_integer():
+                    if isinstance(delta_value, str) and delta_value.is_integer():
                         delta_value = int(delta_value)
 
                     # set item value
@@ -849,8 +879,8 @@ class DatabaseAddOn(SmartPlugin):
             self.vorjahresendwert_dict = {}
         return _todo_items
 
-    def _check_db_existance(self):
-        """ Check existance of database pluging and database
+    def _check_db_existence(self):
+        """ Check existence of database plugin and database
 
          - Checks if DB Plugin is loaded and if driver is PyMySql
          - Gets database plugin parameters
@@ -870,7 +900,7 @@ class DatabaseAddOn(SmartPlugin):
         try:
             db_driver = _db_plugin.get_parameter_value('driver')
         except Exception as e:
-            self.logger.error(f"Error {e} occured during getting database plugin parameter 'driver'. DatabaseAddOn Plugin not loaded.")
+            self.logger.error(f"Error {e} occurred during getting database plugin parameter 'driver'. DatabaseAddOn Plugin not loaded.")
             return False
         else:
             if db_driver.lower() != 'pymysql':
@@ -885,7 +915,7 @@ class DatabaseAddOn(SmartPlugin):
             self.connection_data = _db_plugin.get_parameter_value('connect')  # ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
             self.logger.debug(f"Database Plugin available with instance={db_instance} and connection={self.connection_data}")
         except Exception as e:
-            self.logger.error(f"Error {e} occured during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
+            self.logger.error(f"Error {e} occurred during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
             return False
         else:
             return True
@@ -901,7 +931,7 @@ class DatabaseAddOn(SmartPlugin):
                     self.last_connect_time = time.time()
                     self._db.connect()
                 else:
-                    self.logger.error(f"_initialize_db: Database reconnect supressed: Delta time: {time_delta_last_connect}")
+                    self.logger.error(f"_initialize_db: Database reconnect suppressed: Delta time: {time_delta_last_connect}")
                     return False
         except Exception as e:
             self.logger.critical(f"_initialize_db: Database: Initialization failed: {e}")
@@ -923,7 +953,7 @@ class DatabaseAddOn(SmartPlugin):
             oldest_log = self._db_plugin.readOldestLog(item_id)
             self._oldest_log_dict[item] = oldest_log
 
-        self.logger.debug(f"_get_oldest_log for item {item.id()} = {oldest_log}")
+        # self.logger.debug(f"_get_oldest_log for item {item.id()} = {oldest_log}")
         return oldest_log
 
     def _get_oldest_value(self, item):
@@ -940,7 +970,7 @@ class DatabaseAddOn(SmartPlugin):
             oldest_entry = self._db_plugin.readLog(item_id, self._get_oldest_log(item))
             self._oldest_entry_dict[item] = oldest_entry
 
-        self.logger.debug(f"_get_oldest_value for item {item.id()} = {self._oldest_entry_dict[item][0][4]}")
+        # self.logger.debug(f"_get_oldest_value for item {item.id()} = {self._oldest_entry_dict[item][0][4]}")
         return oldest_entry[0][4]
 
     def _time_since_oldest_log(self, item):
@@ -973,8 +1003,8 @@ class DatabaseAddOn(SmartPlugin):
             value_2 = item.db('max', time_str_2, time_str_2)
             if value_1 is not None:
                 if value_2 is None:
-                    # self.logger.info(f'No entries for Item {item.id()} in DB found for requested enddate {time_str_1}; try to use oldest entry instead')
-                    value_2 = self._oldest_value(item)
+                    self.logger.info(f'No entries for Item {item.id()} in DB found for requested enddate {time_str_1}; try to use oldest entry instead')
+                    value_2 = self._get_oldest_value(item)
                 if value_2 is not None:
                     value = round(value_1 - value_2, 2)
                     # self.logger.debug(f'_delta_value for item={item.id()} with time_str_1={time_str_1} and time_str_2={time_str_2} is {value}')
@@ -994,12 +1024,12 @@ class DatabaseAddOn(SmartPlugin):
         value = item.db(func, time_str_1, time_str_1)
         if value is None:
             self.logger.info(f'No entries for Item {item.id()} in DB found for requested end {time_str_1}; try to use oldest entry instead')
-            value = int(self._oldest_value(item))
+            value = int(self._get_oldest_value(item))
         # self.logger.debug(f'_single_value for item={item.id()} with time_str_1={time_str_1} is {value}')
         return value
 
     def _value_of_db_function(self, item, func, time_str_1, time_str_2):
-        """ Query the database using database pluign functionality
+        """ Query the database using database plugin functionality
 
         :param item: item, for which query should be done
         :param func: function of database plugin
@@ -1094,17 +1124,18 @@ class DatabaseAddOn(SmartPlugin):
         return self._get_db_version()
 
     ##############################
-    #  Database specific stuff
+    #   Database specific stuff
     ##############################
 
     def _execute(self, query, params, cur=None):
         self._query(self._db.execute, query, params, cur)
 
     def _fetchone(self, query, params={}, cur=None):
-        self.logger.debug(f"_fetchone: Called with query={query}, param_dict={params}")
+        # self.logger.debug(f"_fetchone: Called with query={query}, params={params}")
         return self._query(self._db.fetchone, query, params, cur)
 
     def _fetchall(self, query, params={}, cur=None):
+        # self.logger.debug(f"_fetchall: Called with query={query}, params={params}")
         tuples = self._query(self._db.fetchall, query, params, cur)
         return None if tuples is None else list(tuples)
 
@@ -1196,7 +1227,7 @@ class DatabaseAddOn(SmartPlugin):
 
     @staticmethod
     def _get_dbtimestamp_from_date(date):
-        """ Comupute a timestamp for database entry from given date
+        """ Compute a timestamp for database entry from given date
 
         :param date: datetime object / string of format 'yyyy-mm'
         """
@@ -1229,7 +1260,7 @@ def parse_params_to_dict(string):
     except Exception:
         return None
     else:
-        # convert to int and remove posssible double quotes
+        # convert to int and remove possible double quotes
         for key in res_dict:
             if isinstance(res_dict[key], str):
                 res_dict[key] = res_dict[key].replace('"', '')
