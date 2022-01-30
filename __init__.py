@@ -43,7 +43,6 @@ import re
 ########################################
 # ToDo
 #     'avg'
-#     'vorjahreszeitraum'
 ########################################
 
 
@@ -120,6 +119,7 @@ class DatabaseAddOn(SmartPlugin):
         self.db_driver = None                       # driver for database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
         self.alive = None
+        self.execute_debug = False                  # Enable / Disable debug logging for method 'execute items'
         
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
@@ -218,77 +218,104 @@ class DatabaseAddOn(SmartPlugin):
                 self._item_dict[item] = (_database_addon_fct, _database_item)
 
                 # add item to set of items for time of execution
+                if _database_addon_fct.endswith('avg'):
+                    self.logger.warning(f"Item '{item.id()}' with has 'avg' function which is not implemented, yet. Item will not be updated.")
+
+                # handle items starting with 'zaehlerstand'
                 if _database_addon_fct.startswith('zaehlerstand'):
                     self._meter_items.add(item)
+
+                # handle items with 'heute_minus'
                 elif 'heute_minus' in _database_addon_fct or _database_addon_fct.startswith('last'):
                     self._daily_items.add(item)
+
+                # handle items with 'woche_minus'
                 elif 'woche_minus' in _database_addon_fct:
                     self._weekly_items.add(item)
+
+                # handle items with 'monat_minus'
                 elif 'monat_minus' in _database_addon_fct:
                     self._monthly_items.add(item)
+
+                # handle items with 'jahr_minus'
                 elif 'jahr_minus' in _database_addon_fct:
                     self._yearly_items.add(item)
+
+                # handle items starting with 'oldest'
                 elif _database_addon_fct.startswith('oldest'):
                     self._static_items.add(item)
 
+                # handle items starting with 'vorjahreszeitraum'
+                elif _database_addon_fct.startswith('vorjahreszeitraum'):
+                    self._daily_items.add(item)
+
                 # handle all functions with 'summe'
                 elif 'summe' in _database_addon_fct:
-                    if self.has_iattr(item.conf, 'database_addon_params'):
-                        _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
-                        if _database_addon_params is None:
-                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
-                        else:
-                            if 'year' in _database_addon_params:
-                                _database_addon_params['item'] = _database_item
-                                self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                self._daily_items.add(item)
-                            else:
-                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_params}. Item will  be ignored")
+                    if self.db_driver.lower() != 'pymysql':
+                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
                     else:
-                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+                        if self.has_iattr(item.conf, 'database_addon_params'):
+                            _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                            if _database_addon_params is None:
+                                self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                            else:
+                                if 'year' in _database_addon_params:
+                                    _database_addon_params['item'] = _database_item
+                                    self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                    self._daily_items.add(item)
+                                else:
+                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_params}. Item will  be ignored")
+                        else:
+                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
                 # handle tagesmitteltemperatur
                 elif _database_addon_fct == 'tagesmitteltemperatur':
-                    if self.has_iattr(item.conf, 'database_addon_params'):
-                        _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
-                        _database_addon_params['item'] = _database_item
-                        self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                        self._daily_items.add(item)
+                    if self.db_driver.lower() != 'pymysql':
+                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
                     else:
-                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+                        if self.has_iattr(item.conf, 'database_addon_params'):
+                            _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                            _database_addon_params['item'] = _database_item
+                            self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                            self._daily_items.add(item)
+                        else:
+                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
                 # handle db_request
                 elif _database_addon_fct == 'db_request':
-                    if self.has_iattr(item.conf, 'database_addon_params'):
-                        _database_addon_params = self.get_iattr_value(item.conf, 'database_addon_params')
-                        if _database_addon_params in self.std_req_dict:
-                            _database_addon_params = self.std_req_dict[_database_addon_params]
-                        elif '=' in _database_addon_params:
-                            _database_addon_params = parse_params_to_dict(_database_addon_params)
-                        if _database_addon_params is None:
-                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
-                        else:
-                            self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
-                            if any(k in _database_addon_params for k in ('func', 'timespan')):
-                                _database_addon_params['item'] = _database_item
-                                self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                _timespan = _database_addon_params.get('group', None)
-                                if not _timespan:
-                                    _timespan = _database_addon_params.get('timespan', None)
-                                    if _timespan == 'day':
-                                        self._daily_items.add(item)
-                                    elif _timespan == 'week':
-                                        self._weekly_items.add(item)
-                                    elif _timespan == 'month':
-                                        self._monthly_items.add(item)
-                                    elif _timespan == 'year':
-                                        self._yearly_items.add(item)
-                                    else:
-                                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
-                            else:
-                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_params} given. Item will be ignored.")
+                    if self.db_driver.lower() != 'pymysql':
+                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
                     else:
-                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
+                        if self.has_iattr(item.conf, 'database_addon_params'):
+                            _database_addon_params = self.get_iattr_value(item.conf, 'database_addon_params')
+                            if _database_addon_params in self.std_req_dict:
+                                _database_addon_params = self.std_req_dict[_database_addon_params]
+                            elif '=' in _database_addon_params:
+                                _database_addon_params = parse_params_to_dict(_database_addon_params)
+                            if _database_addon_params is None:
+                                self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                            else:
+                                self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
+                                if any(k in _database_addon_params for k in ('func', 'timespan')):
+                                    _database_addon_params['item'] = _database_item
+                                    self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                    _timespan = _database_addon_params.get('group', None)
+                                    if not _timespan:
+                                        _timespan = _database_addon_params.get('timespan', None)
+                                        if _timespan == 'day':
+                                            self._daily_items.add(item)
+                                        elif _timespan == 'week':
+                                            self._weekly_items.add(item)
+                                        elif _timespan == 'month':
+                                            self._monthly_items.add(item)
+                                        elif _timespan == 'year':
+                                            self._yearly_items.add(item)
+                                        else:
+                                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
+                                else:
+                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_params} given. Item will be ignored.")
+                        else:
+                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
 
                 # handle live items
                 else:
@@ -383,6 +410,10 @@ class DatabaseAddOn(SmartPlugin):
             # handle kaeltesumme, waermesumme, gruendlandtempsumme
             elif 'summe' in _database_addon_fct:
                 _database_addon_params = self._item_dict[item][2]
+
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: _database_addon_fct={_database_addon_fct} detected; _database_addon_params={_database_addon_params}")
+
                 if _database_addon_params.keys() & {'item', 'year'}:
                     if _database_addon_fct == 'kaeltesumme':
                         _result = self.kaeltesumme(**_database_addon_params)
@@ -396,19 +427,27 @@ class DatabaseAddOn(SmartPlugin):
             # handle tagesmitteltemperatur
             elif _database_addon_fct == 'tagesmitteltemperatur':
                 _database_addon_params = self._item_dict[item][2]
+
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: _database_addon_fct={_database_addon_fct} detected; _database_addon_params={_database_addon_params}")
+
                 if _database_addon_params.keys() & {'item'}:
                     _result = self.tagesmitteltemperatur(**_database_addon_params)
 
             # handle db_request
             elif _database_addon_fct == 'db_request':
                 _database_addon_params = self._item_dict[item][2]
+
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: _database_addon_fct={_database_addon_fct} detected; _database_addon_params={_database_addon_params}")
+
                 if _database_addon_params.keys() & {'func', 'item', 'timespan'}:
                     _result = self.fetch_log(**_database_addon_params)
                 else:
                     self.logger.error(f"Attribute 'database_addon_params' not containing needed params for Item {item.id} with _database_addon_fct={_database_addon_fct}.")
 
             # handle all live functions of format 'timeframe_function' like 'heute_max'
-            elif len(_var) == 2 and _var[1] in ['min', 'max']:
+            elif len(_var) == 2 and _var[1] in ['min', 'max', 'avg']:
                 self.logger.info(f"execute_items: on_change function={_var[0]} with {_var[1]} detected; will be calculated by next change of database item")
 
             # handle all live functions of format 'timeframe' like 'heute'
@@ -420,7 +459,8 @@ class DatabaseAddOn(SmartPlugin):
                 _window = _var[1]
                 _func = _var[2]
 
-                # self.logger.debug(f"execute_items: 'last' function detected. _window={_window}, _func={_func}")
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: 'last' function detected. _window={_window}, _func={_func}")
 
                 if _window[-1:] in ['i', 'h', 'd', 'w', 'm', 'y']:
                     if _window[:-1].isdigit():
@@ -432,7 +472,8 @@ class DatabaseAddOn(SmartPlugin):
                 _timedelta = _var[1][-1]
                 _func = _var[2]
 
-                # self.logger.debug(f"execute_items: _database_addon_fct={_func} detected; _timeframe={_timeframe}, _timedelta={_timedelta}")
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: _database_addon_fct={_func} detected; _timeframe={_timeframe}, _timedelta={_timedelta}")
 
                 if _timedelta.isdigit():
                     _timedelta = int(_timedelta)
@@ -445,13 +486,14 @@ class DatabaseAddOn(SmartPlugin):
                 _timeframe = _var[0]
                 _timedelta = _var[1][-1]
 
-                # self.logger.debug(f"execute_items: 'wertehistorie total' function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: '{_database_addon_fct}' function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
 
                 if _timedelta.isdigit():
                     _timedelta = int(_timedelta)
                     _time_str_1, _time_str_2 = self._get_time_strs(_timeframe, _timedelta)
                     if _time_str_1 is not None and _time_str_1 is not None:
-                        _result = self._delta_value(_database_item, _time_str_2, _time_str_1)
+                        _result = self._delta_value(_database_item, _time_str_1, _time_str_2)
 
             # handle all functions of format 'function_timeframe_timedelta' like 'zaehlerstand_woche_minus1'
             elif len(_var) == 3 and _var[2].startswith('minus'):
@@ -459,7 +501,8 @@ class DatabaseAddOn(SmartPlugin):
                 _timeframe = _var[1]
                 _timedelta = _var[2][-1]
 
-                # self.logger.debug(f"execute_items: {_func} function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: {_func} function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
 
                 if _timedelta.isdigit():
                     _timedelta = int(_timedelta)
@@ -475,7 +518,8 @@ class DatabaseAddOn(SmartPlugin):
                 _timeframe = _var[2]
                 _timedelta = _var[3][-1]
 
-                # self.logger.debug(f"execute_items: {_func} function detected. _window={_window}  _timeframe={_timeframe}, _timedelta={_timedelta}")
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: {_func} function detected. _window={_window}  _timeframe={_timeframe}, _timedelta={_timedelta}")
 
                 if _timedelta.isdigit():
                     _timedelta = int(_timedelta)
@@ -494,9 +538,10 @@ class DatabaseAddOn(SmartPlugin):
 
             # handle everything else
             else:
-                self.logger.warning(f"execute_items: No function defined or found")
+                self.logger.warning(f"execute_items: Function {_database_addon_fct } for item {item.id()} not defined or found")
 
-            # self.logger.debug(f"execute_items: result is {_result} for item '{item.id()}' with _database_addon_fct={_database_addon_fct} _database_item={_database_item} _database_addon_params={_database_addon_params}")
+            if self.execute_debug:
+                self.logger.debug(f"execute_items: result is {_result} for item '{item.id()}' with _database_addon_fct={_database_addon_fct} _database_item={_database_item} _database_addon_params={_database_addon_params}")
 
             # set item value
             if _result is not None:
@@ -792,35 +837,34 @@ class DatabaseAddOn(SmartPlugin):
                 _var = _database_addon_fct.split('_')
 
                 # handle heute_max, heute_min, woche_max, woche_min.....
-                if len(_var) == 2 and _var[1] in ['min', 'max', 'avg']:
+                if len(_var) == 2 and _var[1] in ['min', 'max']:
                     _timeframe = _var[0]
                     _func = _var[1]
                     _cache_dict, _time_str = map_dict[_timeframe]
 
-                    if _func == 'avg':
-                        self.logger.info(f"{_database_addon_fct} function called but 'avg' not implemented yet.")
-                    else:
-                        # update cache dicts
-                        if _database_item not in _cache_dict:
-                            _cache_dict[_database_item] = {}
-                        if not _cache_dict[_database_item].get(_func, None):
-                            _cache_dict[_database_item][_func] = _database_item.db(_func, _time_str)
-                        else:
-                            _update = False
-                            if _func == 'min' and value < _cache_dict[_database_item][_func]:
-                                _update = True
-                            elif _func == 'max' and value > _cache_dict[_database_item][_func]:
-                                _update = True
-                            if _update:
-                                _cache_dict[_database_item][_func] = value
+                    # update cache dicts
+                    if _database_item not in _cache_dict:
+                        _cache_dict[_database_item] = {}
+                    if _cache_dict[_database_item].get(_func, None) is None:
+                        value = _database_item.db(_func, _time_str)
+                        self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {value} will be added.")
+                        _cache_dict[_database_item][_func] = value
 
-                        # check value is float ending of .0 and convert to int
-                        if isinstance(value, str) and value.is_integer():
-                            value = int(value)
+                    _update = False
+                    if _func == 'min' and value < _cache_dict[_database_item][_func]:
+                        _update = True
+                    elif _func == 'max' and value > _cache_dict[_database_item][_func]:
+                        _update = True
+                    if _update:
+                        _cache_dict[_database_item][_func] = value
 
-                        # set item value
-                        if value != item():
-                            item(value, self.get_shortname())
+                    # check value is float ending of .0 and convert to int
+                    if isinstance(value, str) and value.is_integer():
+                        value = int(value)
+
+                    # set item value
+                    if value != item():
+                        item(value, self.get_shortname())
 
                 # handle heute, woche, monat, jahr
                 elif len(_var) == 1:
@@ -829,7 +873,9 @@ class DatabaseAddOn(SmartPlugin):
 
                     # update cache dicts
                     if _database_item not in _cache_dict:
-                        _cache_dict[_database_item] = self._single_value(_database_item, _time_str)
+                        value = self._single_value(_database_item, _time_str)
+                        self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _timeframe={_timeframe} not in cache dict. Value {value} will be added.")
+                        _cache_dict[_database_item] = value
 
                     # calculate value
                     delta_value = round(value - _cache_dict[_database_item], 2)
@@ -845,6 +891,8 @@ class DatabaseAddOn(SmartPlugin):
     def _get_itemid(self, item):
         """ Get item_id of item out of dict or request it from db via database plugin and put it into dict
         """
+
+        # self.logger.debug(f"_get_itemid called for item={item}")
 
         _item_id = self._itemid_dict.get(item, None)
         if _item_id is None:
@@ -898,16 +946,13 @@ class DatabaseAddOn(SmartPlugin):
 
         # get driver of database and check if it is PyMySql to ensure existence of MySql DB
         try:
-            db_driver = _db_plugin.get_parameter_value('driver')
+            self.db_driver = _db_plugin.get_parameter_value('driver')
         except Exception as e:
             self.logger.error(f"Error {e} occurred during getting database plugin parameter 'driver'. DatabaseAddOn Plugin not loaded.")
             return False
         else:
-            if db_driver.lower() != 'pymysql':
-                self.logger.error(f"Database plugin not loaded, but driver ist not 'PyMySql'. DatabaseAddOn Plugin not loaded.")
-                return False
-            else:
-                self.db_driver = db_driver
+            if self.db_driver.lower() != 'pymysql':
+                self.logger.warning(f"Database is of type 'mysql'. Therefore not complete functionality of that plugin given (e.g. db_request not supported).")
 
         # get database plugin parameters
         try:
@@ -944,6 +989,8 @@ class DatabaseAddOn(SmartPlugin):
         :param item: Item, for which query should be done
         :return: timestamp of oldest log
         """
+
+        # self.logger.debug(f"_get_oldest_log: called for item={item.id()}")
 
         # Zwischenspeicher des oldest_log, zur Reduktion der DB Zugriffe
         if item in self._oldest_log_dict:
@@ -992,7 +1039,6 @@ class DatabaseAddOn(SmartPlugin):
         :param time_str_2: Zeitstring gemäß database-Plugin for older point in time(e.g.: 400i)
         """
 
-        # value_1 = value_2 = value = None
         time_since_oldest_log = self._time_since_oldest_log(item)
         end = int(time_str_1[0:len(time_str_1) - 1])
 
@@ -1038,13 +1084,14 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         # self.logger.debug(f"_value_of_db_function called with item={item.id()}, func={func}, time_str_1={time_str_1} and time_str_2={time_str_2}")
+
         value = item.db(func, time_str_1, time_str_2)
         if value is None:
             self.logger.info(f'_value_of_db_function: No entries for Item {item} in DB found for requested startdate {time_str_1}; try to use oldest entry instead')
-            time_since_oldest_log = self._time_since_oldest_log(self._oldest_log(item))
+            time_since_oldest_log = self._time_since_oldest_log(item)
             end = int(time_str_2[0:len(time_str_2) - 1])
             if time_since_oldest_log > end:
-                time_str_1 = f"{self._time_since_oldest_log(self._oldest_log(item))}i"
+                time_str_1 = f"{self._time_since_oldest_log(item)}i"
                 value = item.db(func, time_str_1, time_str_2)
             else:
                 self.logger.info(f"_value_of_db_function for item={item.id()}: 'time_since_oldest_log' <= 'end'")
@@ -1056,41 +1103,53 @@ class DatabaseAddOn(SmartPlugin):
 
         :param key: key for getting the time strings
         :param x: time difference as increment
+        :return: tuple of timestrings (timestr closer to now,  timestr more in the past)
+
         """
 
-        if 'heute' in key:
-            _time_str_1 = self._time_str_heute_minus_x(x)
-            _time_str_2 = self._time_str_heute_minus_x(x - 1)
-        elif 'woche' in key:
-            _time_str_1 = self._time_str_woche_minus_x(x)
-            _time_str_2 = self._time_str_woche_minus_x(x - 1)
-        elif 'monat' in key:
-            _time_str_1 = self._time_str_monat_minus_x(x)
-            _time_str_2 = self._time_str_monat_minus_x(x - 1)
-        elif 'jahr' in key:
-            _time_str_1 = self._time_str_jahr_minus_x(x)
-            _time_str_2 = self._time_str_jahr_minus_x(x - 1)
+        self.logger.debug(f"_get_time_strs called with key={key}, x={x}")
+
+        if key == 'heute':
+            _time_str_1 = self._time_str_heute_minus_x(x - 1)
+            _time_str_2 = self._time_str_heute_minus_x(x)
+        elif key == 'woche':
+            _time_str_1 = self._time_str_woche_minus_x(x - 1)
+            _time_str_2 = self._time_str_woche_minus_x(x)
+        elif key == 'monat':
+            _time_str_1 = self._time_str_monat_minus_x(x - 1)
+            _time_str_2 = self._time_str_monat_minus_x(x)
+        elif key == 'jahr':
+            _time_str_1 = self._time_str_jahr_minus_x(x - 1)
+            _time_str_2 = self._time_str_jahr_minus_x(x)
+        elif key == 'vorjahreszeitraum':
+            _time_str_1 = self._time_str_heute_minus_jahre_x(x + 1)
+            _time_str_2 = self._time_str_jahr_minus_x(x+1)
         else:
             _time_str_1 = None
             _time_str_2 = None
+
         # self.logger.debug(f"_time_str_1={_time_str_1}, _time_str_2={_time_str_2}")
         return _time_str_1, _time_str_2
 
     def _time_str_heute_minus_x(self, x=0):
-        """ Creates an str for db request in min from now x days ago"""
+        """ Creates an str for db request in min from time since beginning of today"""
         return f"{self.shtime.time_since(self.shtime.today(-x), 'im')}i"
 
     def _time_str_woche_minus_x(self, x=0):
-        """ Creates an str for db request in min from now x weeks ago"""
+        """ Creates an str for db request in min from time since beginning of week"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_week(self.shtime.calendar_week(), None, -x), 'im')}i"
 
     def _time_str_monat_minus_x(self, x=0):
-        """ Creates an str for db request in min from now x month ago"""
+        """ Creates an str for db request in min for time since beginning of month"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_month(None, None, -x), 'im')}i"
 
     def _time_str_jahr_minus_x(self, x=0):
-        """ Creates an str for db request in min from now x month ago"""
+        """ Creates an str for db request in min for time since beginning of year"""
         return f"{self.shtime.time_since(self.shtime.beginning_of_year(None, -x), 'im')}i"
+
+    def _time_str_heute_minus_jahre_x(self, x=0):
+        """ Creates an str for db request in min for time since now x years ago"""
+        return f"{self.shtime.time_since(self.shtime.now() + relativedelta(years=-x), 'im')}i"
 
     def _fetch_all_item(self, item):
         """ Query the database version and provide result
