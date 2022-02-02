@@ -264,7 +264,7 @@ class DatabaseAddOn(SmartPlugin):
                                     self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
                                     self._daily_items.add(item)
                                 else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_params}. Item will  be ignored")
+                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
                         else:
                             self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
@@ -313,7 +313,7 @@ class DatabaseAddOn(SmartPlugin):
                                         else:
                                             self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
                                 else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_params} given. Item will be ignored.")
+                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
                         else:
                             self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
 
@@ -422,7 +422,7 @@ class DatabaseAddOn(SmartPlugin):
                     elif _database_addon_fct == 'gruendlandtempsumme':
                         _result = self.gruenlandtemperatursumme(**_database_addon_params)
                 else:
-                    self.logger.warning(f"Attribute 'database_addon_params' for item {item_id()} not containing needed params for Item {item.id} with _database_addon_fct={_database_addon_fct}.")
+                    self.logger.warning(f"Attribute 'database_addon_params' for item {item.id()} not containing needed params with _database_addon_fct={_database_addon_fct}.")
 
             # handle tagesmitteltemperatur
             elif _database_addon_fct == 'tagesmitteltemperatur':
@@ -669,7 +669,7 @@ class DatabaseAddOn(SmartPlugin):
         :param func: function to be used at query
         :type func: str
         :param item: item object or item_id for which the query should be done
-        :type item: str
+        :type item: item
         :param timespan: time increment für definition of start, end, count (day, week, month, year)
         :type timespan: str
         :param start: start of timeframe (oldest) for query given in x time increments (default = None, meaning complete database)
