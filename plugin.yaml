@@ -99,9 +99,9 @@ item_attributes:
             - 'heute_minus2_min'                            #num    daily       Minimalwert vorgestern (heute -2 Tage)
             - 'heute_minus2_max'                            #num    daily       Maximalwert vorgestern (heute -2 Tage)
             - 'heute_minus2_avg'                            #num    daily       Durchschnittswert vorgestern (heute -2 Tage)
-            - 'heute_minus3_min'                            #num    daily       Minimalwert vorgestern (heute -3 Tage)
-            - 'heute_minus3_max'                            #num    daily       Maximalwert vorgestern (heute -3 Tage)
-            - 'heute_minus3_avg'                            #num    daily       Durchschnittswert vorgestern (heute -3 Tage)
+            - 'heute_minus3_min'                            #num    daily       Minimalwert heute vor 3 Tagen
+            - 'heute_minus3_max'                            #num    daily       Maximalwert heute vor 3 Tagen
+            - 'heute_minus3_avg'                            #num    daily       Durchschnittswert heute vor 3 Tagen
             - 'woche_min'                                   #num    onchange    Minimalwert seit Wochenbeginn    
             - 'woche_max'                                   #num    onchange    Maximalwert seit Wochenbeginn
             - 'woche_avg'                                   #num    onchange    Durchschnittswert seit Wochenbeginn
