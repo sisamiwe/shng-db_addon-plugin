@@ -853,8 +853,8 @@ class DatabaseAddOn(SmartPlugin):
                         value = int(value)
 
                     # set item value
-                    if value != item():
-                        item(value, self.get_shortname())
+                    self.logger.debug(f"on-change item={item.id()} will be set to value={value}")
+                    item(value, self.get_shortname())
 
                 # handle heute, woche, monat, jahr
                 elif len(_var) == 1:
