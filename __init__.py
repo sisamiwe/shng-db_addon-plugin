@@ -43,6 +43,7 @@ import re
 ########################################
 # ToDo
 #   - 'avg' for on-chance items
+#   - wenn item Berechnung läuft, darf keine zweite starten
 ########################################
 
 
@@ -379,7 +380,7 @@ class DatabaseAddOn(SmartPlugin):
             _time_str_2 = None
             _result = None
 
-            self.logger.debug(f"execute_items: item '{item}' is due with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()}")
+            self.logger.info(f"execute_items: item '{item.id()}' will be processed with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()}")
 
             # handle oldest_value
             if _database_addon_fct == 'oldest_value':
