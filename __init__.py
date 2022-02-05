@@ -455,7 +455,8 @@ class DatabaseAddOn(SmartPlugin):
 
                 if _window[-1:] in ['i', 'h', 'd', 'w', 'm', 'y']:
                     if _window[:-1].isdigit():
-                        _result = _database_item.db(_func, _window)
+                        # _result = _database_item.db(_func, _window)
+                        _result = self._db_plugin._single(_func, _window, 'now', _database_item.id())
 
             # handle all functions 'wertehistorie min/max/avg' in format 'timeframe_timedelta_func' like 'heute_minus2_max'
             elif len(_var) == 3 and _var[2] in ['min', 'max', 'avg']:
@@ -837,7 +838,9 @@ class DatabaseAddOn(SmartPlugin):
                     if _database_item not in _cache_dict:
                         _cache_dict[_database_item] = {}
                     if _cache_dict[_database_item].get(_func, None) is None:
-                        value = _database_item.db(_func, _time_str)
+                        # value = _database_item.db(_func, _time_str)
+                        value = self._db_plugin._single(_func, _time_str, 'now', _database_item.id())
+
                         self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {value} will be added.")
                         _cache_dict[_database_item][_func] = value
 
@@ -1042,9 +1045,13 @@ class DatabaseAddOn(SmartPlugin):
 
         if time_since_oldest_log > end:
             # self.logger.debug(f'_delta_value: fetch DB with {item.id()}.db(max, {time_str_1}, {time_str_1})')
-            value_1 = item.db('max', time_str_1, time_str_1)
+            # value_1 = item.db('max', time_str_1, time_str_1)
+            value_1 = self._db_plugin._single('max', time_str_1, time_str_1, item.id())
+
             # self.logger.debug(f'_delta_value: fetch DB with {item.id()}.db(max, {time_str_2}, {time_str_2})')
-            value_2 = item.db('max', time_str_2, time_str_2)
+            # value_2 = item.db('max', time_str_2, time_str_2)
+            value_2 = self._db_plugin._single('max', time_str_2, time_str_2, item.id())
+
             if value_1 is not None:
                 if value_2 is None:
                     self.logger.info(f'No entries for Item {item.id()} in DB found for requested enddate {time_str_1}; try to use oldest entry instead')
@@ -1065,7 +1072,8 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         # value = None
-        value = item.db(func, time_str_1, time_str_1)
+        # value = item.db(func, time_str_1, time_str_1)
+        value = self._db_plugin._single(func, time_str_1, time_str_1, item.id())
         if value is None:
             self.logger.info(f'No entries for Item {item.id()} in DB found for requested end {time_str_1}; try to use oldest entry instead')
             value = int(self._get_oldest_value(item))
@@ -1081,16 +1089,16 @@ class DatabaseAddOn(SmartPlugin):
         :param time_str_2: Zeitstring gemäß database-Plugin for older point in time(e.g.: 400i)
         """
 
-        # self.logger.debug(f"_value_of_db_function called with item={item.id()}, func={func}, time_str_1={time_str_1} and time_str_2={time_str_2}")
+        self.logger.debug(f"_value_of_db_function called with item={item.id()}, func={func}, time_str_1={time_str_1} and time_str_2={time_str_2}")
+        value = self._db_plugin._single(func, time_str_1, time_str_2, item.id())
 
-        value = item.db(func, time_str_1, time_str_2)
         if value is None:
-            self.logger.info(f'_value_of_db_function: No entries for Item {item} in DB found for requested startdate {time_str_1}; try to use oldest entry instead')
+            self.logger.info(f'_value_of_db_function: No entries for Item {item} in DB found for requested start date {time_str_1}; try to use oldest entry instead')
             time_since_oldest_log = self._time_since_oldest_log(item)
             end = int(time_str_2[0:len(time_str_2) - 1])
             if time_since_oldest_log > end:
                 time_str_1 = f"{self._time_since_oldest_log(item)}i"
-                value = item.db(func, time_str_1, time_str_2)
+                value = self._db_plugin._single(func, time_str_1, time_str_2, item.id())
             else:
                 self.logger.info(f"_value_of_db_function for item={item.id()}: 'time_since_oldest_log' <= 'end'")
         # self.logger.debug(f'_value_of_db_function for item={item.id()} with function={func}, time_str_1={time_str_1}, time_str_2={time_str_2} is {value}')
@@ -1150,8 +1158,7 @@ class DatabaseAddOn(SmartPlugin):
         return f"{self.shtime.time_since(self.shtime.now() + relativedelta(years=-x), 'im')}i"
 
     def _fetch_all_item(self, item):
-        """ Query the database version and provide result
-        The fetchAll method retrieves all (remaining) rows of a query result, returning them as a sequence of sequences.
+        """retrieves all (remaining) rows of a query result, returning them as a sequence of sequences.
         
         """
 
