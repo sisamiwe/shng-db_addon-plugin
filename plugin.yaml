@@ -92,7 +92,7 @@ item_attributes:
             - 'last_7d_avg'                                 #num    daily       durchschnittlicher Wert der letzten 7 Tage
             - 'heute_min'                                   #num    onchange    Minimalwert seit Tagesbeginn
             - 'heute_max'                                   #num    onchange    Maximalwert seit Tagesbeginn
-            - 'heute_avg'                                   #num    onchange    Durchschnittswert seit Tagesbeginn
+            # - 'heute_avg'                                   #num    onchange    Durchschnittswert seit Tagesbeginn
             - 'heute_minus1_min'                            #num    daily       Minimalwert gestern (heute -1 Tag) 
             - 'heute_minus1_max'                            #num    daily       Maximalwert gestern (heute -1 Tag) 
             - 'heute_minus1_avg'                            #num    daily       Durchschnittswert gestern (heute -1 Tag) 
@@ -104,7 +104,7 @@ item_attributes:
             - 'heute_minus3_avg'                            #num    daily       Durchschnittswert heute vor 3 Tagen
             - 'woche_min'                                   #num    onchange    Minimalwert seit Wochenbeginn    
             - 'woche_max'                                   #num    onchange    Maximalwert seit Wochenbeginn
-            - 'woche_avg'                                   #num    onchange    Durchschnittswert seit Wochenbeginn
+            # - 'woche_avg'                                   #num    onchange    Durchschnittswert seit Wochenbeginn
             - 'woche_minus1_min'                            #num    weekly      Minimalwert Vorwoche (aktuelle Woche -1)
             - 'woche_minus1_max'                            #num    weekly      Maximalwert Vorwoche (aktuelle Woche -1)
             - 'woche_minus1_avg'                            #num    weekly      Durchschnittswert Vorwoche (aktuelle Woche -1)
@@ -113,7 +113,7 @@ item_attributes:
             - 'woche_minus2_avg'                            #num    weekly      Durchschnittswert aktuelle Woche -2 Wochen
             - 'monat_min'                                   #num    onchange    Minimalwert seit Monatsbeginn 
             - 'monat_max'                                   #num    onchange    Maximalwert seit Monatsbeginn
-            - 'monat_avg'                                   #num    onchange    Durchschnittswert seit Monatsbeginn
+            # - 'monat_avg'                                   #num    onchange    Durchschnittswert seit Monatsbeginn
             - 'monat_minus1_min'                            #num    monthly     Minimalwert Vormonat (aktueller Monat -1)
             - 'monat_minus1_max'                            #num    monthly     Maximalwert Vormonat (aktueller Monat -1)
             - 'monat_minus1_avg'                            #num    monthly     Durchschnittswert Vormonat (aktueller Monat -1)
@@ -122,7 +122,7 @@ item_attributes:
             - 'monat_minus2_avg'                            #num    monthly     Durchschnittswert aktueller Monat -2 Monate
             - 'jahr_min'                                    #num    onchange    Minimalwert seit Jahresbeginn 
             - 'jahr_max'                                    #num    onchange    Maximalwert seit Jahresbeginn    
-            - 'jahr_avg'                                    #num    onchange    Durchschnittswert seit Jahresbeginn   
+            # - 'jahr_avg'                                    #num    onchange    Durchschnittswert seit Jahresbeginn
             - 'jahr_minus1_min'                             #num    yearly      Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)           
             - 'jahr_minus1_max'                             #num    yearly      Maximalwert Vorjahr (aktuelles Jahr -1 Jahr)
             - 'jahr_minus1_avg'                             #num    yearly      Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr)
@@ -366,12 +366,12 @@ item_structs:
             type: num
             cache: yes
 
-        heute_avg:
-            name: Durchschnittlicher Wert seit Tagesbeginn
-            database_addon_fct: heute_avg
-            database_addon_startup: yes
-            type: num
-            cache: yes
+#        heute_avg:
+#            name: Durchschnittlicher Wert seit Tagesbeginn
+#            database_addon_fct: heute_avg
+#            database_addon_startup: yes
+#            type: num
+#            cache: yes
 
         last24h_min:
             name: Minimaler Wert in den letzten 24h (gleitend)
@@ -401,12 +401,12 @@ item_structs:
             type: num
             cache: yes
 
-        woche_avg:
-            name: Durchschnittlicher Wert seit Wochenbeginn
-            database_addon_fct: woche_avg
-            database_addon_startup: yes
-            type: num
-            cache: yes
+#        woche_avg:
+#            name: Durchschnittlicher Wert seit Wochenbeginn
+#            database_addon_fct: woche_avg
+#            database_addon_startup: yes
+#            type: num
+#            cache: yes
 
         monat_min:
             name: Minimaler Wert seit Monatsbeginn
@@ -422,12 +422,12 @@ item_structs:
             type: num
             cache: yes
 
-        monat_avg:
-            name: Durchschnittlicher Wert seit Monatsbeginn
-            database_addon_fct: monat_avg
-            database_addon_startup: yes
-            type: num
-            cache: yes
+#        monat_avg:
+#            name: Durchschnittlicher Wert seit Monatsbeginn
+#            database_addon_fct: monat_avg
+#            database_addon_startup: yes
+#            type: num
+#            cache: yes
 
         jahr_min:
             name: Minimaler Wert seit Jahresbeginn
@@ -443,33 +443,45 @@ item_structs:
             type: num
             cache: yes
 
+#        jahr_avg:
+#            name: Durchschnittlicher Wert seit Jahresbeginn
+#            database_addon_fct: jahr_avg
+#            database_addon_startup: yes
+#            type: num
+#            cache: yes
+
         gestern_min:
             name: Minimaler Wert gestern
             database_addon_fct: heute_minus1_min
+            database_addon_startup: yes
             type: num
             cache: yes
 
         gestern_max:
             name: Maximaler Wert gestern
             database_addon_fct: heute_minus1_max
+            database_addon_startup: yes
             type: num
             cache: yes
 
         gestern_avg:
             name: Durchschnittlicher Wert gestern
             database_addon_fct: heute_minus1_avg
+            database_addon_startup: yes
             type: num
             cache: yes
 
         vorwoche_min:
             name: Minimaler Wert in der Vorwoche
             database_addon_fct: woche_minus1_min
+            database_addon_startup: yes
             type: num
             cache: yes
 
         vorwoche_max:
             name: Maximaler Wert in der Vorwoche
             database_addon_fct: woche_minus1_max
+            database_addon_startup: yes
             type: num
             cache: yes
 
@@ -515,18 +527,21 @@ item_structs:
         gestern_minus1_min:
             name: Minimaler Wert vorgestern
             database_addon_fct: heute_minus2_min
+            database_addon_startup: yes
             type: num
             cache: yes
 
         gestern_minus1_max:
             name: Maximaler Wert vorgestern
             database_addon_fct: heute_minus2_max
+            database_addon_startup: yes
             type: num
             cache: yes
 
         gestern_minus1_avg:
             name: Durchschnittlicher Wert vorgestern
             database_addon_fct: heute_minus2_avg
+            database_addon_startup: yes
             type: num
             cache: yes
 
