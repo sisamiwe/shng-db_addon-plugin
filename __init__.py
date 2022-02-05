@@ -442,7 +442,7 @@ class DatabaseAddOn(SmartPlugin):
 
             # handle all on_change functions of format 'timeframe' like 'heute'
             elif len(_var) == 1 and _var[0]:
-                self.logger.info(f"execute_items: on_change function={_var} detected; will be calculated by next change of database item")
+                self.logger.info(f"execute_items: on_change function={_var[0]} detected; will be calculated by next change of database item")
 
             # handle all functions starting with last in format 'last_window_function' like 'last_24h_max'
             elif len(_var) == 3 and _var[0] == 'last':
@@ -853,8 +853,15 @@ class DatabaseAddOn(SmartPlugin):
                         value = int(value)
 
                     # set item value
-                    self.logger.debug(f"on-change item={item.id()} will be set to value={value}")
-                    item(value, self.get_shortname())
+                    _update = False
+                    item_value = item()
+                    if _func == 'min' and value < item_value:
+                        _update = True
+                    elif _func == 'max' and value > item_value:
+                        _update = True
+                    if _update:
+                        self.logger.debug(f"on-change item={item.id()} will be set to value={value}")
+                        item(value, self.get_shortname())
 
                 # handle heute, woche, monat, jahr
                 elif len(_var) == 1:
