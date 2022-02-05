@@ -141,12 +141,12 @@ item_attributes:
         type: str
         description:
             de: "Parameter für eine Funktion des DB-Addon Plugins im Format 'kwargs' enclosed in quotes like 'keyword=argument, keyword=argument'"
-            en: "Parameters of a DB-Addon Plugin function. Need to have foramt of 'kwargs' enclosed in quotes like 'keyword=argument, keyword=argument'"
+            en: "Parameters of a DB-Addon Plugin function. Need to have format of 'kwargs' enclosed in quotes like 'keyword=argument, keyword=argument'"
 
     database_addon_startup:
         type: bool
         description:
-            de: 'Ausführen der Berechung bei Plugin Start (mit zeitlichem Abstand, wie in den Plugin Parametern definiert)'
+            de: 'Ausführen der Berechnung bei Plugin Start (mit zeitlichem Abstand, wie in den Plugin Parametern definiert)'
             en: 'Run function in startup of plugin (with delay, set in plugin parameters)'
 
 item_structs:
