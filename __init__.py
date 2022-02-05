@@ -355,7 +355,7 @@ class DatabaseAddOn(SmartPlugin):
         """ Handle scheduler call to execute startup items
         """
 
-        self.logger.debug("execute_startup_items called")
+        self.logger.info("execute_startup_items called")
         self.execute_items(self._startup_items)
         
     def execute_all_items(self):
