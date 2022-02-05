@@ -220,107 +220,108 @@ class DatabaseAddOn(SmartPlugin):
                 # add item to set of items for time of execution
                 if _database_addon_fct.endswith('avg'):
                     self.logger.warning(f"Item '{item.id()}' with has 'avg' function which is not implemented, yet. Item will not be updated.")
-
-                # handle items starting with 'zaehlerstand'
-                if _database_addon_fct.startswith('zaehlerstand'):
-                    self._meter_items.add(item)
-
-                # handle items with 'heute_minus'
-                elif 'heute_minus' in _database_addon_fct or _database_addon_fct.startswith('last'):
-                    self._daily_items.add(item)
-
-                # handle items with 'woche_minus'
-                elif 'woche_minus' in _database_addon_fct:
-                    self._weekly_items.add(item)
-
-                # handle items with 'monat_minus'
-                elif 'monat_minus' in _database_addon_fct:
-                    self._monthly_items.add(item)
-
-                # handle items with 'jahr_minus'
-                elif 'jahr_minus' in _database_addon_fct:
-                    self._yearly_items.add(item)
-
-                # handle items starting with 'oldest'
-                elif _database_addon_fct.startswith('oldest'):
-                    self._static_items.add(item)
-
-                # handle items starting with 'vorjahreszeitraum'
-                elif _database_addon_fct.startswith('vorjahreszeitraum'):
-                    self._daily_items.add(item)
-
-                # handle all functions with 'summe'
-                elif 'summe' in _database_addon_fct:
-                    if self.db_driver.lower() != 'pymysql':
-                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
-                    else:
-                        if self.has_iattr(item.conf, 'database_addon_params'):
-                            _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
-                            if _database_addon_params is None:
-                                self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
-                            else:
-                                if 'year' in _database_addon_params:
-                                    _database_addon_params['item'] = _database_item
-                                    self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                    self._daily_items.add(item)
-                                else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
-                        else:
-                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
-
-                # handle tagesmitteltemperatur
-                elif _database_addon_fct == 'tagesmitteltemperatur':
-                    if self.db_driver.lower() != 'pymysql':
-                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
-                    else:
-                        if self.has_iattr(item.conf, 'database_addon_params'):
-                            _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
-                            _database_addon_params['item'] = _database_item
-                            self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                            self._daily_items.add(item)
-                        else:
-                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
-
-                # handle db_request
-                elif _database_addon_fct == 'db_request':
-                    if self.db_driver.lower() != 'pymysql':
-                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
-                    else:
-                        if self.has_iattr(item.conf, 'database_addon_params'):
-                            _database_addon_params = self.get_iattr_value(item.conf, 'database_addon_params')
-                            if _database_addon_params in self.std_req_dict:
-                                _database_addon_params = self.std_req_dict[_database_addon_params]
-                            elif '=' in _database_addon_params:
-                                _database_addon_params = parse_params_to_dict(_database_addon_params)
-                            if _database_addon_params is None:
-                                self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
-                            else:
-                                self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
-                                if any(k in _database_addon_params for k in ('func', 'timespan')):
-                                    _database_addon_params['item'] = _database_item
-                                    self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                    _timespan = _database_addon_params.get('group', None)
-                                    if not _timespan:
-                                        _timespan = _database_addon_params.get('timespan', None)
-                                        if _timespan == 'day':
-                                            self._daily_items.add(item)
-                                        elif _timespan == 'week':
-                                            self._weekly_items.add(item)
-                                        elif _timespan == 'month':
-                                            self._monthly_items.add(item)
-                                        elif _timespan == 'year':
-                                            self._yearly_items.add(item)
-                                        else:
-                                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
-                                else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
-                        else:
-                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
-
-                # handle live items
                 else:
-                    self._live_items.add(item)
-                    self._database_items.add(_database_item)
+
+                    # handle items starting with 'zaehlerstand'
+                    if _database_addon_fct.startswith('zaehlerstand'):
+                        self._meter_items.add(item)
+
+                    # handle items with 'heute_minus'
+                    elif 'heute_minus' in _database_addon_fct or _database_addon_fct.startswith('last'):
+                        self._daily_items.add(item)
+
+                    # handle items with 'woche_minus'
+                    elif 'woche_minus' in _database_addon_fct:
+                        self._weekly_items.add(item)
+
+                    # handle items with 'monat_minus'
+                    elif 'monat_minus' in _database_addon_fct:
+                        self._monthly_items.add(item)
+
+                    # handle items with 'jahr_minus'
+                    elif 'jahr_minus' in _database_addon_fct:
+                        self._yearly_items.add(item)
+
+                    # handle items starting with 'oldest'
+                    elif _database_addon_fct.startswith('oldest'):
+                        self._static_items.add(item)
+
+                    # handle items starting with 'vorjahreszeitraum'
+                    elif _database_addon_fct.startswith('vorjahreszeitraum'):
+                        self._daily_items.add(item)
+
+                    # handle all functions with 'summe'
+                    elif 'summe' in _database_addon_fct:
+                        if self.db_driver.lower() != 'pymysql':
+                            self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
+                        else:
+                            if self.has_iattr(item.conf, 'database_addon_params'):
+                                _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                                if _database_addon_params is None:
+                                    self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                                else:
+                                    if 'year' in _database_addon_params:
+                                        _database_addon_params['item'] = _database_item
+                                        self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                        self._daily_items.add(item)
+                                    else:
+                                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
+                            else:
+                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+
+                    # handle tagesmitteltemperatur
+                    elif _database_addon_fct == 'tagesmitteltemperatur':
+                        if self.db_driver.lower() != 'pymysql':
+                            self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
+                        else:
+                            if self.has_iattr(item.conf, 'database_addon_params'):
+                                _database_addon_params = parse_params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                                _database_addon_params['item'] = _database_item
+                                self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                self._daily_items.add(item)
+                            else:
+                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+
+                    # handle db_request
+                    elif _database_addon_fct == 'db_request':
+                        if self.db_driver.lower() != 'pymysql':
+                            self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
+                        else:
+                            if self.has_iattr(item.conf, 'database_addon_params'):
+                                _database_addon_params = self.get_iattr_value(item.conf, 'database_addon_params')
+                                if _database_addon_params in self.std_req_dict:
+                                    _database_addon_params = self.std_req_dict[_database_addon_params]
+                                elif '=' in _database_addon_params:
+                                    _database_addon_params = parse_params_to_dict(_database_addon_params)
+                                if _database_addon_params is None:
+                                    self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                                else:
+                                    self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
+                                    if any(k in _database_addon_params for k in ('func', 'timespan')):
+                                        _database_addon_params['item'] = _database_item
+                                        self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                        _timespan = _database_addon_params.get('group', None)
+                                        if not _timespan:
+                                            _timespan = _database_addon_params.get('timespan', None)
+                                            if _timespan == 'day':
+                                                self._daily_items.add(item)
+                                            elif _timespan == 'week':
+                                                self._weekly_items.add(item)
+                                            elif _timespan == 'month':
+                                                self._monthly_items.add(item)
+                                            elif _timespan == 'year':
+                                                self._yearly_items.add(item)
+                                            else:
+                                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
+                                    else:
+                                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
+                            else:
+                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
+
+                    # handle live items
+                    else:
+                        self._live_items.add(item)
+                        self._database_items.add(_database_item)
 
             if _database_addon_startup is not None and _database_item is not None:
                 self.logger.debug(f"Item '{item.id()}' added to be run on startup")
