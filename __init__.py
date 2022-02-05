@@ -857,7 +857,7 @@ class DatabaseAddOn(SmartPlugin):
                         _cache_dict[_database_item][_func] = value
 
                     # check value is float ending of .0 and convert to int
-                    if isinstance(value, str) and value.is_integer():
+                    if isinstance(value, str) and value.isdigit():
                         value = int(value)
 
                     # set item value
@@ -879,7 +879,7 @@ class DatabaseAddOn(SmartPlugin):
                     delta_value = round(value - _cache_dict[_database_item], 2)
 
                     # check value is float ending of .0 and convert to int
-                    if isinstance(delta_value, str) and delta_value.is_integer():
+                    if isinstance(delta_value, str) and delta_value.isdigit():
                         delta_value = int(delta_value)
 
                     # set item value
