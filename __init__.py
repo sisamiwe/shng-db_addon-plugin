@@ -42,7 +42,7 @@ import re
 
 ########################################
 # ToDo
-#     'avg'
+#   - 'avg' for on-chance items
 ########################################
 
 
@@ -96,7 +96,7 @@ class DatabaseAddOn(SmartPlugin):
         self._weekly_items = set()                  # set of items, for which the _database_addon_fct shall be executed weekly
         self._monthly_items = set()                 # set of items, for which the _database_addon_fct shall be executed monthly
         self._yearly_items = set()                  # set of items, for which the _database_addon_fct shall be executed yearly
-        self._live_items = set()                    # set of items, for which the _database_addon_fct shall be executed on the fly
+        self._onchange_items = set()                # set of items, for which the _database_addon_fct shall be executed on the fly
         self._meter_items = set()                   # set of items, for which the _database_addon_fct shall be executed separately (get create db entry short before midnight)
         self._startup_items = set()                 # set of items, for which the _database_addon_fct shall be executed on startup
         self._database_items = set()                # set of items with database attribute, relevant for plugin
@@ -154,17 +154,12 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug("Run method called")
         self.alive = True
 
-        # init db
-        # self._initialize_db()
-        
         # add scheduler for cyclic trigger item calculation
         self.scheduler_add('cyclic', self.execute_due_items, prio=3, cron='5 0 0 * * *', cycle=None, value=None, offset=None, next=None)
         
         # add scheduler to trigger items to be calculated at startup with delay
-        time = self.shtime.now() + datetime.timedelta(seconds=(self.startup_run_delay + 3))
-        self.scheduler_add('startup', self.execute_startup_items, next=time)
-        # ask for database_version
-        self._get_db_version()
+        dt = self.shtime.now() + datetime.timedelta(seconds=(self.startup_run_delay + 3))
+        self.scheduler_add('startup', self.execute_startup_items, next=dt)
 
     def stop(self):
         """ Stop method for the plugin
@@ -189,7 +184,7 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if self.has_iattr(item.conf, 'database_addon_fct'):
-            self.logger.debug(f"parse item: {item.id()}")
+            self.logger.debug(f"parse item: {item.id()} due to 'database_addon_fct'")
 
             # get attribute value
             _database_addon_fct = self.get_iattr_value(item.conf, 'database_addon_fct').lower()
@@ -217,7 +212,10 @@ class DatabaseAddOn(SmartPlugin):
                 self.logger.debug(f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item.id()}")
                 self._item_dict[item] = (_database_addon_fct, _database_item)
 
-                # add item to set of items for time of execution
+                # add item to be run on startup
+                if _database_addon_startup is not None:
+                    self.logger.debug(f"Item '{item.id()}' added to be run on startup")
+                    self._startup_items.add(item)
 
                 # handle items starting with 'zaehlerstand'
                 if _database_addon_fct.startswith('zaehlerstand'):
@@ -315,17 +313,13 @@ class DatabaseAddOn(SmartPlugin):
                         else:
                             self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
 
-                # handle live items
+                # handle on_change items
                 else:
-                    self._live_items.add(item)
+                    self._onchange_items.add(item)
                     self._database_items.add(_database_item)
 
-            if _database_addon_startup is not None and _database_item is not None:
-                self.logger.debug(f"Item '{item.id()}' added to be run on startup")
-                self._startup_items.add(item)
-
-        # Callback mit 'update_item' für alle Items mit Attribut 'database', um die live Items zu berechnen
-        elif self.has_iattr(item.conf, 'database'):
+        # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen
+        if self.has_iattr(item.conf, 'database'):
             return self.update_item
 
     def update_item(self, item, caller=None, source=None, dest=None):
@@ -341,11 +335,9 @@ class DatabaseAddOn(SmartPlugin):
         :param dest: if given it represents the dest
         """
 
-        if self.alive and caller != self.get_shortname():
-            # self.logger.info(f"Update item: {item.property.path}, item has been changed outside this plugin")
-            if item in self._database_items:
-                self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
-                self._fill_cache_dicts(item, item())
+        if self.alive and caller != self.get_shortname() and item in self._database_items:
+            self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
+            self._fill_cache_dicts(item, item())
 
     def execute_due_items(self):
         """ Handle scheduler call, ask for due items and start execute_items
@@ -444,11 +436,11 @@ class DatabaseAddOn(SmartPlugin):
                 else:
                     self.logger.error(f"Attribute 'database_addon_params' not containing needed params for Item {item.id} with _database_addon_fct={_database_addon_fct}.")
 
-            # handle all live functions of format 'timeframe_function' like 'heute_max'
+            # handle all on_change functions of format 'timeframe_function' like 'heute_max'
             elif len(_var) == 2 and _var[1] in ['min', 'max']:
                 self.logger.info(f"execute_items: on_change function={_var[0]} with {_var[1]} detected; will be calculated by next change of database item")
 
-            # handle all live functions of format 'timeframe' like 'heute'
+            # handle all on_change functions of format 'timeframe' like 'heute'
             elif len(_var) == 1 and _var[0]:
                 self.logger.info(f"execute_items: on_change function={_var} detected; will be calculated by next change of database item")
 
@@ -828,7 +820,7 @@ class DatabaseAddOn(SmartPlugin):
             'jahr': (self.vorjahresendwert_dict, self._time_str_jahr_minus_x())
             }
 
-        for item in self._live_items:
+        for item in self._onchange_items:
             _database_item = self._item_dict[item][1]
             if _database_item == updated_item:
                 _database_addon_fct = self._item_dict[item][0]

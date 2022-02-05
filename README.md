@@ -1,1 +1,0 @@
-# shng-db_addon-plugin
