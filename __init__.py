@@ -361,7 +361,7 @@ class DatabaseAddOn(SmartPlugin):
         """ Handle scheduler call to execute all items
         """
 
-        self.logger.debug("execute_all_items called")
+        self.logger.info(f"All item will be caluculated!! That will be: {list(self._item_dict.keys())}")
         self.execute_items(list(self._item_dict.keys()))
 
     def execute_items(self, item_list):
