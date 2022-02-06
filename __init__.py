@@ -583,11 +583,15 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if not valid_year(year):
+            self.logger.error(f"gruenlandtemperatursumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
         
         year = int(year)
         current_year = datetime.date.today().year
         year_delta = current_year - year
+        if year_delta < 0:
+            self.logger.error(f"gruenlandtemperatursumme: Start time for query is in future. Query cancelled.")
+            return
 
         _database_addon_params = self.std_req_dict.get('gts', None)
         _database_addon_params['start'] = year_delta
@@ -623,6 +627,7 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if not valid_year(year):
+            self.logger.error(f"waermesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
 
         if month is None:
@@ -634,24 +639,31 @@ class DatabaseAddOn(SmartPlugin):
             end_date = start_date + relativedelta(months=+1) - datetime.timedelta(days=1)
             group2 = 'month'
         else:
+            self.logger.error(f"waermesumme: Month for item={item.id()} was {month}. This is not a valid month. Query cancelled.")
             return
+
         today = datetime.date.today()
+        if start_date > today:
+            self.logger.error(f"waermesumme: Start time for query is in future. Query cancelled.")
+            return
+
         start = (today - start_date).days
         end = (today - end_date).days if end_date < today else 0
+        if start < end:
+            self.logger.error(f"waermesumme: End time for query is before start time. Query cancelled.")
+            return
 
         _database_addon_params = self.std_req_dict.get('waermesumme_year_month', None)
         _database_addon_params['start'] = start
         _database_addon_params['end'] = end
-        if group2:
-            _database_addon_params['group2'] = group2
+        _database_addon_params['group2'] = group2
         _database_addon_params['item'] = item
 
         result = self.fetch_log(**_database_addon_params)
+        self.logger.debug(f"waermesumme_year_month: Result={result} for item={item.id()} with year={year} and month0{month}")
 
         if result:
-            if month is None:
-                result = result[0][1]
-            return result
+            return int(result[0][1])
 
     def kaeltesumme(self, item, year, month=None):
         """
@@ -669,36 +681,49 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if not valid_year(year):
+            self.logger.error(f"kaeltesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
         
         if month is None:
             start_date = datetime.date(int(year), 9, 21)
             end_date = datetime.date(int(year) + 1, 3, 22)
-            group2 = None
+            group2 = 'year'
         elif valid_month(month):
             start_date = datetime.date(int(year), int(month), 1)
             end_date = start_date + relativedelta(months=+1) - datetime.timedelta(days=1)
             group2 = 'month'
         else:
+            self.logger.error(f"kaeltesumme: Month for item={item.id()} was {month}. This is not a valid month. Query cancelled.")
             return
 
         today = datetime.date.today()
+        if start_date > today:
+            self.logger.error(f"kaeltesumme: Start time for query is in future. Query cancelled.")
+            return
+
         start = (today - start_date).days
         end = (today - end_date).days if end_date < today else 0
+        if start < end:
+            self.logger.error(f"kaeltesumme: End time for query is before start time. Query cancelled.")
+            return
 
         _database_addon_params = self.std_req_dict.get('kaltesumme_year_month', None)
         _database_addon_params['start'] = start
         _database_addon_params['end'] = end
-        if group2:
-            _database_addon_params['group2'] = group2
+        _database_addon_params['group2'] = group2
         _database_addon_params['item'] = item
 
         result = self.fetch_log(**_database_addon_params)
+        self.logger.debug(f"kaeltesumme: Result={result} for item={item.id()} with year={year} and month0{month}")
 
+        value = 0
         if result:
-            if month is None:
-                result = result[0][1]
-            return result
+            if month:
+                value = result[0][1]
+            else:
+                for entry in result:
+                    value += entry[1]
+            return int(value)
 
     def tagesmitteltemperatur(self, item, count=None):
         """
@@ -754,7 +779,7 @@ class DatabaseAddOn(SmartPlugin):
             value.append([element[0], element[1]])
         if func == 'diff_max':
             value.pop(0)
-        self.logger.debug(f"fetch_log: value for item={item} with timespan={timespan}, func={func}: {value}")
+        self.logger.debug(f"fetch_log: value for item={item.id()} with timespan={timespan}, func={func}: {value}")
         return value
 
     def fetch_raw(self, query, params=None):
@@ -1130,7 +1155,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug(f'_query_item: Results={value} for item={item.id()} with timespan={timespan}, start={start}, end={end}, group_new={_group_new}, group2_new={_group2_new}.')
         return value
 
-    def _query_log(self, func, item, timespan, start=None, end=0, count=None, group=None, group2=None):
+    def _query_log(self, func, item, timespan, start, end, count=None, group=None, group2=None):
         """
         Create a mysql query str and param dict based on given parameters, get query response and return it
 
@@ -1184,17 +1209,17 @@ class DatabaseAddOn(SmartPlugin):
 
         _select = {
             'avg': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value',
-            'avg1': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(AVG(value), 2) as value FROM (SELECT time, ROUND(AVG(val_num), 2) as value',
+            'avg1': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(AVG(value), 2) as value',
             'min': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, MIN(val_num) as value',
             'max': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, MAX(val_num) as value',
-            'max1': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(MAX(value), 2) as value FROM (SELECT time, ROUND(MAX(val_num), 2) as value',
+            'max1': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(MAX(value), 2) as value',
             'sum': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, SUM(val_num) as value',
             'on': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(val_bool * duration) / SUM(duration), 1) as value',
             'integrate': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(val_num * duration),1) as value',
-            'sum_max': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, MAX(val_num) as value',
-            'sum_avg': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value',
-            'sum_min_neg': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, IF(min(val_num) < 0, min(val_num), 0) as value',
-            'diff_max': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, value1 - LAG(value1) OVER (ORDER BY time) AS value FROM ( SELECT time, round(MAX(val_num), 2) as value1'
+            'sum_max': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(value), 1) as value',
+            'sum_avg': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(value), 1) as value',
+            'sum_min_neg': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, ROUND(SUM(value), 1) as value',
+            'diff_max': 'UNIX_TIMESTAMP(DATE(FROM_UNIXTIME(time/1000))) * 1000 as time1, value1 - LAG(value1) OVER (ORDER BY time) AS value'
             }
 
         _from = {
@@ -1206,10 +1231,10 @@ class DatabaseAddOn(SmartPlugin):
             'sum': '',
             'on': '',
             'integrate': '',
-            'sum_max': '',
+            'sum_max': 'FROM (SELECT time, MAX(val_num) as value',
             'sum_avg': 'FROM (SELECT time, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value',
             'sum_min_neg': 'FROM (SELECT time, IF(min(val_num) < 0, min(val_num), 0) as value',
-            'diff_max': 'FROM ( SELECT time, round(MAX(val_num), 2) as value1'
+            'diff_max': 'FROM (SELECT time, round(MAX(val_num), 2) as value1'
         }
 
         # if query is from now (end == 0) until end of database (start is None)
@@ -1391,19 +1416,19 @@ class DatabaseAddOn(SmartPlugin):
             return None
         if cur is None:
             if self._db.verify(5) == 0:
-                self.logger.error("_query: Database: Connection not recovered")
+                self.logger.error("_query: Connection to database not recovered.")
                 return None
             if not self._db.lock(300):
-                self.logger.error("_query: Database: Can't query due to fail to acquire lock")
+                self.logger.error("_query: Can't query due to fail to acquire lock.")
                 return None
         query_readable = re.sub(r':([a-z_]+)', r'{\1}', query).format(**params)
         try:
             tuples = func(query, params, cur=cur)
         except Exception as e:
-            self.logger.error(f"_query: Database: Error for query {query_readable}: {e}")
+            self.logger.error(f"_query: Error for query {query_readable}: {e}")
             raise e
         else:
-            self.logger.debug(f"_query: Database: Fetch {query_readable}: {tuples}")
+            self.logger.debug(f"_query: Result of {query_readable}: {tuples}")
             return tuples
         finally:
             if cur is None:
@@ -1448,14 +1473,14 @@ def parse_params_to_dict(string):
 
 
 def valid_year(year):
-    if (isinstance(year, int) or (isinstance(year, str) and year.isdigit())) and (1980 <= year <= datetime.date.today().year):
+    if (isinstance(year, int) or (isinstance(year, str) and year.isdigit())) and (1980 <= int(year) <= datetime.date.today().year):
         return True
     else:
         return False
 
 
 def valid_month(month):
-    if (isinstance(month, int) or (isinstance(month, str) and month.isdigit())) and (1 <= month <= 12):
+    if (isinstance(month, int) or (isinstance(month, str) and month.isdigit())) and (1 <= int(month) <= 12):
         return True
     else:
         return False
