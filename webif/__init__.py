@@ -31,6 +31,7 @@ import os
 
 from lib.item import Items
 from lib.model.smartplugin import SmartPluginWebIf
+import json
 
 
 # ------------------------------------------
@@ -60,7 +61,6 @@ class WebInterface(SmartPluginWebIf):
 
         self.tplenv = self.init_template_environment()
 
-
     @cherrypy.expose
     def index(self, reload=None):
         """
@@ -68,14 +68,18 @@ class WebInterface(SmartPluginWebIf):
 
         Render the template and return the html file to be delivered to the browser
 
-        :return: contents of the template after beeing rendered
+        :return: contents of the template after being rendered
         """
-        tmpl = self.tplenv.get_template('index.html')
-        # add values to be passed to the Jinja2 template eg: tmpl.render(p=self.plugin, interface=interface, ...)
-        return tmpl.render(p=self.plugin,
-                           items=sorted(self.items.return_items(), key=lambda k: str.lower(k['_path'])),
-                           item_count=0)
 
+        # get list of items with the attribute database_addon_fct
+        plgitems = []
+        for item in self.items.return_items():
+            if 'database_addon_fct' in item.conf:
+                plgitems.append(item)
+
+        # additionally hand over the list of items, sorted by item-path
+        tmpl = self.tplenv.get_template('index.html')
+        return tmpl.render(p=self.plugin, items=sorted(plgitems, key=lambda k: str.lower(k['_path'])),)
 
     @cherrypy.expose
     def get_data_html(self, dataSet=None):
@@ -89,17 +93,18 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = {}
+            data = dict()
 
-            # data['item'] = {}
-            # for i in self.plugin.items:
-            #     data['item'][i]['value'] = self.plugin.getitemvalue(i)
-            #
+            data['item'] = {}
+            for i in self.plugin.items:
+                data['item'][i]['value'] = self.plugin.getitemvalue(i)
+
             # return it as json the the web page
-            # try:
-            #     return json.dumps(data)
-            # except Exception as e:
-            #     self.logger.error("get_data_html exception: {}".format(e))
+            try:
+                return json.dumps(data)
+            except Exception as e:
+                self.logger.error("get_data_html exception: {}".format(e))
+
         return {}
 
     @cherrypy.expose
