@@ -1087,7 +1087,7 @@ class DatabaseAddOn(SmartPlugin):
         :rtype: tuples
         """
 
-        change = {
+        convertion = {
             'heute': 'day',
             'woche': 'week',
             'monat': 'month',
@@ -1101,9 +1101,9 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug(f"_query_item called with func={func}, item={item.id()}, timespan={timespan}, start={start}, end={end}, group={group}")
 
         # get timespan in correct wording
-        _timespan = change.get(timespan, None)
-        _group_new = change.get(group, None)
-        _group2_new = change.get(group2, None)
+        _timespan = convertion.get(timespan, None)
+        _group_new = convertion.get(group, None)
+        _group2_new = convertion.get(group2, None)
         if not _timespan:
             return
 
