@@ -522,33 +522,33 @@ class DatabaseAddOn(SmartPlugin):
             elif len(_var) == 4 and _var[3].startswith('minus'):
                 _func = _var[0]
                 _window = _var[1]
+                _window_inc = int(_window[:-1])
+                _window_dur = _window[-1]
                 _timeframe = _var[2]
                 _timedelta = _var[3][-1]
+
+                convertion = {
+                    'd': (1, 1 / 7, 1 / 30.4, 1 / 365),
+                    'w': (7, 1, 4.3, 1 / 53),
+                    'm': (30.4, 53 / 12, 1, 1 / 12),
+                    'y': (365, 53, 12, 1),
+                    'heute': 0,
+                    'woche': 1,
+                    'monat': 2,
+                    'jahr': 3,
+                    }
 
                 if self.execute_debug:
                     self.logger.debug(f"execute_items: {_func} function detected. _window={_window}  _timeframe={_timeframe}, _timedelta={_timedelta}")
 
                 if _timedelta.isdigit():
                     _timedelta = int(_timedelta)
-                    if _func == 'rolling':
-                        if _timeframe == 'heute':
-                            _endtime = _timedelta
-                            _starttime = _endtime + 365
-                        elif _timeframe == 'woche':
-                            _endtime = _timedelta
-                            _starttime = _endtime + 53
-                        elif _timeframe == 'monat':
-                            _endtime = _timedelta
-                            _starttime = _endtime + 12
-                        elif _timeframe == 'jahr':
-                            _endtime = _timedelta
-                            _starttime = _endtime + 1
-                        else:
-                            _starttime = None
-                            _endtime = None
+                    _endtime = _timedelta
 
-                        if _starttime and _endtime:
-                            _result = self._query_item('max1', _database_item, _timeframe, start=_starttime, end=_endtime, group=_timeframe, group2=_timeframe)
+                    if _func == 'rolling' and _window_dur in ['d', 'w', 'm', 'y']:
+                        _endtime = 0
+                        _starttime = int(_endtime + convertion[_window_dur][convertion[_timeframe]] * _window_inc)
+                        _result = self._query_item('max1', _database_item, _timeframe, start=_starttime, end=_endtime, group=_timeframe, group2=_timeframe)
 
             # handle everything else
             else:
