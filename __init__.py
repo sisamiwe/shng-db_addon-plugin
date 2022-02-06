@@ -44,13 +44,13 @@ import re
 # ToDo
 #   - 'avg' for on-chance items
 #   - wenn item Berechnung läuft, darf keine zweite starten
-#   - db Abfrage zu einem bestimmen Zeitpunkt
 #   - Rolling window auf andere Fenster als 12m ausweiten
 ########################################
 
 
 class DatabaseAddOn(SmartPlugin):
-    """ Main class of the Plugin. Does all plugin specific stuff and provides the update functions for the items
+    """
+    Main class of the Plugin. Does all plugin specific stuff and provides the update functions for the items
     """
 
     std_req_dict = {
@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts': {'func': 'max', 'timespan': 'year', 'start': None, 'end': None, 'group': 'day'},
     }
 
-    PLUGIN_VERSION = '1.0.0'
+    PLUGIN_VERSION = '1.0.B'
 
     def __init__(self, sh):
         """
@@ -1329,6 +1329,29 @@ class DatabaseAddOn(SmartPlugin):
         query = "SELECT * FROM log WHERE item_id = :item_id AND time = :timestamp;"
         return self._fetchall(query, params, cur=cur)
 
+    def _read_item_table(self, item):
+        """
+        Read item table if smarthome database
+
+        :param item: name or Item_id of the item within the database
+        :type item: item
+
+        :return: Data for the selected item
+        :rtype: tuple
+        """
+
+        columns_entries = ('id', 'name', 'time', 'val_str', 'val_num', 'val_bool', 'changed')
+        columns = ", ".join(columns_entries)
+
+        if isinstance(item, Item):
+            query = f"SELECT {columns} FROM item WHERE name = '{str(item.id())}'"
+            return self._fetchone(query)
+
+        elif item.isdigit() or isinstance(item, int):
+            item = int(item)
+            query = f"SELECT {columns} FROM item WHERE id = {item}"
+            return self._fetchone(query)
+
     def _get_db_version(self):
         """ Query the database version and provide result
         """
@@ -1509,24 +1532,6 @@ def valid_month(month):
 #     else:
 #         return connection
 #
-# def _read_item_table(self, item):
-#     """ Read item table if smarthome database
-#
-#     :param item: name or Item_id of the item within the database
-#     :return: Data for the selected item
-#     """
-#
-#     columns_entries = ('id', 'name', 'time', 'val_str', 'val_num', 'val_bool', 'changed')
-#     columns = ", ".join(columns_entries)
-#
-#     if isinstance(item, Item):
-#         query = f"SELECT {columns} FROM item WHERE name = '{str(item.id())}'"
-#         return self._fetchone(query)
-#
-#     elif item.isdigit() or isinstance(item, int):
-#         item = int(item)
-#         query = f"SELECT {columns} FROM item WHERE id = {item}"
-#         return self._fetchone(query)
 #
 # def _get_itemid_via_db_plugin(self, item):
 #     """ Get item_id of item out of dict or request it from db via database plugin and put it into dict
