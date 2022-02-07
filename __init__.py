@@ -251,7 +251,7 @@ class DatabaseAddOn(SmartPlugin):
                 elif _database_addon_fct.startswith('vorjahreszeitraum'):
                     self._daily_items.add(item)
 
-                # handle all functions with 'summe'
+                # handle all functions with 'summe' like waermesumme, kaeltesumme, gruenlandtemperatursumme
                 elif 'summe' in _database_addon_fct:
                     if self.db_driver.lower() != 'pymysql':
                         self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
@@ -576,11 +576,9 @@ class DatabaseAddOn(SmartPlugin):
 
             # set item value
             if _result is not None:
-                # if fetch_log provides Error Message as result as list starting with '<ERROR>', put this into error log
-                if isinstance(_result, list) and '<ERROR>' in _result:
-                    self.logger.error(f"execute_items: result with error received. {_result}")
-                else:
-                    item(_result, self.get_shortname())
+                if isinstance(_result, float):
+                    _result = round(_result, 1)
+                item(_result, self.get_shortname())
 
     ##############################
     #       Public functions
@@ -602,9 +600,13 @@ class DatabaseAddOn(SmartPlugin):
         if not valid_year(year):
             self.logger.error(f"gruenlandtemperatursumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
+
+        current_year = datetime.date.today().year
+
+        if year == 'current':
+            year = current_year
         
         year = int(year)
-        current_year = datetime.date.today().year
         year_delta = current_year - year
         if year_delta < 0:
             self.logger.error(f"gruenlandtemperatursumme: Start time for query is in future. Query cancelled.")
@@ -647,6 +649,9 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.error(f"waermesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
 
+        if year == 'current':
+            year = datetime.date.today().year
+
         if month is None:
             start_date = datetime.date(int(year), 3, 20)
             end_date = datetime.date(int(year), 9, 21)
@@ -661,7 +666,7 @@ class DatabaseAddOn(SmartPlugin):
 
         today = datetime.date.today()
         if start_date > today:
-            self.logger.error(f"waermesumme: Start time for query is in future. Query cancelled.")
+            self.logger.info(f"waermesumme: Start time for query is in future. Query cancelled.")
             return
 
         start = (today - start_date).days
@@ -700,6 +705,12 @@ class DatabaseAddOn(SmartPlugin):
         if not valid_year(year):
             self.logger.error(f"kaeltesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
+
+        if year == 'current':
+            if datetime.date.today() < datetime.date(int(datetime.date.today().year), 9, 21):
+                year = datetime.date.today().year - 1
+            else:
+                year = datetime.date.today().year
         
         if month is None:
             start_date = datetime.date(int(year), 9, 21)
@@ -1490,7 +1501,7 @@ def parse_params_to_dict(string):
 
 
 def valid_year(year):
-    if (isinstance(year, int) or (isinstance(year, str) and year.isdigit())) and (1980 <= int(year) <= datetime.date.today().year):
+    if ((isinstance(year, int) or (isinstance(year, str) and year.isdigit())) and (1980 <= int(year) <= datetime.date.today().year)) or (isinstance(year, str) and year == 'current'):
         return True
     else:
         return False
