@@ -93,18 +93,17 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = dict()
+            data = {}
 
-            data['item'] = {}
-            for i in self.plugin.items:
-                data['item'][i]['value'] = self.plugin.getitemvalue(i)
-
+            # data['item'] = {}
+            # for i in self.plugin.items:
+            #     data['item'][i]['value'] = self.plugin.getitemvalue(i)
+            #
             # return it as json the the web page
-            try:
-                return json.dumps(data)
-            except Exception as e:
-                self.logger.error("get_data_html exception: {}".format(e))
-
+            # try:
+            #     return json.dumps(data)
+            # except Exception as e:
+            #     self.logger.error("get_data_html exception: {}".format(e))
         return {}
 
     @cherrypy.expose

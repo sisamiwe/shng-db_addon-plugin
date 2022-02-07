@@ -40,12 +40,11 @@ from dateutil.relativedelta import *
 import time
 import re
 
-########################################
+#########################################################################
 # ToDo
 #   - 'avg' for on-chance items
 #   - wenn item Berechnung läuft, darf keine zweite starten
-#   - Rolling window auf andere Fenster als 12m ausweiten
-########################################
+#########################################################################
 
 
 class DatabaseAddOn(SmartPlugin):
@@ -513,10 +512,9 @@ class DatabaseAddOn(SmartPlugin):
                 if isinstance(_timedelta, str) and _timedelta.isdigit():
                     _timedelta = int(_timedelta)
 
-                if isinstance(_timedelta, int):
-                    if _func == 'zaehlerstand':
-                        _result = self._query_item('max', _database_item, _timeframe, start=_timedelta, end=_timedelta)
-                        self.logger.debug(f"zaehlerstand: _result={_result}")
+                if _func == 'zaehlerstand':
+                    _result = self._query_item('max', _database_item, _timeframe, start=_timedelta, end=_timedelta)
+                    self.logger.debug(f"zaehlerstand: _result={_result}")
 
             # handle all functions of format 'function_window_timeframe_timedelta' like 'rolling_12m_woche_minus1'
             elif len(_var) == 4 and _var[3].startswith('minus'):
@@ -527,11 +525,26 @@ class DatabaseAddOn(SmartPlugin):
                 _timeframe = _var[2]
                 _timedelta = _var[3][-1]
 
+                # time convertion
+
+                d_in_y = 365
+                d_in_w = 7
+                m_in_y = 12
+                w_in_y = d_in_y / d_in_w
+                w_in_m = w_in_y / m_in_y
+                d_in_m = d_in_y / m_in_y
+                y_in_m = 1 / m_in_y
+                w_in_d = 1 / d_in_w
+                m_in_d = 1 / d_in_m
+                y_in_d = 1 / d_in_y
+                m_in_w = 1 / w_in_m
+                y_in_w = 1 / w_in_y
+
                 convertion = {
-                    'd': (1, 1 / 7, 1 / 30.4, 1 / 365),
-                    'w': (7, 1, 4.3, 1 / 53),
-                    'm': (30.4, 53 / 12, 1, 1 / 12),
-                    'y': (365, 53, 12, 1),
+                    'd': (1, w_in_d, m_in_d, y_in_d),
+                    'w': (d_in_w, 1, m_in_w, y_in_w),
+                    'm': (d_in_m, w_in_m, 1, y_in_m),
+                    'y': (d_in_y, w_in_y, m_in_y, 1),
                     'heute': 0,
                     'woche': 1,
                     'monat': 2,
@@ -541,14 +554,13 @@ class DatabaseAddOn(SmartPlugin):
                 if self.execute_debug:
                     self.logger.debug(f"execute_items: {_func} function detected. _window={_window}  _timeframe={_timeframe}, _timedelta={_timedelta}")
 
-                if _timedelta.isdigit():
+                if isinstance(_timedelta, str) and _timedelta.isdigit():
                     _timedelta = int(_timedelta)
                     _endtime = _timedelta
 
                     if _func == 'rolling' and _window_dur in ['d', 'w', 'm', 'y']:
-                        _endtime = 0
-                        _starttime = int(_endtime + convertion[_window_dur][convertion[_timeframe]] * _window_inc)
-                        _result = self._query_item('max1', _database_item, _timeframe, start=_starttime, end=_endtime, group=_timeframe, group2=_timeframe)
+                        _starttime = int(convertion[_window_dur][convertion[_timeframe]] * _window_inc)
+                        _result = self._query_item('max1', _database_item, _timeframe, start=_starttime, end=0, group=_timeframe, group2=_timeframe)
 
             # handle everything else
             else:

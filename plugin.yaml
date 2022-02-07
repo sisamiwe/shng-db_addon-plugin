@@ -73,13 +73,13 @@ item_attributes:
             - 'vorjahreszeitraum_minus0'                    #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres
             - 'vorjahreszeitraum_minus1'                    #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
             - 'vorjahreszeitraum_minus2'                    #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren
-            - 'zaehlerstand_gestern'                        #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
+            - 'zaehlerstand_heute_minus1'                        #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
             - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
             - 'zaehlerstand_woche_minus2'                   #num    weekly      Zählerstand / Wert am Ende der vorletzten Woche (aktuelle Woche -2 Woche)        
-            - 'zaehlerstand_woche_minus3'                   #num    weekly      Zählerstand / Wert am Ende der aktuelle Woche -3 Woche
+            - 'zaehlerstand_woche_minus3'                   #num    weekly      Zählerstand / Wert am Ende der aktuellen Woche -3 Woche
             - 'zaehlerstand_monat_minus1'                   #num    monthly     Zählerstand / Wert am Ende des letzten Monates (aktueller Monat -1 Monat)   
             - 'zaehlerstand_monat_minus2'                   #num    monthly     Zählerstand / Wert am Ende des vorletzten Monates (aktueller Monat -2 Monate)   
-            - 'zaehlerstand_monat_minus3'                   #num    monthly     Zählerstand / Wert am Ende des aktueller Monat -3 Monate   
+            - 'zaehlerstand_monat_minus3'                   #num    monthly     Zählerstand / Wert am Ende des aktuellen Monats -3 Monate
             - 'zaehlerstand_jahr_minus1'                    #num    yearly      Zählerstand / Wert am Ende des letzten Jahres (aktuelles Jahr -1 Jahr)   
             - 'zaehlerstand_jahr_minus2'                    #num    yearly      Zählerstand / Wert am Ende des vorletzten Jahres (aktuelles Jahr -2 Jahre)   
             - 'zaehlerstand_jahr_minus3'                    #num    yearly      Zählerstand / Wert am Ende des aktuellen Jahres -3 Jahre
@@ -271,7 +271,7 @@ item_structs:
 
         zaehlerstand_tagesende:
             name: Zählerstand zum Tagesende gestern
-            database_addon_fct: zaehlerstand_gestern
+            database_addon_fct: zaehlerstand_heute_minus1
             type: num
             visu_acl: ro
             cache: yes
