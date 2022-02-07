@@ -525,30 +525,35 @@ class DatabaseAddOn(SmartPlugin):
                 _timeframe = _var[2]
                 _timedelta = _var[3][-1]
 
-                # time convertion
+                # time conversion
+                _d_in_y = 365
+                _d_in_w = 7
+                _m_in_y = 12
+                _w_in_y = _d_in_y / _d_in_w
+                _w_in_m = _w_in_y / _m_in_y
+                _d_in_m = _d_in_y / _m_in_y
 
-                d_in_y = 365
-                d_in_w = 7
-                m_in_y = 12
-                w_in_y = d_in_y / d_in_w
-                w_in_m = w_in_y / m_in_y
-                d_in_m = d_in_y / m_in_y
-                y_in_m = 1 / m_in_y
-                w_in_d = 1 / d_in_w
-                m_in_d = 1 / d_in_m
-                y_in_d = 1 / d_in_y
-                m_in_w = 1 / w_in_m
-                y_in_w = 1 / w_in_y
-
-                convertion = {
-                    'd': (1, w_in_d, m_in_d, y_in_d),
-                    'w': (d_in_w, 1, m_in_w, y_in_w),
-                    'm': (d_in_m, w_in_m, 1, y_in_m),
-                    'y': (d_in_y, w_in_y, m_in_y, 1),
-                    'heute': 0,
-                    'woche': 1,
-                    'monat': 2,
-                    'jahr': 3,
+                conversion = {
+                    'heute': {'d': 1,
+                              'w': _d_in_w,
+                              'm': _d_in_m,
+                              'y': _d_in_y,
+                              },
+                    'woche': {'d': 1 / _d_in_w,
+                              'w': 1,
+                              'm': _w_in_m,
+                              'y': _w_in_y
+                              },
+                    'monat': {'d': 1 / _d_in_m,
+                              'w': 1 / _w_in_m,
+                              'm': 1,
+                              'y': _m_in_y
+                              },
+                    'jahr': {'d': 1 / _d_in_y,
+                             'w': 1 / _w_in_y,
+                             'm': 1 / _m_in_y,
+                             'y': 1
+                             }
                     }
 
                 if self.execute_debug:
@@ -559,7 +564,7 @@ class DatabaseAddOn(SmartPlugin):
                     _endtime = _timedelta
 
                     if _func == 'rolling' and _window_dur in ['d', 'w', 'm', 'y']:
-                        _starttime = int(convertion[_window_dur][convertion[_timeframe]] * _window_inc)
+                        _starttime = int(round(conversion[_timeframe][_window_dur] * _window_inc, 0))
                         _result = self._query_item('max1', _database_item, _timeframe, start=_starttime, end=0, group=_timeframe, group2=_timeframe)
 
             # handle everything else
