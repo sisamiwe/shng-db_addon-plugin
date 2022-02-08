@@ -122,11 +122,11 @@ class DatabaseAddOn(SmartPlugin):
         self.db_driver = None                       # driver for database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
         self.alive = None
-        self.parse_debug = False                     # Enable / Disable debug logging for method 'parse item'
-        self.execute_debug = False                   # Enable / Disable debug logging for method 'execute items'
-        self.sql_debug = False                       # Enable / Disable debug logging for sql stuff
-        self.on_change_debug = False                 # Enable / Disable debug logging for method '_fill_cache_dicts'
-        self.prepare_debug = False                   # Enable / Disable debug logging for query preparation
+        self.parse_debug = True                     # Enable / Disable debug logging for method 'parse item'
+        self.execute_debug = True                   # Enable / Disable debug logging for method 'execute items'
+        self.sql_debug = True                       # Enable / Disable debug logging for sql stuff
+        self.on_change_debug = True                 # Enable / Disable debug logging for method '_fill_cache_dicts'
+        self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
 
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
