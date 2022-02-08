@@ -385,10 +385,11 @@ class DatabaseAddOn(SmartPlugin):
         Execute all due_items
         """
 
-        self.logger.debug("execute_due_items called")
+        if self.execute_debug:
+            self.logger.debug("execute_due_items called")
 
         _todo_items = self._create_due_items()
-        self.logger.info(f"execute_due_items: Following items will be calculated: {_todo_items}")
+        self.logger.info(f"execute_due_items: Following {len(_todo_items)} items will be calculated: {_todo_items}")
 
         self.execute_items(_todo_items)
 
@@ -396,8 +397,8 @@ class DatabaseAddOn(SmartPlugin):
         """
         Execute all startup_items
         """
-
-        self.logger.info("execute_startup_items called")
+        if self.execute_debug:
+            self.logger.debug("execute_startup_items called")
         self.execute_items(list(self._startup_items))
 
     def execute_all_items(self):
@@ -405,7 +406,7 @@ class DatabaseAddOn(SmartPlugin):
         Execute all items
         """
 
-        self.logger.info(f"All item will be caluculated!! That will be: {list(self._item_dict.keys())}")
+        self.logger.info(f"All item will be calculated!! That will be {len(list(self._item_dict.keys()))} items!")
         self.execute_items(list(self._item_dict.keys()))
 
     def execute_items(self, item_list):
@@ -1258,9 +1259,9 @@ class DatabaseAddOn(SmartPlugin):
                 value = int(self._get_oldest_value(item))
             else:
                 if func == 'max1' and len(log) >= 2:
-                    value = log[1][1] - log[0][1]
+                    value = round(log[1][1] - log[0][1], 1)
                 else:
-                    value = log[0][1]
+                    value = round(log[0][1], 1)
         else:
             self.logger.error(f"Error occurred during _query_log.")
         
