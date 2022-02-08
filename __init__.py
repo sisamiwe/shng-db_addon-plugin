@@ -651,7 +651,7 @@ class DatabaseAddOn(SmartPlugin):
 
         if self.execute_debug:
             _duration = int(time.time() - _start_time)
-            self.logger.debug(f"execute_items: FINISHED calculating {len(item_list)} itemsw within {_duration} sec.")
+            self.logger.debug(f"execute_items: FINISHED calculating {len(item_list)} items within {_duration} sec.")
 
     ##############################
     #       Public functions
