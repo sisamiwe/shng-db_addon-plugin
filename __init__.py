@@ -122,10 +122,11 @@ class DatabaseAddOn(SmartPlugin):
         self.db_driver = None                       # driver for database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
         self.alive = None
-        self.execute_debug = True                   # Enable / Disable debug logging for method 'execute items'
-        self.sql_debug = True                       # Enable / Disable debug logging for sql stuff
-        self.on_change_debug = True                 # Enable / Disable debug logging for method '_fill_cache_dicts'
-        self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
+        self.parse_debug = False                     # Enable / Disable debug logging for method 'parse item'
+        self.execute_debug = False                   # Enable / Disable debug logging for method 'execute items'
+        self.sql_debug = False                       # Enable / Disable debug logging for sql stuff
+        self.on_change_debug = False                 # Enable / Disable debug logging for method '_fill_cache_dicts'
+        self.prepare_debug = False                   # Enable / Disable debug logging for query preparation
 
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
@@ -193,7 +194,8 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if self.has_iattr(item.conf, 'database_addon_fct'):
-            self.logger.debug(f"parse item: {item.id()} due to 'database_addon_fct'")
+            if self.parse_debug:
+                self.logger.debug(f"parse item: {item.id()} due to 'database_addon_fct'")
 
             # get attribute value
             _database_addon_fct = self.get_iattr_value(item.conf, 'database_addon_fct').lower()
@@ -218,41 +220,57 @@ class DatabaseAddOn(SmartPlugin):
             # create items sets
             if _database_item is not None:
                 # add item to item dict
-                self.logger.debug(f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item.id()}")
+                if self.parse_debug:
+                    self.logger.debug(f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item.id()}")
                 self._item_dict[item] = (_database_addon_fct, _database_item)
 
                 # add item to be run on startup
                 if _database_addon_startup is not None:
-                    self.logger.debug(f"Item '{item.id()}' added to be run on startup")
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run on startup")
                     self._startup_items.add(item)
 
-                # handle items starting with 'zaehlerstand'
-                if _database_addon_fct.startswith('zaehlerstand'):
+                # handle items starting with 'zaehlerstand_tagesende'
+                if _database_addon_fct == 'zaehlerstand_tagesende':
                     self._meter_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Function not implemented yet.")
 
                 # handle items with 'heute_minus'
                 elif 'heute_minus' in _database_addon_fct or _database_addon_fct.startswith('last'):
                     self._daily_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run daily.")
 
                 # handle items with 'woche_minus'
                 elif 'woche_minus' in _database_addon_fct:
                     self._weekly_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run weekly.")
 
                 # handle items with 'monat_minus'
                 elif 'monat_minus' in _database_addon_fct:
                     self._monthly_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run monthly.")
 
                 # handle items with 'jahr_minus'
                 elif 'jahr_minus' in _database_addon_fct:
                     self._yearly_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
 
                 # handle static items starting with 'general_'
                 elif _database_addon_fct.startswith('general_'):
                     self._static_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' will not be cyclic.")
 
                 # handle items with 'vorjahreszeitraum'
                 elif 'vorjahreszeitraum' in _database_addon_fct:
                     self._daily_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run daily.")
 
                 # handle all functions with 'summe' like waermesumme, kaeltesumme, gruenlandtemperatursumme
                 elif 'summe' in _database_addon_fct:
@@ -268,6 +286,8 @@ class DatabaseAddOn(SmartPlugin):
                                     _database_addon_params['item'] = _database_item
                                     self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
                                     self._daily_items.add(item)
+                                    if self.parse_debug:
+                                        self.logger.debug(f"Item '{item.id()}' added to be run daily.")
                                 else:
                                     self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
                         else:
@@ -300,23 +320,32 @@ class DatabaseAddOn(SmartPlugin):
                             if _database_addon_params is None:
                                 self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
                             else:
-                                self.logger.debug(f"parse_item: item={item.id()}, _database_addon_params={_database_addon_params}")
+                                if self.parse_debug:
+                                    self.logger.debug(f"parse_item: _database_addon_fct={_database_addon_fct} for item={item.id()}, _database_addon_params={_database_addon_params}")
                                 if any(k in _database_addon_params for k in ('func', 'timespan')):
                                     _database_addon_params['item'] = _database_item
                                     self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
                                     _timespan = _database_addon_params.get('group', None)
                                     if not _timespan:
                                         _timespan = _database_addon_params.get('timespan', None)
-                                        if _timespan == 'day':
-                                            self._daily_items.add(item)
-                                        elif _timespan == 'week':
-                                            self._weekly_items.add(item)
-                                        elif _timespan == 'month':
-                                            self._monthly_items.add(item)
-                                        elif _timespan == 'year':
-                                            self._yearly_items.add(item)
-                                        else:
-                                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
+                                    if _timespan == 'day':
+                                        self._daily_items.add(item)
+                                        if self.parse_debug:
+                                            self.logger.debug(f"Item '{item.id()}' added to be run daily.")
+                                    elif _timespan == 'week':
+                                        self._weekly_items.add(item)
+                                        if self.parse_debug:
+                                            self.logger.debug(f"Item '{item.id()}' added to be run weekly.")
+                                    elif _timespan == 'month':
+                                        self._monthly_items.add(item)
+                                        if self.parse_debug:
+                                            self.logger.debug(f"Item '{item.id()}' added to be run monthly.")
+                                    elif _timespan == 'year':
+                                        self._yearly_items.add(item)
+                                        if self.parse_debug:
+                                            self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
+                                    else:
+                                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
                                 else:
                                     self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
                         else:
@@ -325,6 +354,8 @@ class DatabaseAddOn(SmartPlugin):
                 # handle on_change items
                 else:
                     self._onchange_items.add(item)
+                    if self.parse_debug:
+                        self.logger.debug(f"Item '{item.id()}' added to be run on-change.")
                     self._database_items.add(_database_item)
 
         # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen

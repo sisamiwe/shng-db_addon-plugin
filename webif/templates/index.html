@@ -109,6 +109,8 @@
 					<th>{{_('Item')}}</th>
 					<th>{{_('Typ')}}</th>
 					<th>{{_('AddOn Attribute')}}</th>
+					<th>{{_('Update Cycle')}}</th>
+					<th>{{_('Run on init')}}</th>
 					<th>{{_('Wert')}}</th>
 					<th>{{_('Letztes Update')}}</th>
 					<th>{{_('Letzter Change')}}</th>
@@ -120,7 +122,25 @@
 						<td class="py-1">{{ item._path }}</td>
 						<td class="py-1">{{ item._type }}</td>
 						<td class="py-1">{{ p._item_dict[item][0] }}</td>
-						<td class="py-1">{{ item._value }}</td>
+						{%  if item is in p._daily_items %}
+							<td class="py-1" style="text-align: center">{{_('täglich')}}</td>
+						{%  elif item is in p._weekly_items %}
+							<td class="py-1" style="text-align: center">{{_('wöchentlich')}}</td>
+						{%  elif item is in p._monthly_items %}
+							<td class="py-1" style="text-align: center">{{_('monatlich')}}</td>
+						{%  elif item is in p._yearly_items %}
+							<td class="py-1" style="text-align: center">{{_('jährlich')}}</td>
+						{%  elif item is in p._onchange_items %}
+							<td class="py-1" style="text-align: center">{{_('on-change')}}</td>
+						{% else %}
+							<td class="py-1" style="text-align: center">-</td>
+						{% endif %}
+						{%  if item is in p._startup_items %}
+							<td class="py-1" style="text-align: center">{{_('yes')}}</td>
+						{% else %}
+							<td class="py-1" style="text-align: center">-</td>
+						{% endif %}
+						<td class="py-1" style="text-align: right">{{ item._value }}</td>
 						<td class="py-1">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
 						<td class="py-1">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
 					</tr>

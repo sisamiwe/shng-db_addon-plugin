@@ -73,6 +73,7 @@ item_attributes:
             - 'verbrauch_vorjahreszeitraum_minus0'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres
             - 'verbrauch_vorjahreszeitraum_minus1'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
             - 'verbrauch_vorjahreszeitraum_minus2'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren
+            # - 'zaehlerstand_tagesende'
             - 'zaehlerstand_heute_minus1'                   #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
             - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
             - 'zaehlerstand_woche_minus2'                   #num    weekly      Zählerstand / Wert am Ende der vorletzten Woche (aktuelle Woche -2 Woche)        
