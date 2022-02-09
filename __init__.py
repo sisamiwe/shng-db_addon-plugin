@@ -1405,7 +1405,7 @@ class DatabaseAddOn(SmartPlugin):
         _where = 'item_id = :item '
 
         # if query should exclude val_bool
-        if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg', 'diff_max']
+        if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg', 'diff_max']:
             _where = f'{_where}AND val_bool = 1 '
 
         # query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past
