@@ -646,8 +646,10 @@ class DatabaseAddOn(SmartPlugin):
 
             # set item value
             if _result is not None:
-                if isinstance(_result, float):
-                    _result = round(_result, 1)
+
+                if self.execute_debug:
+                    self.logger.debug(f"execute_items: Item value of item '{item.id()}' will be set to {_result}")
+
                 item(_result, self.get_shortname())
 
         if self.execute_debug:
@@ -924,6 +926,9 @@ class DatabaseAddOn(SmartPlugin):
         :type value: foo
         """
 
+        if self.on_change_debug:
+            self.logger.debug(f"_fill_cache_dicts called with updated_item={updated_item.id()} and value={value}.")
+
         map_dict = {
             'heute': self.tageswert_dict,
             'woche': self.wochenwert_dict,
@@ -944,11 +949,14 @@ class DatabaseAddOn(SmartPlugin):
                 _database_addon_fct = self._item_dict[item][0]
                 _var = _database_addon_fct.split('_')
 
-                # handle heute_max, heute_min, woche_max, woche_min.....
-                if len(_var) == 2 and _var[1] in ['min', 'max']:
-                    _timeframe = _var[0]
-                    _func = _var[1]
+                # handle minmax on-change items like minmax_heute_max, minmax_heute_min, minmax_woche_max, minmax_woche_min.....
+                if _database_addon_fct.startswith('minmax') and len(_var) == 3 and _var[2] in ['min', 'max']:
+                    _timeframe = _var[1]
+                    _func = _var[2]
                     _cache_dict = map_dict[_timeframe]
+
+                    if self.on_change_debug:
+                        self.logger.debug(f"_fill_cache_dicts: minmax item detected. Check for update of _cache_dicts and item value.")
 
                     # update cache dicts
                     if _database_item not in _cache_dict:
@@ -983,10 +991,13 @@ class DatabaseAddOn(SmartPlugin):
                             self.logger.debug(f"on-change item={item.id()} will be set to value={value}")
                         item(value, self.get_shortname())
 
-                # handle heute, woche, monat, jahr
-                elif len(_var) == 1:
-                    _timeframe = _var[0]
+                # handle verbrauch und zaehlerstand on-change items ending with heute, woche, monat, jahr
+                elif _database_addon_fct.startswith('verbrauch') and len(_var) == 2 and _var[1] in ['heute', 'woche', 'monat', 'jahr']:
+                    _timeframe = _var[1]
                     _cache_dict = map_dict1[_timeframe]
+
+                    if self.on_change_debug:
+                        self.logger.debug(f"_fill_cache_dicts: verbrauch item detected. Check for update of _cache_dicts and item value.")
 
                     # update cache dicts
                     if _database_item not in _cache_dict:
@@ -1244,7 +1255,7 @@ class DatabaseAddOn(SmartPlugin):
         if func == 'max1' and _oldest_log > _ts_start:
             self.logger.info(f"_query_item: Requested start time='{_ts_start}' of query with function='{func}' for Item='{item.id()}' is prior to oldest entry='{_oldest_log}'. Query cancelled.")
             return
-        # Alle anderen 'max1' nur ausführen, wenn die Datenbank auch zum Endzeitpunkt der Abfrage auch Werte enthält
+        # Alle anderen Funktionen nur ausführen, wenn die Datenbank auch zum Endzeitpunkt der Abfrage auch Werte enthält
         elif _oldest_log > _ts_end:
             self.logger.info(f"_query_item: Requested end time='{_ts_end}' of query with function='{func}' for Item='{item.id()}' is prior to oldest entry='{_oldest_log}'. Query cancelled.")
             return
@@ -1254,14 +1265,21 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.debug(f"_query_item: log={log}")
 
         if log is not None:
-            if log[0][0] is None:
-                self.logger.info(f'No entries for Item {item.id()} in DB found for requested end date. Oldest entry will be used instead')
-                value = int(self._get_oldest_value(item))
-            else:
-                if func == 'max1' and len(log) >= 2:
-                    value = round(log[1][1] - log[0][1], 1)
+            if len(log) > 0:
+                if log[0][0] is None:
+                    self.logger.info(f'No entries for Item {item.id()} in DB found for requested end date. Oldest entry will be used instead')
+                    value = int(self._get_oldest_value(item))
                 else:
-                    value = round(log[0][1], 1)
+                    if func == 'max1' and len(log) >= 2:
+                        value = round(log[1][1] - log[0][1], 1)
+                        if self.prepare_debug:
+                            self.logger.debug(f"_query_item: value={value} based on A) with value={log[1][1]} at {timestr_from_timestamp(log[1][0])} and B) with value={log[0][1]} at {timestr_from_timestamp(log[0][0])}")
+                    else:
+                        value = round(log[0][1], 1)
+                        if self.prepare_debug:
+                            self.logger.debug(f"_query_item: value={value} at {timestr_from_timestamp(log[0][0])}")
+            else:
+                self.logger.error(f"Error occurred during _query_log. Result is empty.")
         else:
             self.logger.error(f"Error occurred during _query_log.")
         
@@ -1623,6 +1641,12 @@ def valid_month(month):
         return True
     else:
         return False
+
+
+def timestr_from_timestamp(timestamp):
+
+    return datetime.datetime.fromtimestamp(int(timestamp) / 1000, datetime.timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
+
 
 ##############################
 #           Backup

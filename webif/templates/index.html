@@ -140,7 +140,7 @@
 						{% else %}
 							<td class="py-1" style="text-align: center">-</td>
 						{% endif %}
-						<td class="py-1" style="text-align: right">{{ item._value }}</td>
+						<td class="py-1" style="text-align: right">{{ item.property.value }}</td>
 						<td class="py-1">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
 						<td class="py-1">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
 					</tr>
