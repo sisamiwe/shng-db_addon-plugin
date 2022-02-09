@@ -30,11 +30,11 @@ parameters:
             de: 'Zeitlicher Abstand in Sekunden, mit der die Funktionen, die bei Startup ausgeführt werden sollen, ausgeführt werden'
             en: 'Delay in seconds, after which the startup functions will be run'
             
-    db_instance:
-        type: str
-        description:
-            de: 'Instanz of mysql-DB, die verwendet werden soll'
-            en: 'Instance of mysql-DB to be used'
+#    db_instance:
+#        type: str
+#        description:
+#            de: 'Instanz of mysql-DB, die verwendet werden soll'
+#            en: 'Instance of mysql-DB to be used'
 
 item_attributes:
     database_addon_fct:
@@ -43,7 +43,7 @@ item_attributes:
             de: 'Funktion des DB-Addon Plugins'
             en: 'Function of DB-Addon Plugins'
         valid_list:
-            # Wertehistorie total
+            # Wertehistorie total // Verbrauch
             - 'verbrauch_heute'                             #num    onchange    Verbrauch am heutigen Tag (Differenz zwischen aktuellem Wert und den Wert am Ende des vorherigen Tages)
             - 'verbrauch_woche'                             #num    onchange    Verbrauch in der aktuellen Woche
             - 'verbrauch_monat'                             #num    onchange    Verbrauch im aktuellen Monat
@@ -73,6 +73,7 @@ item_attributes:
             - 'verbrauch_vorjahreszeitraum_minus0'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres
             - 'verbrauch_vorjahreszeitraum_minus1'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
             - 'verbrauch_vorjahreszeitraum_minus2'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren
+            # Zaehlerstand
             # - 'zaehlerstand_tagesende'
             - 'zaehlerstand_heute_minus1'                   #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
             - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
@@ -153,7 +154,7 @@ item_attributes:
 item_structs:
     total_1:
         name: Struct für Wertehistorie mit dauerhaft ansteigendem Zählerstand
-        heute:
+        verbrauch_heute:
             name: Verbrauch heute
             database_addon_fct: verbrauch_heute
             database_addon_startup: yes
@@ -161,7 +162,7 @@ item_structs:
             visu_acl: ro
             # cache: yes
 
-        woche:
+        verbrauch_woche:
             name: Verbrauch seit Wochenbeginn
             database_addon_fct: verbrauch_woche
             database_addon_startup: yes
@@ -169,7 +170,7 @@ item_structs:
             visu_acl: ro
             # cache: yes
 
-        monat:
+        verbrauch_monat:
             name: Verbrauch seit Monatsbeginn
             database_addon_fct: verbrauch_monat
             database_addon_startup: yes
@@ -177,7 +178,7 @@ item_structs:
             visu_acl: ro
             # cache: yes
 
-        jahr:
+        verbrauch_jahr:
             name: Verbrauch seit Jahresbeginn
             database_addon_fct: verbrauch_jahr
             database_addon_startup: yes
@@ -185,63 +186,63 @@ item_structs:
             visu_acl: ro
             # cache: yes
 
-        rolling_12m:
+        verbrauch_rolling_12m:
             name: Verbrauch innerhalb der letzten 12 Monate ausgehend von gestern
             database_addon_fct: verbrauch_rolling_12m_heute_minus1
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern:
+        verbrauch_gestern:
             name: Verbrauch gestern
             database_addon_fct: verbrauch_heute_minus1
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern_minus1:
+        verbrauch_gestern_minus1:
             name: Verbrauch vorgestern
             database_addon_fct: verbrauch_heute_minus2
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern_minus2:
+        verbrauch_gestern_minus2:
             name: Verbrauch vor 3 Tagen
             database_addon_fct: verbrauch_heute_minus3
             type: num
             visu_acl: ro
             # cache: yes
 
-        vorwoche:
+        verbrauch_vorwoche:
             name: Verbrauch in der Vorwoche
             database_addon_fct: verbrauch_woche_minus1
             type: num
             visu_acl: ro
             # cache: yes
 
-        vorwoche_minus1:
+        verbrauch_vorwoche_minus1:
             name: Verbrauch vor 2 Wochen
             database_addon_fct: verbrauch_woche_minus2
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat:
+        verbrauch_vormonat:
             name: Verbrauch im Vormonat
             database_addon_fct: verbrauch_monat_minus1
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat_minus12:
+        verbrauch_vormonat_minus12:
             name: Verbrauch vor 12 Monaten
             database_addon_fct: verbrauch_monat_minus12
             type: num
             visu_acl: ro
             # cache: yes
 
-        vorjahreszeitraum:
+        verbrauch_vorjahreszeitraum:
             name: Verbrauch im Vorjahrzeitraum 1.1. bis jetzt vor einem Jahr
             database_addon_fct: verbrauch_vorjahreszeitraum_minus0
             database_addon_startup: yes
@@ -249,21 +250,21 @@ item_structs:
             visu_acl: ro
             # cache: yes
 
-        vormonat_zaehlerstand:
+        zaehlerstand_monat_minus1:
             name: Zählerstand zum Ende des Vormonates
             database_addon_fct: zaehlerstand_monat_minus1
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat_minus1_zaehlerstand:
+        zaehlerstand_monat_minus2:
             name: Zählerstand zum Monatsende vor 2 Monaten
             database_addon_fct: zaehlerstand_monat_minus2
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat_minus2_zaehlerstand:
+        zaehlerstand_monat_minus3:
             name: Zählerstand zum Monatsende vor 3 Monaten
             database_addon_fct: zaehlerstand_monat_minus3
             type: num
@@ -280,70 +281,70 @@ item_structs:
     total_2:
         name: Struct Erweiterung für Wertehistorie mit dauerhaft ansteigendem Zählerstand
 
-        gestern_minus3:
+        verbrauch_gestern_minus3:
             name: Verbrauch vor 3 Tagen
             database_addon_fct: verbrauch_heute_minus3
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern_minus4:
+        verbrauch_gestern_minus4:
             name: Verbrauch vor 4 Tagen
             database_addon_fct: verbrauch_heute_minus4
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern_minus5:
+        verbrauch_gestern_minus5:
             name: Verbrauch vor 5 Tagen
             database_addon_fct: verbrauch_heute_minus5
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern_minus6:
+        verbrauch_gestern_minus6:
             name: Verbrauch vor 6 Tagen
             database_addon_fct: verbrauch_heute_minus6
             type: num
             visu_acl: ro
             # cache: yes
 
-        gestern_minus7:
+        verbrauch_gestern_minus7:
             name: Verbrauch vor 7 Tagen
             database_addon_fct: verbrauch_heute_minus7
             type: num
             visu_acl: ro
             # cache: yes
 
-        vorwoche_minus2:
+        verbrauch_vorwoche_minus2:
             name: Verbrauch vor 3 Wochen
             database_addon_fct: verbrauch_woche_minus3
             type: num
             visu_acl: ro
             # cache: yes
 
-        vorwoche_minus3:
+        verbrauch_vorwoche_minus3:
             name: Verbrauch vor 4 Wochen
             database_addon_fct: verbrauch_woche_minus4
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat_minus1:
+        verbrauch_vormonat_minus1:
             name: Verbrauch vor 2 Monaten
             database_addon_fct: verbrauch_monat_minus2
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat_minus2:
+        verbrauch_vormonat_minus2:
             name: Verbrauch vor 3 Monaten
             database_addon_fct: verbrauch_monat_minus3
             type: num
             visu_acl: ro
             # cache: yes
 
-        vormonat_minus3:
+        verbrauch_vormonat_minus3:
             name: Verbrauch vor 4 Monaten
             database_addon_fct: verbrauch_monat_minus4
             type: num

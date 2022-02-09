@@ -43,8 +43,8 @@ import re
 #########################################################################
 # ToDo
 #   - 'avg' for on-chance items
-#   - wenn item Berechnung läuft, darf keine zweite starten
-#   - on-change items last... umsetzen
+#   - on-change items last... implementieren
+#   - zaehlerstand_tagesende implementieren
 #########################################################################
 
 
@@ -122,19 +122,19 @@ class DatabaseAddOn(SmartPlugin):
         self.connection_data = None                 # connection data list to database
         self.db_driver = None                       # driver for database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
-        self.alive = None
+        self.alive = None                           # Is plugin alive?
+        self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
+        self.execute_items_active = False           # Is there a running _execute_items method
+        self.further_item_list = []                 # Buffer for item_list, used if _execute_items is still running
         self.parse_debug = True                     # Enable / Disable debug logging for method 'parse item'
         self.execute_debug = True                   # Enable / Disable debug logging for method 'execute items'
         self.sql_debug = True                       # Enable / Disable debug logging for sql stuff
         self.on_change_debug = True                 # Enable / Disable debug logging for method '_fill_cache_dicts'
         self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
-        self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
-        self.execute_items_active = False           # Is there a running _execute_items method
-        self.further_item_list = []                 # buffer for item_list, used if _execute_items is still running
 
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
-        self.db_instance = self.get_parameter_value('db_instance')
+        # self.db_instance = self.get_parameter_value('db_instance')
 
         # check existence of db-plugin, get parameters, and init connection to db
         if not self._check_db_existence():
@@ -582,6 +582,12 @@ class DatabaseAddOn(SmartPlugin):
                     _result = self._query_item('max', _database_item, _timeframe, start=_timedelta, end=_timedelta)
                     if self.execute_debug:
                         self.logger.debug(f"zaehlerstand: _result={_result}")
+                    if _result == 0:
+                        if self.execute_debug:
+                            self.logger.debug(f"execute_items: _result={_result}. It seem that there was no entry for _timeframe={_timeframe}, _timedelta={_timedelta} in DB. Try to get last value prior to that.")
+                        _result = self._query_item('max', _database_item, _timeframe, start=_timedelta+10, end=_timedelta+1)
+                        if self.execute_debug:
+                            self.logger.debug(f"execute_items: Next valid entry found is {_result}.")
 
             # handle item starting with 'minmax_'
             elif _database_addon_fct.startswith('minmax_'):
@@ -1287,7 +1293,11 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.debug(f"_query_item: log={log}")
 
         if log is not None:
-            if len(log) > 0:
+            if len(log) == 0:
+                value = 0
+                if self.prepare_debug:
+                    self.logger.debug(f"No entry found database for requested timeframe. Try to get the valid value prior to given point in time.")
+            else:
                 if log[0][0] is None:
                     self.logger.info(f'No entries for Item {item.id()} in DB found for requested end date. Oldest entry will be used instead')
                     value = int(self._get_oldest_value(item))
@@ -1295,13 +1305,11 @@ class DatabaseAddOn(SmartPlugin):
                     if func == 'max1' and len(log) >= 2:
                         value = round(log[1][1] - log[0][1], 1)
                         if self.prepare_debug:
-                            self.logger.debug(f"_query_item: value={value} based on A) with value={log[1][1]} at {timestr_from_timestamp(log[1][0])} and B) with value={log[0][1]} at {timestr_from_timestamp(log[0][0])}")
+                            self.logger.debug(f"_query_item: value={value} based on A) with value={log[1][1]} at {timestamp_to_timestring(log[1][0])} and B) with value={log[0][1]} at {timestamp_to_timestring(log[0][0])}")
                     else:
                         value = round(log[0][1], 1)
                         if self.prepare_debug:
-                            self.logger.debug(f"_query_item: value={value} at {timestr_from_timestamp(log[0][0])}")
-            else:
-                self.logger.error(f"Error occurred during _query_log. Result is empty.")
+                            self.logger.debug(f"_query_item: value={value} at {timestamp_to_timestring(log[0][0])}")
         else:
             self.logger.error(f"Error occurred during _query_log.")
         
@@ -1684,7 +1692,7 @@ def valid_month(month):
         return False
 
 
-def timestr_from_timestamp(timestamp):
+def timestamp_to_timestring(timestamp):
 
     return datetime.datetime.fromtimestamp(int(timestamp) / 1000, datetime.timezone.utc).astimezone().strftime('%Y-%m-%d %H:%M:%S')
 
