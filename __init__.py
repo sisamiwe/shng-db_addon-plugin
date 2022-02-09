@@ -128,7 +128,9 @@ class DatabaseAddOn(SmartPlugin):
         self.sql_debug = True                       # Enable / Disable debug logging for sql stuff
         self.on_change_debug = True                 # Enable / Disable debug logging for method '_fill_cache_dicts'
         self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
-        self.activate_update = False                # item updates for outside this plugin will be ignored until startup will be called
+        self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
+        self.execute_items_active = False           # Is there a running _execute_items method
+        self.further_item_list = []
 
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
@@ -424,6 +426,15 @@ class DatabaseAddOn(SmartPlugin):
         :type item_list: list
         """
 
+        # check if another cyclic cmd run is still active and handle it
+        if self.execute_items_active:
+            self.logger.warning('Execute_items called, but previous run is still active. Run will be started after current one.')
+            self.further_item_list.extend(item_list)
+            return
+
+        # set lock
+        self.execute_items_active = True
+
         _item_count = len(item_list)
 
         if self.execute_debug:
@@ -664,6 +675,14 @@ class DatabaseAddOn(SmartPlugin):
         if self.execute_debug:
             _duration = int(time.time() - _start_time)
             self.logger.debug(f"execute_items: FINISHED calculating {len(item_list)} items within {_duration} sec.")
+
+        # release lock
+        self.execute_items_active = False
+
+        if self.further_item_list:
+            if self.execute_debug:
+                self.logger.debug(f"Execute_items now runs items called during last run.")
+            self.execute_items(list(set(self.further_item_list)))
 
     ##############################
     #       Public functions
