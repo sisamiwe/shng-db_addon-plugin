@@ -1403,6 +1403,11 @@ class DatabaseAddOn(SmartPlugin):
 
         # if query is from now (end == 0) until end of database (start is None)
         _where = 'item_id = :item '
+
+        # if query should exclude val_bool
+        if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg', 'diff_max']
+            _where = f'{_where}AND val_bool = 1 '
+
         # query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past
         _where_between = {
             'year':  'AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN MAKEDATE(year(now()-interval :start YEAR), 1) AND MAKEDATE(year(now()-interval :end YEAR), 1) ',
