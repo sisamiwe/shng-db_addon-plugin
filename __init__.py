@@ -130,7 +130,7 @@ class DatabaseAddOn(SmartPlugin):
         self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
         self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
         self.execute_items_active = False           # Is there a running _execute_items method
-        self.further_item_list = []
+        self.further_item_list = []                 # buffer for item_list, used if _execute_items is still running
 
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
@@ -471,7 +471,8 @@ class DatabaseAddOn(SmartPlugin):
 
                 # handle all on_change functions of format 'verbrauch_timeframe' like 'verbrauch_heute'
                 if len(_var) == 2 and _var[1] in ['heute', 'woche', 'monat', 'jahr']:
-                    self.logger.info(f"on_change function={_var[1]} detected; will be calculated by next change of database item")
+                    if self.execute_debug:
+                        self.logger.debug(f"on_change function={_var[1]} detected; will be calculated by next change of database item")
 
                 # handle all functions 'verbrauch' in format 'verbrauch_timeframe_timedelta' like 'verbrauch_heute_minus2'
                 elif len(_var) == 3 and _var[1] in ['heute', 'woche', 'monat', 'jahr'] and _var[2].startswith('minus'):

@@ -23,7 +23,7 @@ plugin:
 
 parameters:
     startup_run_delay:
-        type: num
+        type: int
         mandatory: false
         default: 0
         description:

@@ -47,8 +47,8 @@
 			<td class="py-1">{% if p._db._connected %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
 			<td class="py-1" width="150px"><strong>{{ _('Treiber') }}</strong></td>
 			<td class="py-1">{{ p.db_driver }}</td>
-			<td class="py-1"></td>
-			<td class="py-1"></td>
+			<td class="py-1" width="150px"><strong>{{ _('Startup Delay') }}</strong></td>
+			<td class="py-1">{{ (p.startup_run_delay) }}s</td>
 		</tr>
 		{% set first = True %}
 		{% for key, value in p._db._params.items() %}
