@@ -450,7 +450,7 @@ class DatabaseAddOn(SmartPlugin):
             _time_str_2 = None
             _result = None
 
-            self.logger.info(f"XXXXXXXXXX Item No {ix}/{_item_count} '{item.id()}' will be processed with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()}")
+            self.logger.info(f"XXXXXXXXXX Item No {ix+1}/{_item_count} '{item.id()}' will be processed with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()}")
 
             # handle general functions
             if _database_addon_fct.startswith('general_'):
@@ -682,7 +682,9 @@ class DatabaseAddOn(SmartPlugin):
         if self.further_item_list:
             if self.execute_debug:
                 self.logger.debug(f"Execute_items now runs items called during last run.")
-            self.execute_items(list(set(self.further_item_list)))
+            new_item_list = list(set(self.further_item_list))
+            self.further_item_list =[]
+            self.execute_items(new_item_list)
 
     ##############################
     #       Public functions
@@ -1601,7 +1603,7 @@ class DatabaseAddOn(SmartPlugin):
             params = {}
             
         if self.sql_debug:
-            self.logger.debug(f"_query: Called with fetch={fetch}, query={query}, params={params}")
+            self.logger.debug(f"_query: Called with query={query}, params={params}")
             
         if not self._initialize_db():
             return None
