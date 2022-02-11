@@ -28,8 +28,8 @@
 	$(document).ready( function () {
 		$(window).trigger('datatables_defaults'); // loading default behaviour
 		try {
-			$('#maintable').DataTable( {"paging": false, fixedHeader: true} );
-            $('#mtable2').DataTable( {"paging": false, fixedHeader: true} );
+			$('#maintable').DataTable( {} );
+            $('#mtable2').DataTable( {} );
 			}
 		catch (e) {
 			console.log("Datatable JS not loaded, showing standard table without reorder option " + e)
@@ -77,7 +77,7 @@
 -->
 {% block buttons %}
 	<div>
-		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Recalculation of all items?') }}')) { jQuery.get('recalc_all'); }">{{_('Recalc all')}}</button>
+		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Recalculation of all items?') }}')) { jQuery.get('recalc_all'); }">{{_('Re-evaluate all')}}</button>
 		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Clean all cache dicts?') }}')) { jQuery.get('clean_cache_dicts'); }">{{_('Clean cache dicts')}}</button>
 	</div>
 {% endblock %}
@@ -141,7 +141,7 @@
 						{% else %}
 							<td class="py-1" style="text-align: center">-</td>
 						{% endif %}
-						<td class="py-1" style="text-align: right">{{ item.property.value }}</td>
+						<td class="py-1" style="text-align: right">{{ item.property.value | float }}</td>
 						<td class="py-1">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
 						<td class="py-1">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
 					</tr>
