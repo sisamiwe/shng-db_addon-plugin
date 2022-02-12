@@ -25,14 +25,9 @@
 #
 #########################################################################
 
-import datetime
-import time
-import os
-
 from lib.item import Items
 from lib.model.smartplugin import SmartPluginWebIf
 import json
-
 
 # ------------------------------------------
 #    Webinterface of the plugin
@@ -58,7 +53,6 @@ class WebInterface(SmartPluginWebIf):
         self.webif_dir = webif_dir
         self.plugin = plugin
         self.items = Items.get_instance()
-
         self.tplenv = self.init_template_environment()
 
     @cherrypy.expose
@@ -68,14 +62,13 @@ class WebInterface(SmartPluginWebIf):
 
         Render the template and return the html file to be delivered to the browser
 
-        :return: contents of the template after being rendered
+        :return: contents of the template after beeing rendered
         """
 
         # get list of items with the attribute database_addon_fct
         plgitems = []
-        for item in self.items.return_items():
-            if 'database_addon_fct' in item.conf:
-                plgitems.append(item)
+        for item in self.plugin._item_dict:
+            plgitems.append(item)
 
         # additionally hand over the list of items, sorted by item-path
         tmpl = self.tplenv.get_template('index.html')
@@ -93,17 +86,16 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = {}
+            data = self.plugin._webdata
+            for item in self.plugin._item_dict:
+                if data.get(item.id(), None):
+                    data[item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
+                    data[item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
 
-            # data['item'] = {}
-            # for i in self.plugin.items:
-            #     data['item'][i]['value'] = self.plugin.getitemvalue(i)
-            #
-            # return it as json the the web page
-            # try:
-            #     return json.dumps(data)
-            # except Exception as e:
-            #     self.logger.error("get_data_html exception: {}".format(e))
+            try:
+                return json.dumps(data)
+            except Exception as e:
+                self.logger.error(f"get_data_html exception: {e}")
         return {}
 
     @cherrypy.expose

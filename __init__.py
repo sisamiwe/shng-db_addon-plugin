@@ -116,6 +116,7 @@ class DatabaseAddOn(SmartPlugin):
         self.wochenwert_dict = {}                   # dict to hold min and max value of current week for items
         self.monatswert_dict = {}                   # dict to hold min and max value of current month for items
         self.jahreswert_dict = {}                   # dict to hold min and max value of current year for items
+        self._webdata = {}                          # dict to hold information for webif update
         self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
         self._db = None                             # object of database
@@ -237,12 +238,17 @@ class DatabaseAddOn(SmartPlugin):
                 if self.parse_debug:
                     self.logger.debug(f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item.id()}")
                 self._item_dict[item] = (_database_addon_fct, _database_item, _database_addon_ignore_value)
+                self._webdata.update({item.id(): {}})
+                self._webdata[item.id()].update({'attribute': _database_addon_fct})
 
                 # add item to be run on startup
                 if _database_addon_startup is not None:
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run on startup")
                     self._startup_items.add(item)
+                    self._webdata[item.id()].update({'startup': True})
+                else:
+                    self._webdata[item.id()].update({'startup': False})
 
                 # handle items starting with 'zaehlerstand_tagesende'
                 if _database_addon_fct == 'zaehlerstand_tagesende':
@@ -371,6 +377,20 @@ class DatabaseAddOn(SmartPlugin):
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run on-change.")
                     self._database_items.add(_database_item)
+
+                # create data for webIF
+                _update_cycle = 'None'
+                if item in self._daily_items:
+                    _update_cycle = 'täglich'
+                elif item in self._weekly_items:
+                    _update_cycle = 'wöchentlich'
+                elif item in self._monthly_items:
+                    _update_cycle = 'monatlich'
+                elif item in self._yearly_items:
+                    _update_cycle = 'jährlich'
+                elif item in self._onchange_items:
+                    _update_cycle = 'on-change'
+                self._webdata[item.id()].update({'cycle': _update_cycle})
 
         # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen
         if self.has_iattr(item.conf, 'database'):
@@ -681,12 +701,11 @@ class DatabaseAddOn(SmartPlugin):
             if self.execute_debug:
                 self.logger.debug(f"execute_items: result is {_result} for item '{item.id()}' with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()} _database_addon_params={_database_addon_params}")
 
-            # set item value
+            # set item value and put data into webif update dict
             if _result is not None:
-
                 if self.execute_debug:
                     self.logger.debug(f"execute_items: Item value of item '{item.id()}' will be set to {_result}")
-
+                self._webdata[item.id()].update({'value': _result})
                 item(_result, self.get_shortname())
 
         _duration = int(time.time() - _start_time)
@@ -1028,10 +1047,11 @@ class DatabaseAddOn(SmartPlugin):
                     if _update:
                         _cache_dict[_database_item][_func] = value
 
-                    # set item value
+                    # set item value and put data into webif update dict
                     value = _cache_dict[_database_item][_func]
                     if self.on_change_debug:
                         self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
+                    self._webdata[item.id()].update({'value': value})
                     item(value, self.get_shortname())
 
                 # handle verbrauch und zaehlerstand on-change items ending with heute, woche, monat, jahr

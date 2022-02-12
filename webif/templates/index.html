@@ -3,32 +3,34 @@
 {% set logo_frame = false %}
 
 <!-- set update_interval to a value > 0 (in milliseconds) to enable periodic data updates -->
-{% set update_interval = 0 %}
+{% set update_interval = 5000 %}
 
 <!--
 	Additional script tag for plugin specific javascript code go into this block
 -->
 {% block pluginscripts %}
 <script>
-	function handleUpdatedData(response, dataSet=null) {
-		if (dataSet === 'devices_info' || dataSet === null) {
-			var objResponse = JSON.parse(response);
-			myProto = document.getElementById(dataSet);
-			for (var device in objResponse) {
-				/*
-				shngInsertText (device+'_source', objResponse[device]['source']);
-				shngInsertText (device+'_powerState', objResponse[device]['powerState']);
-				*/
-			}
-		}
-	}
+    function handleUpdatedData(response, dataSet=null) {
+        if (dataSet === 'devices_info' || dataSet === null) {
+            var objResponse = JSON.parse(response);
+            
+            for (item in objResponse) {
+                value = parseFloat(objResponse[item]['value'])
+                shngInsertText(item+'_value', value);
+                shngInsertText(item+'_last_update', objResponse[item]['last_update']);
+                shngInsertText(item+'_last_change', objResponse[item]['last_change']);
+            }
+        }
+    }
 </script>
+
 
 <script>
 	$(document).ready( function () {
 		$(window).trigger('datatables_defaults'); // loading default behaviour
 		try {
 			$('#maintable').DataTable( {} );
+            $('#maintable2').DataTable( {} );
             $('#mtable2').DataTable( {} );
 			}
 		catch (e) {
@@ -85,21 +87,22 @@
 <!--
 	Define the number of tabs for the body of the web interface (1 - 6)
 -->
-{% set tabcount = 2 %}
+{% set tabcount = 3 %}
 
 
 <!--
 	Set the tab that will be visible on start, if another tab that 1 is wanted (1 - 3)
 -->
 {% if p._item_dict %}
-	{% set start_tab = 1 %}
+	{% set start_tab = 2 %}
 {% endif %}
 
 
 <!--
 	Content block for the first tab of the Webinterface
 -->
-{% set tab1title = "<strong>" ~ p.get_shortname() ~ " Items</strong> " %}
+{% set item_count = p._item_dict|length %}
+{% set tab1title = "<strong>" ~ p.get_shortname() ~ " Items</strong> (" ~ item_count ~ ")" %}
 {% block bodytab1 %}
 
 <div class="table-responsive" style="margin-left: 3px; margin-right: 3px;" class="row">
@@ -110,9 +113,9 @@
 					<th>{{_('Item')}}</th>
 					<th>{{_('Typ')}}</th>
 					<th>{{_('AddOn Attribute')}}</th>
-					<th>{{_('Update Cycle')}}</th>
-					<th>{{_('Run on init')}}</th>
-					<th>{{_('Wert')}}</th>
+					<th style="text-align: center">{{_('Update Cycle')}}</th>
+					<th style="text-align: center">{{_('Run on init')}}</th>
+					<th style="text-align: right">{{_('Wert')}}</th>
 					<th>{{_('Letztes Update')}}</th>
 					<th>{{_('Letzter Change')}}</th>
 				</tr>
@@ -152,9 +155,46 @@
 </div>
 {% endblock bodytab1 %}
 
-
-{% set tab2title = "<strong>" ~ p.get_shortname() ~ " Maintenance</strong>" %}
+{% set tab2title = "<strong>" ~ p.get_shortname() ~ " Items auto</strong> (" ~ item_count ~ ")" %}
 {% block bodytab2 %}
+<div class="table-responsive" style="margin-left: 3px; margin-right: 3px;" class="row">
+    <div class="col-sm-12">
+		<table id="maintable2" class="table table-striped table-hover pluginList display">
+			<thead>
+				<tr>
+					<th>{{_('Item')}}</th>
+                    <th>{{_('Typ')}}</th>
+                    <th class="attribute">{{_('AddOn Attribute')}}</th>
+					<th style="text-align: center">{{_('Update Cycle')}}</th>
+					<th style="text-align: center">{{_('Run on init')}}</th>
+					<th class="value" style="text-align: right">{{_('Wert')}}</th>
+                    <th class="last_update">{{_('Letztes Update')}}</th>
+					<th class="last_change">{{_('Letzter Change')}}</th>
+				</tr>
+			</thead>
+			<tbody>
+                {% for item in items %}
+                    {% set item_id = item.id() %}
+                    <tr>
+                        <td class="py-1">{{ item_id }}</td>
+                        <td class="py-1">{{ item.property.type }}</td>
+						<td class="py-1">{{ p._webdata[item_id]['attribute'] }}</td>
+                        <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['cycle'] }}</td>
+                        <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['startup'] }}</td>
+						<td class="py-1" id="{{ item_id }}_value" style="text-align: right">{{ item.property.value | float }}</td>
+                        <td class="py-1" id="{{ item_id }}_last_update">{{ _('Initialisiere...') }}</td>
+                        <td class="py-1" id="{{ item_id }}_last_change">{{ _('Initialisiere...') }}</td>
+                    </tr>
+                 {% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+{% endblock bodytab2 %}
+
+
+{% set tab3title = "<strong>" ~ p.get_shortname() ~ " Maintenance</strong>" %}
+{% block bodytab3 %}
 <div class="table-responsive" style="margin-left: 3px; margin-right: 3px;" class="row">
     <div class="col-sm-12">
 		<table id="mtable2" class="table table-striped table-hover pluginList display">
@@ -165,6 +205,10 @@
 				</tr>
 			</thead>
 			<tbody>
+                <tr>
+					<td class="py-1">{{ _('_webdata') }}</td>
+					<td class="py-1">{{ p._webdata }}</td>
+				</tr>
 				<tr>
 					<td class="py-1">{{ _('_item_dict') }}</td>
 					<td class="py-1">{{ p._item_dict }}</td>
@@ -253,5 +297,4 @@
 		</table>
 	</div>
 </div>
-{% endblock bodytab2 %}
-
+{% endblock bodytab3 %}
