@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts':                       {'func': 'max',         'timespan': 'year',  'start': None, 'end': None, 'group': 'day'},
         }
 
-    PLUGIN_VERSION = '1.0.C'
+    PLUGIN_VERSION = '1.0.D'
 
     def __init__(self, sh):
         """
@@ -136,6 +136,7 @@ class DatabaseAddOn(SmartPlugin):
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.ignore_0_at_temp_items = self.get_parameter_value('ignore_0_at_temp_items')
+        self.webif_pagelength = self.get_parameter_value('webif_pagelength')
         # self.db_instance = self.get_parameter_value('db_instance')
 
         # check existence of db-plugin, get parameters, and init connection to db

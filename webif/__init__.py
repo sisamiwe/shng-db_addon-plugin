@@ -72,7 +72,10 @@ class WebInterface(SmartPluginWebIf):
 
         # additionally hand over the list of items, sorted by item-path
         tmpl = self.tplenv.get_template('index.html')
-        return tmpl.render(p=self.plugin, items=sorted(plgitems, key=lambda k: str.lower(k['_path'])),)
+        return tmpl.render(p=self.plugin,
+                           webif_pagelength=self.plugin.webif_pagelength,
+                           items=sorted(plgitems, key=lambda k: str.lower(k['_path'])),
+                           item_count=len(plgitems))
 
     @cherrypy.expose
     def get_data_html(self, dataSet=None):

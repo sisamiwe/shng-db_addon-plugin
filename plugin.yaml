@@ -12,7 +12,7 @@ plugin:
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
 #    support: https://knx-user-forum.de/forum/supportforen/smarthome-py
 
-    version: 1.0.C                  # Plugin version (must match the version specified in __init__.py)
+    version: 1.0.D                  # Plugin version (must match the version specified in __init__.py)
     sh_minversion: 1.8              # minimum shNG version to use this plugin
 #    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
 #    py_minversion: 3.6             # minimum Python version to use for this plugin
@@ -37,6 +37,18 @@ parameters:
         description:
             de: "Bei Items mit 'temp' im Pfad werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
             en: "At items having 'temp' in path, val_num=0 will be ignored for database queries"
+            
+    webif_pagelength:
+        type: int
+        default: 100
+        valid_list:
+            - -1
+            - 25
+            - 50
+            - 100
+        description:
+            de: 'Anzahl an Items, die standardmäßig in einer Web Interface Tabelle pro Seite angezeigt werden'
+            en: 'Amount of items being listed in a web interface table per page by default'
             
 #    db_instance:
 #        type: str
@@ -164,6 +176,7 @@ item_attributes:
         description:
             de: 'Wert der bei Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert werden soll'
             en: 'Value which will be ignored at datebase query'
+
 
 item_structs:
     verbrauch_1:
