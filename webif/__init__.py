@@ -96,7 +96,7 @@ class WebInterface(SmartPluginWebIf):
                     data[item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
 
             try:
-                return json.dumps(data)
+                return json.dumps(data, default=str)
             except Exception as e:
                 self.logger.error(f"get_data_html exception: {e}")
         return {}
