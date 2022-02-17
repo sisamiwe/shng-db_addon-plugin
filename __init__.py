@@ -1338,11 +1338,20 @@ class DatabaseAddOn(SmartPlugin):
                     value = int(self._get_oldest_value(item))
                 else:
                     if func == 'max1' and len(log) >= 2:
-                        value = round(log[1][1] - log[0][1], 1)
+                        try:
+                            value = log[1][1] - log[0][1]
+                        except Exception:
+                            pass
+                        if value:
+                            value = round(value, 1)
+                        else:
+                            value = 0
                         if self.prepare_debug:
                             self.logger.debug(f"_query_item: value={value} based on A) with value={log[1][1]} at {timestamp_to_timestring(log[1][0])} and B) with value={log[0][1]} at {timestamp_to_timestring(log[0][0])}")
                     else:
-                        value = round(log[0][1], 1)
+                        value = log[0][1]
+                        if value:
+                            value = round(value, 1)
                         if self.prepare_debug:
                             self.logger.debug(f"_query_item: value={value} at {timestamp_to_timestring(log[0][0])}")
         else:

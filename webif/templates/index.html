@@ -4,8 +4,20 @@
 
 {% block pluginstyles %}
 <style>
-  table th.value {
+  table th.item {
+    width: 350px;
+  }
+  table th.type {
+    width: 50px;
+  }
+  table th.attribute {
     width: 250px;
+  }
+  table th.cycle {
+    width: 150px;
+  }
+  table th.init {
+    width: 100px;
   }
   #maintable {
      display: none;
@@ -122,11 +134,11 @@
 		<table id="maintable" class="table0 table-striped table-hover pluginList display">
 			<thead>
 				<tr>
-					<th>{{_('Item')}}</th>
-                    <th>{{_('Typ')}}</th>
+					<th class="item">{{_('Item')}}</th>
+                    <th class="type">{{_('Typ')}}</th>
                     <th class="attribute">{{_('AddOn Attribute')}}</th>
-					<th style="text-align: center">{{_('Update Cycle')}}</th>
-					<th style="text-align: center">{{_('Run on init')}}</th>
+					<th class="cycle" style="text-align: center">{{_('Update Cycle')}}</th>
+					<th class="init" style="text-align: center">{{_('Run on init')}}</th>
 					<th class="value" style="text-align: right">{{_('Wert')}}</th>
                     <th style="text-align: center">{{_('Letztes Update')}}</th>
 					<th style="text-align: center">{{_('Letzter Change')}}</th>
@@ -141,9 +153,9 @@
 						<td class="py-1">{{ p._webdata[item_id]['attribute'] }}</td>
                         <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['cycle'] }}</td>
                         <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['startup'] }}</td>
-						<td class="py-1" id="{{ item_id }}_value" style="text-align: right">{{ item.property.value | float }}</td>
-                        <td class="py-1" id="{{ item_id }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
-                        <td class="py-1" id="{{ item_id }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}{{_('.')}}</td>
+						<td class="py-1" id="{{ item_id }}_value" style="text-align: right">{{_('.')}}{{ item.property.value | float }}</td>
+                        <td class="py-1" id="{{ item_id }}_last_update" style="text-align: center">{{_('.')}}{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                        <td class="py-1" id="{{ item_id }}_last_change" style="text-align: center">{{_('.')}}{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}{{_('.')}}</td>
                     </tr>
                  {% endfor %}
 			</tbody>
