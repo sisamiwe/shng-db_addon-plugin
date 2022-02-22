@@ -367,7 +367,7 @@ item_structs:
 
         zaehlerstand_vormonat:
             name: Zählerstand zum Ende des Vormonates
-            database_addon_fct: verbrauch_zaehlerstand_monat_minus1
+            database_addon_fct: zaehlerstand_monat_minus1
             type: num
             visu_acl: ro
             # cache: yes
