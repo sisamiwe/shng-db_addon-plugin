@@ -1013,7 +1013,7 @@ class DatabaseAddOn(SmartPlugin):
 
         for item in self._onchange_items:
             _database_item = self._item_dict[item][1]
-            if _database_item == updated_item:
+            if value and _database_item == updated_item:
                 _database_addon_fct = self._item_dict[item][0]
                 _var = _database_addon_fct.split('_')
                 _ignore_value = self._item_dict[item][2]
