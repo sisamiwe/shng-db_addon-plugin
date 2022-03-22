@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts':                       {'func': 'max',         'timespan': 'year',  'start': None, 'end': None, 'group': 'day'},
         }
 
-    PLUGIN_VERSION = '1.0.D'
+    PLUGIN_VERSION = '1.0.E'
 
     def __init__(self, sh):
         """
@@ -979,6 +979,10 @@ class DatabaseAddOn(SmartPlugin):
 
         # return request of database
         return self._fetchall(query, params)
+
+    @property
+    def item_list(self):
+        return list(self._item_dict.keys())
 
     ##############################
     #        Support stuff

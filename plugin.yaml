@@ -12,7 +12,7 @@ plugin:
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
 #    support: https://knx-user-forum.de/forum/supportforen/smarthome-py
 
-    version: 1.0.D                  # Plugin version (must match the version specified in __init__.py)
+    version: 1.0.E                  # Plugin version (must match the version specified in __init__.py)
     sh_minversion: 1.8              # minimum shNG version to use this plugin
 #    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
 #    py_minversion: 3.6             # minimum Python version to use for this plugin
@@ -24,15 +24,13 @@ plugin:
 parameters:
     startup_run_delay:
         type: int
-        mandatory: false
         default: 0
         description:
-            de: 'Zeitlicher Abstand in Sekunden, mit der die Funktionen, die bei Startup ausgeführt werden sollen, ausgeführt werden'
-            en: 'Delay in seconds, after which the startup functions will be run'
+            de: 'Zeitlicher Abstand in Sekunden, mit der die Berechnungen bei Startup ausgeführt werden sollen'
+            en: 'Delay in seconds, after which the startup calculations will be run'
 
     ignore_0_at_temp_items:
         type: bool
-        mandatory: false
         default: false
         description:
             de: "Bei Items mit 'temp' im Pfad werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
@@ -40,15 +38,25 @@ parameters:
             
     webif_pagelength:
         type: int
-        default: 100
+        default: -1
         valid_list:
             - -1
+            - 0
             - 25
             - 50
             - 100
         description:
-            de: 'Anzahl an Items, die standardmäßig in einer Web Interface Tabelle pro Seite angezeigt werden'
-            en: 'Amount of items being listed in a web interface table per page by default'
+            de: 'Anzahl an Items, die standardmäßig in einer Web Interface Tabelle pro Seite angezeigt werden.
+                 0 = automatisch, -1 = alle'
+            en: 'Amount of items being listed in a web interface table per page by default.
+                 0 = automatic, -1 = all'
+        description_long:
+            de: 'Anzahl an Items, die standardmäßig in einer Web Interface Tabelle pro Seite angezeigt werden.\n
+                 Bei 0 wird die Tabelle automatisch an die Höhe des Browserfensters angepasst.\n
+                 Bei -1 werden alle Tabelleneinträge auf einer Seite angezeigt.'
+            en: 'Amount of items being listed in a web interface table per page by default.\n
+                 0 adjusts the table height automatically based on the height of the browser windows.\n
+                 -1 shows all table entries on one page.'
             
 #    db_instance:
 #        type: str

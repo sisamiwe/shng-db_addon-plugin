@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # vim: set encoding=utf-8 tabstop=4 softtabstop=4 shiftwidth=4 expandtab
 #########################################################################
-#  Copyright 2020-     <AUTHOR>                                   <EMAIL>
+#  Copyright 2022-         Michael Wenzel           wenzel_michael@web.de
 #########################################################################
 #  This file is part of SmartHomeNG.
 #  https://www.smarthomeNG.de
 #  https://knx-user-forum.de/forum/supportforen/smarthome-py
 #
-#  Sample plugin for new plugins to run with SmartHomeNG version 1.5 and
-#  upwards.
+#  This plugin provides additional functionality to mysql database
+#  connected via database plugin
 #
 #  SmartHomeNG is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,16 +25,10 @@
 #
 #########################################################################
 
+import json
+import cherrypy
 from lib.item import Items
 from lib.model.smartplugin import SmartPluginWebIf
-import json
-
-# ------------------------------------------
-#    Webinterface of the plugin
-# ------------------------------------------
-
-import cherrypy
-import csv
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -65,17 +59,22 @@ class WebInterface(SmartPluginWebIf):
         :return: contents of the template after beeing rendered
         """
 
-        # get list of items with the attribute database_addon_fct
-        plgitems = []
-        for item in self.plugin._item_dict:
-            plgitems.append(item)
+        # get webif_pagelength
+        try:
+            pagelength = self.plugin.webif_pagelength
+        except Exception:
+            pagelength = 100
 
-        # additionally hand over the list of items, sorted by item-path
         tmpl = self.tplenv.get_template('index.html')
+
         return tmpl.render(p=self.plugin,
-                           webif_pagelength=self.plugin.webif_pagelength,
-                           items=sorted(plgitems, key=lambda k: str.lower(k['_path'])),
-                           item_count=len(plgitems))
+                           webif_pagelength=pagelength,
+                           items=sorted(self.plugin.item_list, key=lambda k: str.lower(k['_path'])),
+                           item_count=len(self.plugin.item_list),
+                           plugin_shortname=self.plugin.get_shortname(),
+                           plugin_version=self.plugin.get_version(),
+                           plugin_info=self.plugin.get_info(),
+                           )
 
     @cherrypy.expose
     def get_data_html(self, dataSet=None):
@@ -94,7 +93,6 @@ class WebInterface(SmartPluginWebIf):
                 if data.get(item.id(), None):
                     data[item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
                     data[item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
-
             try:
                 return json.dumps(data, default=str)
             except Exception as e:
