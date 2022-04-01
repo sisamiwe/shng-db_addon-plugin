@@ -105,12 +105,12 @@
 				<tr>
 				{% endif %}
 					{% if key != "passwd" %}
-					<td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{{ value }}</td>
+					    <td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{{ value }}</td>
 					{% else %}
-					<td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{% for letter in value %}*{% endfor %}</td>
+					    <td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{% for letter in value %}*{% endfor %}</td>
 					{% endif %}
 					{% if loop.index % 3 > 0 and loop.last %}
-						<td class="py-1" colspan="{{ loop.index % 3 }}"></td>
+						<td class="py-1" colspan="{{ loop.index % 3 }}">12</td>
 					{% endif %}
 				{% if loop.index % 4 == 0 and not first %}
 				</tr>

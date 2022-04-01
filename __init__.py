@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts':                       {'func': 'max',         'timespan': 'year',  'start': None, 'end': None, 'group': 'day'},
         }
 
-    PLUGIN_VERSION = '1.0.E'
+    PLUGIN_VERSION = '1.0.F'
 
     def __init__(self, sh):
         """
@@ -123,6 +123,7 @@ class DatabaseAddOn(SmartPlugin):
         self.connection_data = None                 # connection data list to database
         self.db_driver = None                       # driver for database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
+        self.duration = 0                           # duration of a calculation cycle
         self.alive = None                           # Is plugin alive?
         self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
         self.execute_items_active = False           # Is there a running _execute_items method
@@ -709,8 +710,8 @@ class DatabaseAddOn(SmartPlugin):
                 self._webdata[item.id()].update({'value': _result})
                 item(_result, self.get_shortname())
 
-        _duration = int(time.time() - _start_time)
-        self.logger.info(f"execute_items: FINISHED calculating {len(item_list)} items within {_duration} sec.")
+        self.duration = int(time.time() - _start_time)
+        self.logger.info(f"execute_items: FINISHED calculating {len(item_list)} items within {self.duration} sec.")
 
         # release lock
         self.execute_items_active = False
@@ -1124,7 +1125,7 @@ class DatabaseAddOn(SmartPlugin):
             self.vorwochenendwert_dict = {}
             # wenn erster Tage (des Monates), werden auch die monatlichen Items berechnet
         if self.shtime.now().hour == 0 and self.shtime.now().minute == 0 and self.shtime.now().day == 1:
-            _todo_items.update(self._montly_items)
+            _todo_items.update(self._monthly_items)
             self.monatswert_dict = {}
             self.vormonatsendwert_dict = {}
         # wenn erster Tage des ersten Monates, werden auch die jährlichen Items berechnet
