@@ -1042,23 +1042,25 @@ class DatabaseAddOn(SmartPlugin):
 
                     # update cache dicts
                     _update = False
-                    if _func == 'min' and value < _cache_dict[_database_item][_func]:
-                        _update = True
-                        if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: new value={value} lower then current min_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
-                    elif _func == 'max' and value > _cache_dict[_database_item][_func]:
-                        _update = True
-                        if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: new value={value} higher then current max_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
-                    if _update:
-                        _cache_dict[_database_item][_func] = value
+                    _cached_value = _cache_dict[_database_item][_func]
+                    if _cached_value:
+                        if _func == 'min' and value < _cached_value:
+                            _update = True
+                            if self.on_change_debug:
+                                self.logger.debug(f"_fill_cache_dicts: new value={value} lower then current min_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
+                        elif _func == 'max' and value > _cached_value:
+                            _update = True
+                            if self.on_change_debug:
+                                self.logger.debug(f"_fill_cache_dicts: new value={value} higher then current max_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
+                        if _update:
+                            _cache_dict[_database_item][_func] = value
 
-                    # set item value and put data into webif update dict
-                    value = _cache_dict[_database_item][_func]
-                    if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
-                    self._webdata[item.id()].update({'value': value})
-                    item(value, self.get_shortname())
+                        # set item value and put data into webif update dict
+                        value = _cached_value
+                        if self.on_change_debug:
+                            self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
+                        self._webdata[item.id()].update({'value': value})
+                        item(value, self.get_shortname())
 
                 # handle verbrauch und zaehlerstand on-change items ending with heute, woche, monat, jahr
                 elif _database_addon_fct.startswith('verbrauch') and len(_var) == 2 and _var[1] in ['heute', 'woche', 'monat', 'jahr']:
@@ -1076,12 +1078,14 @@ class DatabaseAddOn(SmartPlugin):
                             self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _timeframe={_timeframe} not in cache dict. Value {value} has been added.")
 
                     # calculate value
-                    delta_value = round(value - _cache_dict[_database_item], 1)
+                    _cached_value = _cache_dict[_database_item]
+                    if _cached_value:
+                        delta_value = round(value - _cached_value, 1)
 
-                    # set item value
-                    if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} will be set to value={delta_value}; current item value={item()}.")
-                    item(delta_value, self.get_shortname())
+                        # set item value
+                        if self.on_change_debug:
+                            self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} will be set to value={delta_value}; current item value={item()}.")
+                        item(delta_value, self.get_shortname())
 
     def _get_itemid(self, item):
         """
