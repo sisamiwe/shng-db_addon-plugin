@@ -1251,7 +1251,7 @@ class DatabaseAddOn(SmartPlugin):
             self._oldest_entry_dict[item] = oldest_entry
         
         if self.prepare_debug:
-            self.logger.debug(f"_get_oldest_value for item {item.id()} = {self._oldest_entry_dict[item][0][4]}")
+            self.logger.debug(f"_get_oldest_value for item {item.id()} = {self._oldest_entry_dict[item]}")
         
         return oldest_entry[0][4]
 
