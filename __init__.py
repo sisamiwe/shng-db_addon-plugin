@@ -431,7 +431,7 @@ class DatabaseAddOn(SmartPlugin):
         if self.execute_debug:
             self.logger.debug("execute_due_items called")
 
-        _todo_items = self._create_due_items()
+        _todo_items = list(self._create_due_items())
         self.logger.info(f"execute_due_items: Following {len(_todo_items)} items will be calculated: {_todo_items}")
 
         self.execute_items(_todo_items)
@@ -1124,7 +1124,7 @@ class DatabaseAddOn(SmartPlugin):
                     self._itemid_dict[item] = _item_id
         return _item_id
 
-    def _create_due_items(self) -> list:
+    def _create_due_items(self) -> set:
         """
         Create list of items which are due, resets cache dicts
 
@@ -1220,7 +1220,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             return True
 
-    def _get_oldest_log(self, item) -> list:
+    def _get_oldest_log(self, item) -> int:
         """
         Get timestamp of oldest entry of item from cache dict or get value from db and put it to cache dict
 
@@ -1270,7 +1270,7 @@ class DatabaseAddOn(SmartPlugin):
         
         return oldest_entry[0][4]
 
-    def _query_item(self, func: str, item, timespan: str, start: int, end: int, group: str = None, group2: str = None, ignore_value=None):
+    def _query_item(self, func: str, item, timespan: str, start: int, end: int, group: str = None, group2: str = None, ignore_value=None) -> Union[int, float, bool, None]:
         """
         Create a mysql query str and param dict based on given parameters, get query response and return it
 
@@ -1599,7 +1599,7 @@ class DatabaseAddOn(SmartPlugin):
         query = "SELECT * FROM log WHERE item_id = :item_id AND time = :timestamp;"
         return self._fetchall(query, params, cur=cur)
 
-    def _read_item_table(self, item):
+    def _read_item_table(self, item) -> tuple:
         """
         Read item table if smarthome database
 
