@@ -34,9 +34,9 @@ from .webif import WebInterface
 import lib.db
 
 import sqlvalidator
-# import pymysql.cursors
 import datetime
 from dateutil.relativedelta import *
+from typing import Union
 import time
 import re
 
@@ -423,7 +423,7 @@ class DatabaseAddOn(SmartPlugin):
             else:
                 self._fill_cache_dicts(item, item())
 
-    def execute_due_items(self):
+    def execute_due_items(self) -> None:
         """
         Execute all due_items
         """
@@ -436,7 +436,7 @@ class DatabaseAddOn(SmartPlugin):
 
         self.execute_items(_todo_items)
 
-    def execute_startup_items(self):
+    def execute_startup_items(self) -> None:
         """
         Execute all startup_items
         """
@@ -446,7 +446,7 @@ class DatabaseAddOn(SmartPlugin):
         self.activate_update = True
         self.execute_items(list(self._startup_items))
 
-    def execute_all_items(self):
+    def execute_all_items(self) -> None:
         """
         Execute all items
         """
@@ -454,7 +454,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.info(f"All item will be calculated!! That will be {len(list(self._item_dict.keys()))} items!")
         self.execute_items(list(self._item_dict.keys()))
 
-    def execute_items(self, item_list):
+    def execute_items(self, item_list: list) -> None:
         """
         Execute functions per item based on given item list
 
@@ -731,7 +731,7 @@ class DatabaseAddOn(SmartPlugin):
     #       Public functions
     ##############################
 
-    def gruenlandtemperatursumme(self, item, year: int):
+    def gruenlandtemperatursumme(self, item, year: Union[int, str]) -> Union[int, None]:
         """
         Query database for gruenlandtemperatursumme for given year or year/month
 
@@ -777,7 +777,7 @@ class DatabaseAddOn(SmartPlugin):
                 gts += entry[1]
         return int(round(gts, 0))
 
-    def waermesumme(self, item, year, month: int = None):
+    def waermesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
         """
         Query database for waermesumme for given year or year/month
 
@@ -834,7 +834,7 @@ class DatabaseAddOn(SmartPlugin):
         if result:
             return int(result[0][1])
 
-    def kaeltesumme(self, item, year, month: int = None):
+    def kaeltesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
         """
         Query database for kaeltesumme for given year or year/month
 
@@ -900,7 +900,7 @@ class DatabaseAddOn(SmartPlugin):
                     value += entry[1]
             return int(value)
 
-    def tagesmitteltemperatur(self, item, count: int = None):
+    def tagesmitteltemperatur(self, item, count: int = None) -> list:
         """
         Query database for tagesmitteltemperatur
 
@@ -920,7 +920,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self.fetch_log(**_database_addon_params)
 
-    def fetch_log(self, func: str, item, timespan: str, start: int = None, end: int = 0, count: int = None, group: str = None, group2: str = None, ignore_value=None):
+    def fetch_log(self, func: str, item, timespan: str, start: int = None, end: int = 0, count: int = None, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
         Query database, format response and return it
 
@@ -959,7 +959,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug(f"fetch_log: value for item={item.id()} with timespan={timespan}, func={func}: {value}")
         return value
 
-    def fetch_raw(self, query: str, params: dict = None):
+    def fetch_raw(self, query: str, params: dict = None) -> Union[list, None]:
         """
         Fetch database with given query string and params
 
@@ -993,7 +993,7 @@ class DatabaseAddOn(SmartPlugin):
     #        Support stuff
     ##############################
 
-    def _check_db_connection_setting(self):
+    def _check_db_connection_setting(self) -> None:
         connect_timeout = int(self._get_db_connect_timeout()[1])
         self.logger.debug(f"connect_timeout={connect_timeout}")
         if connect_timeout != self.default_connect_timeout:
@@ -1004,7 +1004,7 @@ class DatabaseAddOn(SmartPlugin):
         if net_read_timeout != self.default_net_read_timeout:
             self.logger.warning(f"DB variable 'net_read_timeout' need to adjusted for proper working to {self.default_net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
 
-    def _fill_cache_dicts(self, updated_item, value):
+    def _fill_cache_dicts(self, updated_item, value) -> None:
         """
         Get item and item value for which an update has been detected, fill cache dicts and set item value.
 
@@ -1102,7 +1102,7 @@ class DatabaseAddOn(SmartPlugin):
                             self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} will be set to value={delta_value}; current item value={item()}.")
                         item(delta_value, self.get_shortname())
 
-    def _get_itemid(self, item):
+    def _get_itemid(self, item) -> int:
         """
         Returns the ID of the given item from cache dict or request it from database
 
@@ -1124,7 +1124,7 @@ class DatabaseAddOn(SmartPlugin):
                     self._itemid_dict[item] = _item_id
         return _item_id
 
-    def _create_due_items(self):
+    def _create_due_items(self) -> list:
         """
         Create list of items which are due, resets cache dicts
 
@@ -1154,7 +1154,7 @@ class DatabaseAddOn(SmartPlugin):
             self.vorjahresendwert_dict = {}
         return _todo_items
 
-    def _check_db_existence(self):
+    def _check_db_existence(self) -> bool:
         """
         Check existence of database plugin and database
          - Checks if DB Plugin is loaded and if driver is PyMySql
@@ -1195,7 +1195,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             return True
 
-    def _initialize_db(self):
+    def _initialize_db(self) -> bool:
         """
         Initializes database connection
 
@@ -1220,7 +1220,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             return True
 
-    def _get_oldest_log(self, item):
+    def _get_oldest_log(self, item) -> list:
         """
         Get timestamp of oldest entry of item from cache dict or get value from db and put it to cache dict
 
@@ -1247,7 +1247,7 @@ class DatabaseAddOn(SmartPlugin):
         
         return oldest_log
 
-    def _get_oldest_value(self, item):
+    def _get_oldest_value(self, item) -> Union[int, float, bool]:
         """
         Get value of oldest log of item from cache dict or get value from db and put it to cache dict
 
@@ -1622,7 +1622,7 @@ class DatabaseAddOn(SmartPlugin):
             query = f"SELECT {columns} FROM item WHERE id = {item}"
             return self._fetchone(query)
 
-    def _get_db_version(self):
+    def _get_db_version(self) -> str:
         """ 
         Query the database version and provide result
         """
@@ -1630,7 +1630,7 @@ class DatabaseAddOn(SmartPlugin):
         query = 'SELECT VERSION()'
         return self._fetchone(query)
 
-    def _get_db_connect_timeout(self):
+    def _get_db_connect_timeout(self) -> str:
         """
         SHOW GLOBAL connect_timeout
         """
@@ -1638,7 +1638,7 @@ class DatabaseAddOn(SmartPlugin):
         query = "SHOW GLOBAL VARIABLES LIKE 'connect_timeout'"
         return self._fetchone(query)
 
-    def _get_db_net_read_timeout(self):
+    def _get_db_net_read_timeout(self) -> str:
         """
         SHOW GLOBAL net_read_timeout
         """
@@ -1646,7 +1646,7 @@ class DatabaseAddOn(SmartPlugin):
         query = "SHOW GLOBAL VARIABLES LIKE 'net_read_timeout'"
         return self._fetchone(query)
 
-    def _clean_cache_dicts(self):
+    def _clean_cache_dicts(self) -> None:
         """
         Clean all cache dicts
         """
@@ -1740,7 +1740,7 @@ class DatabaseAddOn(SmartPlugin):
 ##############################
 
 
-def params_to_dict(string: str):
+def params_to_dict(string: str) -> Union[dict, None]:
     """ Parse a string with named arguments and comma separation to dict; (e.g. string = 'year=2022, month=12')
     """
 
@@ -1772,7 +1772,7 @@ def params_to_dict(string: str):
         return res_dict
 
 
-def valid_year(year):
+def valid_year(year: Union[int, str]) -> bool:
     """
     Check if given year is digit and within allowed range
     """
@@ -1783,7 +1783,7 @@ def valid_year(year):
         return False
 
 
-def valid_month(month):
+def valid_month(month: Union[int, str]) -> bool:
     """
     Check if given month is digit and within allowed range
     """
@@ -1794,7 +1794,7 @@ def valid_month(month):
         return False
 
 
-def timestamp_to_timestring(timestamp):
+def timestamp_to_timestring(timestamp: int) -> str:
     """
     Parse timestamp from db query to string representing date and time
     """
