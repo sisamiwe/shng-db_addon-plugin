@@ -34,6 +34,16 @@ Bsp:
 Anforderungen
 -------------
 Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
+Zudem müssen einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen bearbeitet werden.
+Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen.
+
+.. code-block:: bash
+
+    [mysqld]
+    connect_timeout = 60
+    net_read_timeout = 60
+    wait_timeout = 28800
+    interactive_timeout = 28800
 
 
 Konfiguration

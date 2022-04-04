@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts':                       {'func': 'max',         'timespan': 'year',  'start': None, 'end': None, 'group': 'day'},
         }
 
-    PLUGIN_VERSION = '1.0.F'
+    PLUGIN_VERSION = '1.0.G'
 
     def __init__(self, sh):
         """
@@ -731,7 +731,7 @@ class DatabaseAddOn(SmartPlugin):
     #       Public functions
     ##############################
 
-    def gruenlandtemperatursumme(self, item, year):
+    def gruenlandtemperatursumme(self, item, year: int):
         """
         Query database for gruenlandtemperatursumme for given year or year/month
 
@@ -777,7 +777,7 @@ class DatabaseAddOn(SmartPlugin):
                 gts += entry[1]
         return int(round(gts, 0))
 
-    def waermesumme(self, item, year, month=None):
+    def waermesumme(self, item, year, month: int = None):
         """
         Query database for waermesumme for given year or year/month
 
@@ -834,7 +834,7 @@ class DatabaseAddOn(SmartPlugin):
         if result:
             return int(result[0][1])
 
-    def kaeltesumme(self, item, year, month=None):
+    def kaeltesumme(self, item, year, month: int = None):
         """
         Query database for kaeltesumme for given year or year/month
 
@@ -900,7 +900,7 @@ class DatabaseAddOn(SmartPlugin):
                     value += entry[1]
             return int(value)
 
-    def tagesmitteltemperatur(self, item, count=None):
+    def tagesmitteltemperatur(self, item, count: int = None):
         """
         Query database for tagesmitteltemperatur
 
@@ -920,7 +920,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self.fetch_log(**_database_addon_params)
 
-    def fetch_log(self, func, item, timespan, start=None, end=0, count=None, group=None, group2=None, ignore_value=None):
+    def fetch_log(self, func: str, item, timespan: str, start: int = None, end: int = 0, count: int = None, group: str = None, group2: str = None, ignore_value=None):
         """
         Query database, format response and return it
 
@@ -959,7 +959,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug(f"fetch_log: value for item={item.id()} with timespan={timespan}, func={func}: {value}")
         return value
 
-    def fetch_raw(self, query, params=None):
+    def fetch_raw(self, query: str, params: dict = None):
         """
         Fetch database with given query string and params
 
@@ -995,12 +995,12 @@ class DatabaseAddOn(SmartPlugin):
 
     def _check_db_connection_setting(self):
         connect_timeout = int(self._get_db_connect_timeout()[1])
-        self.logger.warning(f"connect_timeout={connect_timeout}")
+        self.logger.debug(f"connect_timeout={connect_timeout}")
         if connect_timeout != self.default_connect_timeout:
             self.logger.warning(f"DB variable 'connect_timeout' need to adjusted for proper working to {self.default_connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
 
         net_read_timeout = int(self._get_db_net_read_timeout()[1])
-        self.logger.warning(f"net_read_timeout={net_read_timeout}")
+        self.logger.debug(f"net_read_timeout={net_read_timeout}")
         if net_read_timeout != self.default_net_read_timeout:
             self.logger.warning(f"DB variable 'net_read_timeout' need to adjusted for proper working to {self.default_net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
 
@@ -1270,7 +1270,7 @@ class DatabaseAddOn(SmartPlugin):
         
         return oldest_entry[0][4]
 
-    def _query_item(self, func, item, timespan, start, end, group=None, group2=None, ignore_value=None):
+    def _query_item(self, func: str, item, timespan: str, start: int, end: int, group: str = None, group2: str = None, ignore_value=None):
         """
         Create a mysql query str and param dict based on given parameters, get query response and return it
 
@@ -1386,7 +1386,7 @@ class DatabaseAddOn(SmartPlugin):
         
         return value
 
-    def _query_log(self, func, item, timespan, start, end, count=None, group=None, group2=None, ignore_value=None):
+    def _query_log(self, func: str, item, timespan: str, start: int, end: int, count: int = None, group: str = None, group2: str = None, ignore_value=None):
         """
         Create a mysql query str and param dict based on given parameters, get query response and return it
 
@@ -1567,7 +1567,7 @@ class DatabaseAddOn(SmartPlugin):
             result = self._fetchall(query, params)
             return result
 
-    def _read_log_oldest(self, item_id, cur=None):
+    def _read_log_oldest(self, item_id: int, cur=None):
         """
         Read the oldest log record for given database ID
 
@@ -1582,7 +1582,7 @@ class DatabaseAddOn(SmartPlugin):
         query = "SELECT min(time) FROM log WHERE item_id = :item_id;"
         return self._fetchall(query, params, cur=cur)[0][0]
 
-    def _read_log_timestamp(self, item_id, timestamp, cur=None):
+    def _read_log_timestamp(self, item_id: int, timestamp: int, cur=None):
         """
         Read database log record for given database ID
 
@@ -1673,7 +1673,7 @@ class DatabaseAddOn(SmartPlugin):
     #   Database specific stuff
     ##############################
 
-    def _execute(self, query, params=None, cur=None):
+    def _execute(self, query: str, params: dict = None, cur=None):
         if params is None:
             params = {}
             
@@ -1682,7 +1682,7 @@ class DatabaseAddOn(SmartPlugin):
             
         return self._query(self._db.execute, query, params, cur)
 
-    def _fetchone(self, query, params=None, cur=None):
+    def _fetchone(self, query: str, params: dict = None, cur=None):
         if params is None:
             params = {}
             
@@ -1691,7 +1691,7 @@ class DatabaseAddOn(SmartPlugin):
             
         return self._query(self._db.fetchone, query, params, cur)
 
-    def _fetchall(self, query, params=None, cur=None):
+    def _fetchall(self, query: str, params: dict = None, cur=None):
         if params is None:
             params = {}
             
@@ -1701,7 +1701,7 @@ class DatabaseAddOn(SmartPlugin):
         tuples = self._query(self._db.fetchall, query, params, cur)
         return None if tuples is None else list(tuples)
 
-    def _query(self, fetch, query, params=None, cur=None):
+    def _query(self, fetch, query: str, params: dict = None, cur=None):
         if params is None:
             params = {}
             
@@ -1740,7 +1740,7 @@ class DatabaseAddOn(SmartPlugin):
 ##############################
 
 
-def params_to_dict(string):
+def params_to_dict(string: str):
     """ Parse a string with named arguments and comma separation to dict; (e.g. string = 'year=2022, month=12')
     """
 
