@@ -133,6 +133,8 @@ class DatabaseAddOn(SmartPlugin):
         self.sql_debug = True                       # Enable / Disable debug logging for sql stuff
         self.on_change_debug = True                 # Enable / Disable debug logging for method '_fill_cache_dicts'
         self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
+        self.default_connect_timeout = 60
+        self.default_net_read_timeout = 60
 
         # get plugin parameters
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
@@ -156,6 +158,8 @@ class DatabaseAddOn(SmartPlugin):
         if not self._initialize_db():
             self._init_complete = False
             # pass
+
+        self._check_db_connection_setting()
 
         # init webinterface
         if not self.init_webinterface(WebInterface):
@@ -989,6 +993,17 @@ class DatabaseAddOn(SmartPlugin):
     #        Support stuff
     ##############################
 
+    def _check_db_connection_setting(self):
+        connect_timeout = int(self._get_db_connect_timeout()[1])
+        self.logger.warning(f"connect_timeout={connect_timeout}")
+        if connect_timeout != self.default_connect_timeout:
+            self.logger.warning(f"DB variable 'connect_timeout' need to adjusted for proper working to {self.default_connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
+
+        net_read_timeout = int(self._get_db_net_read_timeout()[1])
+        self.logger.warning(f"net_read_timeout={net_read_timeout}")
+        if net_read_timeout != self.default_net_read_timeout:
+            self.logger.warning(f"DB variable 'net_read_timeout' need to adjusted for proper working to {self.default_net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
+
     def _fill_cache_dicts(self, updated_item, value):
         """
         Get item and item value for which an update has been detected, fill cache dicts and set item value.
@@ -1613,6 +1628,22 @@ class DatabaseAddOn(SmartPlugin):
         """
         
         query = 'SELECT VERSION()'
+        return self._fetchone(query)
+
+    def _get_db_connect_timeout(self):
+        """
+        SHOW GLOBAL connect_timeout
+        """
+
+        query = "SHOW GLOBAL VARIABLES LIKE 'connect_timeout'"
+        return self._fetchone(query)
+
+    def _get_db_net_read_timeout(self):
+        """
+        SHOW GLOBAL net_read_timeout
+        """
+
+        query = "SHOW GLOBAL VARIABLES LIKE 'net_read_timeout'"
         return self._fetchone(query)
 
     def _clean_cache_dicts(self):
