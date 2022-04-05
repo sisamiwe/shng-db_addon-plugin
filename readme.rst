@@ -35,7 +35,7 @@ Anforderungen
 -------------
 Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
 Zudem müssen einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen bearbeitet werden.
-Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen.
+Dazu folgenden Block am Ende der Datei */etc/mysql/debian.cnf* einfügen bzw den existierenden ergänzen.
 
 .. code-block:: bash
 
