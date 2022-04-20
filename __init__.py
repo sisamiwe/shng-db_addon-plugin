@@ -1725,7 +1725,6 @@ class DatabaseAddOn(SmartPlugin):
             tuples = fetch(query, params, cur=cur)
         except Exception as e:
             self.logger.error(f"_query: Error for query {query_readable}: {e}")
-            raise e
         else:
             if self.sql_debug:
                 self.logger.debug(f"_query: Result of {query_readable}: {tuples}")
