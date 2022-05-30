@@ -65,6 +65,8 @@ class WebInterface(SmartPluginWebIf):
         except Exception:
             pagelength = 100
 
+        maintenance = True if self.plugin.get_log_level <= 20 else False
+
         tmpl = self.tplenv.get_template('index.html')
 
         return tmpl.render(p=self.plugin,
@@ -74,6 +76,7 @@ class WebInterface(SmartPluginWebIf):
                            plugin_shortname=self.plugin.get_shortname(),
                            plugin_version=self.plugin.get_version(),
                            plugin_info=self.plugin.get_info(),
+                           maintenance=maintenance,
                            )
 
     @cherrypy.expose

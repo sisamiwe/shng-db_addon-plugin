@@ -5,19 +5,22 @@
 {% block pluginstyles %}
 <style>
   table th.item {
-    width: 350px;
+    width: 310px;
   }
   table th.type {
     width: 50px;
   }
   table th.attribute {
-    width: 250px;
+    width: 220px;
   }
   table th.cycle {
     width: 150px;
   }
   table th.init {
     width: 100px;
+  }
+  .value {
+    max-width: 150px;
   }
 </style>
 {% endblock pluginstyles %}
@@ -45,10 +48,11 @@
     }
     
     try {
-      table0 = $('#maintable').DataTable( {
+      table1 = $('#maintable').DataTable( {
         pageLength: webif_pagelength,
+        columnDefs: [{ "targets": [5], "className": "truncate value"}].concat($.fn.dataTable.defaults.columnDefs),
         pageResize: resize});
-      table1 = $('#mtable2').DataTable( {
+      table2 = $('#mtable2').DataTable( {
         pageLength: webif_pagelength,
         pageResize: resize});
     }
@@ -102,7 +106,7 @@
 					    <td class="py-1"><strong>{{ key }}</strong></td><td class="py-1">{% for letter in value %}*{% endfor %}</td>
 					{% endif %}
 					{% if loop.index % 3 > 0 and loop.last %}
-						<td class="py-1" colspan="{{ loop.index % 3 }}">12</td>
+						<td class="py-1" colspan="{{ loop.index % 3 }}"></td>
 					{% endif %}
 				{% if loop.index % 4 == 0 and not first %}
 				</tr>
@@ -113,9 +117,6 @@
 {% endblock headtable %}
 
 
-<!--
-	Additional buttons for the web interface (if any are needed) - displayed below the headtable-section
--->
 {% block buttons %}
 	<div>
 		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Recalculation of all items?') }}')) { jQuery.get('recalc_all'); }">{{_('Re-evaluate all')}}</button>
@@ -123,24 +124,21 @@
 	</div>
 {% endblock %}
 
-<!--
-	Define the number of tabs for the body of the web interface (1 - 6)
--->
 {% set tabcount = 2 %}
 
-
-<!--
-	Set the tab that will be visible on start, if another tab that 1 is wanted (1 - 3)
--->
 {% if item_count > 0 %}
 	{% set start_tab = 1 %}
 {% endif %}
 
 
-<!--
-	Content block for the first tab of the Webinterface
--->
 {% set tab1title = "<strong>" ~ plugin_shortname ~ " Items</strong> (" ~ item_count ~ ")" %}
+{% if maintenance %}
+    {% set tab2title = "<strong>" ~ plugin_shortname ~ " Maintenance</strong>" %}
+{% else %}
+    {% set tab4title = "hidden" %}
+{% endif %}
+
+
 {% block bodytab1 %}
 <div class="container-fluid m-2 table-resize">
     <table id="maintable" class="table table-striped table-hover pluginList display">
@@ -151,7 +149,7 @@
                 <th class="attribute">{{_('AddOn Attribute')}}</th>
                 <th class="cycle" style="text-align: center">{{_('Update Cycle')}}</th>
                 <th class="init" style="text-align: center">{{_('Run on init')}}</th>
-                <th class="value" style="text-align: right">{{_('Wert')}}</th>
+                <th style="text-align: right">{{_('Wert')}}</th>
                 <th style="text-align: center">{{_('Letztes Update')}}</th>
                 <th style="text-align: center">{{_('Letzter Change')}}</th>
             </tr>
@@ -165,9 +163,9 @@
                     <td class="py-1">{{ p._webdata[item_id]['attribute'] }}</td>
                     <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['cycle'] }}</td>
                     <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['startup'] }}</td>
-                    <td class="py-1" id="{{ item_id }}_value" style="text-align: right">.{{ item.property.value | float }}</td>
-                    <td class="py-1" id="{{ item_id }}_last_update" style="text-align: center">.{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
-                    <td class="py-1" id="{{ item_id }}_last_change" style="text-align: center">.{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}{{_('.')}}</td>
+                    <td class="py-1" id="{{ item_id }}_value" style="text-align: right">{{ item.property.value | float }}</td>
+                    <td class="py-1" id="{{ item_id }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                    <td class="py-1" id="{{ item_id }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                 </tr>
              {% endfor %}
         </tbody>
@@ -176,7 +174,6 @@
 {% endblock bodytab1 %}
 
 
-{% set tab2title = "<strong>" ~ plugin_shortname ~ " Maintenance</strong>" %}
 {% block bodytab2 %}
 <div class="container-fluid m-2 table-resize">
     <table id="mtable2" class="table table-striped table-hover pluginList display">

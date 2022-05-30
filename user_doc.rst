@@ -35,6 +35,17 @@ Anforderungen
 -------------
 Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
 
+Zudem sollten einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
+Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
+
+.. code-block:: bash
+
+    [mysqld]
+    connect_timeout = 60
+    net_read_timeout = 60
+    wait_timeout = 28800
+    interactive_timeout = 28800
+
 
 Konfiguration
 -------------

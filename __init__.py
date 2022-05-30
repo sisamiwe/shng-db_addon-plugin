@@ -727,6 +727,10 @@ class DatabaseAddOn(SmartPlugin):
             self.further_item_list = []
             self.execute_items(new_item_list)
 
+    @property
+    def get_log_level(self):
+        return self.logger.getEffectiveLevel()
+
     ##############################
     #       Public functions
     ##############################
@@ -995,14 +999,12 @@ class DatabaseAddOn(SmartPlugin):
 
     def _check_db_connection_setting(self) -> None:
         connect_timeout = int(self._get_db_connect_timeout()[1])
-        self.logger.debug(f"connect_timeout={connect_timeout}")
         if connect_timeout != self.default_connect_timeout:
-            self.logger.warning(f"DB variable 'connect_timeout' need to adjusted for proper working to {self.default_connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
+            self.logger.warning(f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
         net_read_timeout = int(self._get_db_net_read_timeout()[1])
-        self.logger.debug(f"net_read_timeout={net_read_timeout}")
         if net_read_timeout != self.default_net_read_timeout:
-            self.logger.warning(f"DB variable 'net_read_timeout' need to adjusted for proper working to {self.default_net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf")
+            self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
     def _fill_cache_dicts(self, updated_item, value) -> None:
         """
@@ -1258,17 +1260,22 @@ class DatabaseAddOn(SmartPlugin):
         :rtype: float
         """
 
-        if item in self._oldest_entry_dict:
-            oldest_entry = self._oldest_entry_dict[item]
+        if item in self._oldest_entry_dict and len(self._oldest_entry_dict[item]):
+            oldest_value = self._oldest_entry_dict[item][0][4]
         else:
             item_id = self._get_itemid(item)
-            oldest_entry = self._read_log_timestamp(item_id, self._get_oldest_log(item))
-            self._oldest_entry_dict[item] = oldest_entry
-        
+            validity = False
+            while validity is False:
+                oldest_entry = self._read_log_timestamp(item_id, self._get_oldest_log(item))
+                if isinstance(oldest_entry, list) and isinstance(oldest_entry[0], tuple) and len(oldest_entry[0]) == 4:
+                    self._oldest_entry_dict[item] = oldest_entry
+                    oldest_value = oldest_entry[0][4]
+                    validity = True
+
         if self.prepare_debug:
-            self.logger.debug(f"_get_oldest_value for item {item.id()} = {self._oldest_entry_dict[item]}")
+            self.logger.debug(f"_get_oldest_value for item {item.id()} = {oldest_value}")
         
-        return oldest_entry[0][4]
+        return oldest_value
 
     def _query_item(self, func: str, item, timespan: str, start: int, end: int, group: str = None, group2: str = None, ignore_value=None) -> Union[int, float, bool, None]:
         """
@@ -1333,7 +1340,11 @@ class DatabaseAddOn(SmartPlugin):
         _ts_start = int(datetime.datetime.timestamp(_dt_start))
         _ts_end = int(datetime.datetime.timestamp(_dt_end))
 
-        _oldest_log = int(self._get_oldest_log(item) / 1000)
+        try:
+            _oldest_log = int(self._get_oldest_log(item) / 1000)
+        except Exception:
+            _oldest_log = 0
+
         if self.prepare_debug:
             self.logger.debug(f"_query_item: oldest_log={_oldest_log}, ts_start={_ts_start}, ts_end={_ts_end}")
 
