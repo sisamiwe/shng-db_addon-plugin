@@ -833,7 +833,7 @@ class DatabaseAddOn(SmartPlugin):
         _database_addon_params['item'] = item
 
         result = self.fetch_log(**_database_addon_params)
-        self.logger.debug(f"waermesumme_year_month: Result={result} for item={item.id()} with year={year} and month0{month}")
+        self.logger.debug(f"waermesumme_year_month: {result=} for {item.id()=} with {year=} and {month=}")
 
         if result:
             return int(result[0][1])
@@ -893,7 +893,7 @@ class DatabaseAddOn(SmartPlugin):
         _database_addon_params['item'] = item
 
         result = self.fetch_log(**_database_addon_params)
-        self.logger.debug(f"kaeltesumme: Result={result} for item={item.id()} with year={year} and month0{month}")
+        self.logger.debug(f"kaeltesumme: {result=} for {item.id()=} with {year=} and {month=}")
 
         value = 0
         if result:
@@ -1265,12 +1265,18 @@ class DatabaseAddOn(SmartPlugin):
         else:
             item_id = self._get_itemid(item)
             validity = False
+            i = 0
             while validity is False:
                 oldest_entry = self._read_log_timestamp(item_id, self._get_oldest_log(item))
-                if isinstance(oldest_entry, list) and isinstance(oldest_entry[0], tuple) and len(oldest_entry[0]) == 4:
+                i += 1
+                if isinstance(oldest_entry, list) and isinstance(oldest_entry[0], tuple) and len(oldest_entry[0]) >= 4:
                     self._oldest_entry_dict[item] = oldest_entry
                     oldest_value = oldest_entry[0][4]
                     validity = True
+                elif i == 10:
+                    oldest_value = -999999999
+                    validity = True
+                    self.logger.error(f"oldest_value for item {item.id()} could not be read; value is set to -999999999")
 
         if self.prepare_debug:
             self.logger.debug(f"_get_oldest_value for item {item.id()} = {oldest_value}")

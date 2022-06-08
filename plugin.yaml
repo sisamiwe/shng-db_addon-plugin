@@ -183,7 +183,7 @@ item_attributes:
         type: num
         description:
             de: 'Wert der bei Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert werden soll'
-            en: 'Value which will be ignored at datebase query'
+            en: 'Value which will be ignored at database query'
 
 
 item_structs:
