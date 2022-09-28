@@ -588,7 +588,7 @@ class DatabaseAddOn(SmartPlugin):
                     _timedelta = int(_timedelta)
 
                 if _func == 'zaehlerstand':
-                    _result = self._zaehlerstand_abfrage(_database_item, _timeframe, _timedelta)
+                    _result = self._query_item(func='max', item=item, timeframe=_timeframe, start=_timedelta, end=_timedelta)
 
             # handle item starting with 'minmax_'
             elif _database_addon_fct.startswith('minmax_'):
@@ -951,6 +951,10 @@ class DatabaseAddOn(SmartPlugin):
     ##############################
 
     def _check_db_connection_setting(self) -> None:
+        """
+        Check Setting of DB connection for stable use.
+        """
+
         connect_timeout = int(self._get_db_connect_timeout()[1])
         if connect_timeout != self.default_connect_timeout:
             self.logger.warning(f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
@@ -959,14 +963,12 @@ class DatabaseAddOn(SmartPlugin):
         if net_read_timeout != self.default_net_read_timeout:
             self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
-    def _fill_cache_dicts(self, updated_item, value) -> None:
+    def _fill_cache_dicts(self, updated_item, value: float) -> None:
         """
         Get item and item value for which an update has been detected, fill cache dicts and set item value.
 
         :param updated_item: Item which has been updated
-        :type updated_item: item
         :param value: Value of updated item
-        :type value: foo
         """
 
         if self.on_change_debug:
@@ -1062,10 +1064,8 @@ class DatabaseAddOn(SmartPlugin):
         Returns the ID of the given item from cache dict or request it from database
 
         :param item: Item to get the ID for
-        :type item: item
 
         :return: id of the item within the database
-        :rtype: int | None
         """
 
         self.logger.debug(f"_get_itemid called with item={item.id()}")
@@ -1081,10 +1081,10 @@ class DatabaseAddOn(SmartPlugin):
 
     def _create_due_items(self) -> set:
         """
-        Create list of items which are due, resets cache dicts
+        Create set of items which are due and resets cache dicts
 
-        :return: list of items, which need to be operated
-        :rtype: list
+        :return: set of items, which need to be operated
+
         """
 
         _todo_items = set()
@@ -1116,8 +1116,7 @@ class DatabaseAddOn(SmartPlugin):
          - Gets database plugin parameters
          - Puts database connection parameters to plugin properties
 
-        :return: Status of db existance
-        :rtype: bool
+        :return: Status of db existence
         """
 
         # check if database plugin is loaded
@@ -1155,7 +1154,6 @@ class DatabaseAddOn(SmartPlugin):
         Initializes database connection
 
         :return: Status of initialization
-        :rtype: bool
         """
 
         try:
@@ -1180,10 +1178,8 @@ class DatabaseAddOn(SmartPlugin):
         Get timestamp of oldest entry of item from cache dict or get value from db and put it to cache dict
 
         :param item: Item, for which query should be done
-        :type item: item
 
         :return: timestamp of oldest log
-        :rtype: int
         """
 
         if self.prepare_debug:
@@ -1207,10 +1203,8 @@ class DatabaseAddOn(SmartPlugin):
         Get value of oldest log of item from cache dict or get value from db and put it to cache dict
 
         :param item: Item, for which query should be done
-        :type item: item
 
         :return: oldest value
-        :rtype: float
         """
 
         oldest_value = None
@@ -1239,6 +1233,14 @@ class DatabaseAddOn(SmartPlugin):
         return oldest_value
 
     def _get_query_timeframe_as_timestamp(self, timeframe: str, start: int, end: int):
+        """
+        Converts timeframe for query into a unix-timestamp
+
+        :param timeframe: timeframe as week, month, year
+        :param start: beginning of timeframe
+        :param start: end of timeframe
+
+        """
 
         if self.prepare_debug:
             self.logger.debug(f"_get_query_timeframe_as_timestamp called with timespan={timeframe}, start={start}, end={end}")
@@ -1264,6 +1266,13 @@ class DatabaseAddOn(SmartPlugin):
         return _ts_start, _ts_end
 
     def _check_query_result(self, item, log):
+        """
+        Checks query result for correctness
+
+        :param item: item, the query result belongs to
+        :param log: query  result
+
+        """
 
         if not isinstance(log, list):
             return
@@ -1284,6 +1293,13 @@ class DatabaseAddOn(SmartPlugin):
         return value
 
     def _get_itemid_for_query(self, item):
+        """
+        Get DB item id for query
+
+        :param item: item, the query should be done for
+
+        """
+
         if isinstance(item, Item):
             item_id = self._get_itemid(item)
         elif item.isdigit() or isinstance(item, int):
@@ -1292,19 +1308,16 @@ class DatabaseAddOn(SmartPlugin):
             item_id = None
         return item_id
 
-    def _zaehlerstand_abfrage(self, item, timeframe: str, timedelta: int):
-
-        if self.prepare_debug:
-            self.logger.debug(f"_zaehlerstand_abfrage called with {item=},{timeframe=},{timedelta=}")
-
-        _result = self._query_item(func='max', item=item, timeframe=timeframe, start=timedelta, end=timedelta)
-
-        if self.prepare_debug:
-            self.logger.debug(f"zaehlerstand: {_result=} for {item=},{timeframe=},{timedelta=}")
-
-        return _result
-
     def _verbrauch_abfrage(self, item, timeframe: str, start: int, end: int):
+        """
+        Handle query for Verbrauch
+
+        :param item: item, the query should be done for
+        :param timeframe: timeframe as week, month, year
+        :param start: beginning of timeframe
+        :param start: end of timeframe
+
+        """
 
         if self.prepare_debug:
             self.logger.debug(f"_verbrauch_abfrage called with {item=},{timeframe=},{start=},{end=}")
@@ -1312,6 +1325,7 @@ class DatabaseAddOn(SmartPlugin):
         value_end = self._query_item(func='max', item=item, timeframe=timeframe, start=end, end=end)
         if self.prepare_debug:
             self.logger.debug(f"_verbrauch_abfrage {value_end=}")
+
         value_start = self._query_item(func='max', item=item, timeframe=timeframe, start=start, end=start)
         if self.prepare_debug:
             self.logger.debug(f"_verbrauch_abfrage {value_start=}")
@@ -1944,6 +1958,7 @@ def timestamp_to_timestring(timestamp: int) -> str:
 def convert_timeframe(timeframe: str) -> str:
     """
     Convert timeframe
+
     """
 
     convertion = {
