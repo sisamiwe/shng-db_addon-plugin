@@ -179,6 +179,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # add scheduler to trigger items to be calculated at startup with delay
         dt = self.shtime.now() + datetime.timedelta(seconds=(self.startup_run_delay + 3))
+        self.logger.info(f"Set scheduler for calculating startup-items with delay of {self.startup_run_delay + 3}s to {dt}.")
         self.scheduler_add('startup', self.execute_startup_items, next=dt)
 
     def stop(self):
@@ -418,7 +419,7 @@ class DatabaseAddOn(SmartPlugin):
         if self.alive and caller != self.get_shortname() and item in self._database_items:
             self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
             if not self.activate_update:
-                self.logger.debug(f"update_item: Update method is paused for startup.")
+                self.logger.debug(f"update_item: Update method is paused for startup or cyclic run.")
             else:
                 self._fill_cache_dicts(item, item())
 
@@ -442,7 +443,6 @@ class DatabaseAddOn(SmartPlugin):
         if self.execute_debug:
             self.logger.debug("execute_startup_items called")
 
-        self.activate_update = True
         self.execute_items(list(self._startup_items))
 
     def execute_all_items(self) -> None:
@@ -469,6 +469,10 @@ class DatabaseAddOn(SmartPlugin):
 
         # set lock
         self.execute_items_active = True
+
+        # deactivate handling of onchange
+        self.activate_update = False
+        self.logger.info(f"execute_items: DEACTIVATE handling of on-change items calculation.")
 
         _item_count = len(item_list)
 
@@ -533,7 +537,7 @@ class DatabaseAddOn(SmartPlugin):
                     _timedelta = _var[4][-1]            # 1
 
                     if self.execute_debug:
-                        self.logger.debug(f"execute_items: {_func} function detected. _window={_window}, _timeframe={_timeframe}, _timedelta={_timedelta}")
+                        self.logger.debug(f"execute_items: '{_func}' function detected. {_window=}, {_timeframe=}, {_timedelta=}")
 
                     if isinstance(_timedelta, str) and _timedelta.isdigit():
                         _timedelta = int(_timedelta)
@@ -549,7 +553,7 @@ class DatabaseAddOn(SmartPlugin):
                     _timedelta = _var[2][-1]
 
                     if self.execute_debug:
-                        self.logger.debug(f"execute_items: '{_database_addon_fct}' function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
+                        self.logger.debug(f"execute_items: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
 
                     if isinstance(_timedelta, str) and _timedelta.isdigit():
                         _timedelta = int(_timedelta)
@@ -568,7 +572,7 @@ class DatabaseAddOn(SmartPlugin):
                         _result = self._verbrauch_abfrage(_database_item, _timeframe, _start, _end)
                         
                 if _result and _result < 0:
-                    self.logger.warning(f"Result of item {item.id()} with _database_addon_fct={_database_addon_fct} was negativ. Something seems to be wrong.")
+                    self.logger.warning(f"Result of item {item.id()} with {_database_addon_fct=} was negativ. Something seems to be wrong.")
 
             # handle item starting with 'zaehlerstand_' of format 'zaehlerstand_timeframe_timedelta' like 'zaehlerstand_woche_minus1'
             elif _database_addon_fct.startswith('zaehlerstand_') and len(_var) == 3 and _var[2].startswith('minus'):
@@ -681,6 +685,10 @@ class DatabaseAddOn(SmartPlugin):
         # release lock
         self.execute_items_active = False
 
+        # activate handling of onchange
+        self.activate_update = True
+        self.logger.info(f"execute_items: ACTIVATE handling of on-change items calculation.")
+
         if self.further_item_list:
             if self.execute_debug:
                 self.logger.debug(f"Execute_items now runs items called during last run.")
@@ -701,9 +709,7 @@ class DatabaseAddOn(SmartPlugin):
         Query database for gruenlandtemperatursumme for given year or year/month
 
         :param item: item object or item_id for which the query should be done
-        :type item: item
         :param year: year the gruenlandtemperatursumme should be calculated for
-        :type year: str
 
         :return: gruenlandtemperatursumme
         :rtype: int
@@ -747,11 +753,8 @@ class DatabaseAddOn(SmartPlugin):
         Query database for waermesumme for given year or year/month
 
         :param item: item object or item_id for which the query should be done
-        :type item: item
         :param year: year the waermesumme should be calculated for
-        :type year: str
         :param month: month the waermesumme should be calculated for
-        :type month: str
 
         :return: waermesumme
         :rtype: int
@@ -804,11 +807,8 @@ class DatabaseAddOn(SmartPlugin):
         Query database for kaeltesumme for given year or year/month
 
         :param item: item object or item_id for which the query should be done
-        :type item: item
         :param year: year the kaeltesumme should be calculated for
-        :type year: str
         :param month: month the kaeltesumme should be calculated for
-        :type month: str
 
         :return: kaeltesumme
         :rtype: int
@@ -870,9 +870,7 @@ class DatabaseAddOn(SmartPlugin):
         Query database for tagesmitteltemperatur
 
         :param item: item object or item_id for which the query should be done
-        :type item: item
         :param count: start of timeframe defined by number of time increments starting from now to the left (into the past)
-        :type count: int
 
         :return: tagesmitteltemperatur
         :rtype: list of tuples
@@ -890,30 +888,24 @@ class DatabaseAddOn(SmartPlugin):
         Query database, format response and return it
 
         :param func: function to be used at query
-        :type func: str
         :param item: item object or item_id for which the query should be done
-        :type item: item
         :param timespan: time increment für definition of start, end, count (day, week, month, year)
-        :type timespan: str
         :param start: start of timeframe (oldest) for query given in x time increments (default = None, meaning complete database)
-        :type start: int
         :param end: end of timeframe (newest) for query given in x time increments (default = 0, meaning today, end of last week, end of last month, end of last year)
-        :type end: int
         :param count: start of timeframe defined by number of time increments starting from end to the left (into the past)
-        :type count: int
         :param group: first grouping parameter (default = None, possible values: day, week, month, year)
-        :type group: str
         :param group2: second grouping parameter (default = None, possible values: day, week, month, year)
-        :type group2: str
         :param ignore_value: value of val_num, which will be ignored during query
-        :type ignore_value: num
 
-        :return: formated query response
+        :return: formatted query response
         :rtype: list
         """
 
         # query
         query_result = self._query_log(func, item, timespan, start, end, count, group, group2, ignore_value)
+
+        if query_result is None:
+            return
 
         # handle result
         value = []
@@ -1318,7 +1310,11 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.debug(f"_verbrauch_abfrage called with {item=},{timeframe=},{start=},{end=}")
 
         value_end = self._query_item(func='max', item=item, timeframe=timeframe, start=end, end=end)
+        if self.prepare_debug:
+            self.logger.debug(f"_verbrauch_abfrage {value_end=}")
         value_start = self._query_item(func='max', item=item, timeframe=timeframe, start=start, end=start)
+        if self.prepare_debug:
+            self.logger.debug(f"_verbrauch_abfrage {value_start=}")
 
         if value_end is None or value_start is None:
             return
@@ -1391,7 +1387,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             _result = self._check_query_result(item, log)
             if self.prepare_debug:
-                self.logger.debug(f"_query_item: _result={_result}")
+                self.logger.debug(f"_query_item: {_result=}")
             return _result
 
     def _query_log(self, func: str, item, timeframe: str, start: int, end: int, count: int = None, group: str = None, group2: str = None, ignore_value=None):
@@ -1475,13 +1471,13 @@ class DatabaseAddOn(SmartPlugin):
 
         # CHECK START
         # if start is given and start is <= end, abort
-        if start is not None and start <= end:
+        if start is not None and start < end:
             self.logger.error(f"_query_log: Requested {start=} for item={item.id()} is not valid. Query cancelled.")
             return
         # define start if count is given (older point in time) if count is given but start is not given
         if start is None and count is not None:
             start = int(end) + int(count)
-        else:
+        if start is None:
             self.logger.error(f"_query_log: Error occurred during handling of {count=}. Query cancelled.")
             return
 
@@ -1514,7 +1510,7 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.error(f"_query_log: ItemId for item={item.id()} not found. Query cancelled.")
             return
 
-        # ADAPT _WHERE DEPENDING ON START, END AND TIMESPAN
+        # ADAPT _WHERE DEPENDING ON START, END AND TIMEFRAME
         if not (start is None and end == 0):
             _where = f"{_where}{_timespan[timeframe]}"
 
@@ -1955,6 +1951,7 @@ def convert_timeframe(timeframe: str) -> str:
         'woche': 'week',
         'monat': 'month',
         'jahr': 'year',
+        'vorjahreszeitraum': 'day',
         'd': 'day',
         'w': 'week',
         'm': 'month',
