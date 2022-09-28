@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts':                       {'func': 'max',         'timespan': 'year',  'start': None, 'end': None, 'group': 'day'},
         }
 
-    PLUGIN_VERSION = '1.0.G'
+    PLUGIN_VERSION = '1.0.H'
 
     def __init__(self, sh):
         """
@@ -450,7 +450,7 @@ class DatabaseAddOn(SmartPlugin):
         Execute all items
         """
 
-        self.logger.info(f"All item will be calculated!! That will be {len(list(self._item_dict.keys()))} items!")
+        self.logger.info(f"Values for all {len(list(self._item_dict.keys()))} items with 'database_addon_fct' attribute will be calculated!")
         self.execute_items(list(self._item_dict.keys()))
 
     def execute_items(self, item_list: list) -> None:
@@ -472,7 +472,7 @@ class DatabaseAddOn(SmartPlugin):
 
         _item_count = len(item_list)
 
-        self.logger.info(f"execute_items: START calculating {_item_count} items. item_list={item_list}")
+        self.logger.info(f"execute_items: START calculating {_item_count} items. {item_list=}")
         _start_time = time.time()
 
         for index, item in enumerate(item_list):
@@ -485,7 +485,7 @@ class DatabaseAddOn(SmartPlugin):
             _time_str_2 = None
             _result = None
 
-            self.logger.info(f"Item No. {index+1}/{_item_count} '{item.id()}' will be processed with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()}")
+            self.logger.info(f"Item No. {index+1}/{_item_count} '{item.id()}' will be processed with {_database_addon_fct=} _database_item={_database_item.id()}")
 
             # handle general functions
             if _database_addon_fct.startswith('general_'):
@@ -515,7 +515,7 @@ class DatabaseAddOn(SmartPlugin):
                     _timedelta = _var[2][-1]
 
                     if self.execute_debug:
-                        self.logger.debug(f"execute_items: '{_database_addon_fct}' function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
+                        self.logger.debug(f"execute_items: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
 
                     if isinstance(_timedelta, str) and _timedelta.isdigit():
                         _timedelta = int(_timedelta)
@@ -526,11 +526,11 @@ class DatabaseAddOn(SmartPlugin):
                 # handle all functions of format 'verbrauch_function_window_timeframe_timedelta' like 'verbrauch_rolling_12m_woche_minus1'
                 elif len(_var) == 5 and _var[1] == 'rolling' and _var[4].startswith('minus'):
                     _func = _var[1]
-                    _window = _var[2]                   #12m
-                    _window_inc = int(_window[:-1])     #12
-                    _window_dur = _window[-1]           #m
-                    _timeframe = _var[3]                #woche
-                    _timedelta = _var[4][-1]            #1
+                    _window = _var[2]                   # 12m
+                    _window_inc = int(_window[:-1])     # 12
+                    _window_dur = _window[-1]           # m
+                    _timeframe = _var[3]                # woche
+                    _timedelta = _var[4][-1]            # 1
 
                     if self.execute_debug:
                         self.logger.debug(f"execute_items: {_func} function detected. _window={_window}, _timeframe={_timeframe}, _timedelta={_timedelta}")
@@ -578,7 +578,7 @@ class DatabaseAddOn(SmartPlugin):
                 _timedelta = _var[2][-1]
 
                 if self.execute_debug:
-                    self.logger.debug(f"execute_items: {_func} function detected. _timeframe={_timeframe}, _timedelta={_timedelta}")
+                    self.logger.debug(f"execute_items: {_func} function detected. {_timeframe=}, {_timedelta=}")
 
                 if isinstance(_timedelta, str) and _timedelta.isdigit():
                     _timedelta = int(_timedelta)
@@ -601,7 +601,7 @@ class DatabaseAddOn(SmartPlugin):
                     _timedelta = _window[:-1]
 
                     if self.execute_debug:
-                        self.logger.debug(f"execute_items: 'last' function detected. _window={_window}, _func={_func}")
+                        self.logger.debug(f"execute_items: 'last' function detected. {_window=}, {_func=}")
 
                     if _timeframe in ['d', 'w', 'm', 'y'] and _timedelta.isdigit():
                         _result = self._query_item(_func, _database_item, _timeframe, start=_timedelta, end=0, ignore_value=_ignore_value)
@@ -619,14 +619,14 @@ class DatabaseAddOn(SmartPlugin):
                         _timedelta = int(_timedelta)
 
                     if isinstance(_timedelta, int):
-                        _result = self._query_item_single(_func, _database_item, _timeframe, _timedelta, ignore_value=_ignore_value)
+                        _result = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=_timedelta, end=_timedelta, ignore_value=_ignore_value)
 
             # handle kaeltesumme, waermesumme, gruendlandtempsumme
             elif 'summe' in _database_addon_fct:
                 _database_addon_params = self._item_dict[item][3]
 
                 if self.execute_debug:
-                    self.logger.debug(f"execute_items: _database_addon_fct={_database_addon_fct} detected; _database_addon_params={_database_addon_params}")
+                    self.logger.debug(f"execute_items: {_database_addon_fct=} detected; {_database_addon_params=}")
 
                 if _database_addon_params.keys() & {'item', 'year'}:
                     if _database_addon_fct == 'kaeltesumme':
@@ -636,14 +636,14 @@ class DatabaseAddOn(SmartPlugin):
                     elif _database_addon_fct == 'gruendlandtempsumme':
                         _result = self.gruenlandtemperatursumme(**_database_addon_params)
                 else:
-                    self.logger.warning(f"Attribute 'database_addon_params' for item {item.id()} not containing needed params with _database_addon_fct={_database_addon_fct}.")
+                    self.logger.warning(f"Attribute 'database_addon_params' for item {item.id()} not containing needed params with {_database_addon_fct=}.")
 
             # handle tagesmitteltemperatur
             elif _database_addon_fct == 'tagesmitteltemperatur':
                 _database_addon_params = self._item_dict[item][3]
 
                 if self.execute_debug:
-                    self.logger.debug(f"execute_items: _database_addon_fct={_database_addon_fct} detected; _database_addon_params={_database_addon_params}")
+                    self.logger.debug(f"execute_items: {_database_addon_fct=} detected; {_database_addon_params=}")
 
                 if _database_addon_params.keys() & {'item'}:
                     _result = self.tagesmitteltemperatur(**_database_addon_params)
@@ -653,12 +653,12 @@ class DatabaseAddOn(SmartPlugin):
                 _database_addon_params = self._item_dict[item][3]
 
                 if self.execute_debug:
-                    self.logger.debug(f"execute_items: _database_addon_fct={_database_addon_fct} detected; _database_addon_params={_database_addon_params}")
+                    self.logger.debug(f"execute_items: {_database_addon_fct=} detected; {_database_addon_params=}")
 
                 if _database_addon_params.keys() & {'func', 'item', 'timespan'}:
                     _result = self.fetch_log(**_database_addon_params)
                 else:
-                    self.logger.error(f"Attribute 'database_addon_params' not containing needed params for Item {item.id} with _database_addon_fct={_database_addon_fct}.")
+                    self.logger.error(f"Attribute 'database_addon_params' not containing needed params for Item {item.id} with {_database_addon_fct=}.")
 
             # handle everything else
             else:
@@ -666,7 +666,7 @@ class DatabaseAddOn(SmartPlugin):
 
             # log result
             if self.execute_debug:
-                self.logger.debug(f"execute_items: result is {_result} for item '{item.id()}' with _database_addon_fct={_database_addon_fct} _database_item={_database_item.id()} _database_addon_params={_database_addon_params}")
+                self.logger.debug(f"execute_items: result is {_result} for item '{item.id()}' with {_database_addon_fct=} _database_item={_database_item.id()} {_database_addon_params=}")
 
             # set item value and put data into webif update dict
             if _result is not None:
@@ -676,7 +676,7 @@ class DatabaseAddOn(SmartPlugin):
                 item(_result, self.get_shortname())
 
         self.duration = int(time.time() - _start_time)
-        self.logger.info(f"execute_items: FINISHED calculating {len(item_list)} items within {self.duration} sec.")
+        self.logger.info(f"execute_items: FINISHED calculating values for {len(item_list)} items within {self.duration} sec.")
 
         # release lock
         self.execute_items_active = False
@@ -1008,15 +1008,15 @@ class DatabaseAddOn(SmartPlugin):
                     _cache_dict = map_dict[_timeframe]
 
                     if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: minmax item {updated_item.id()} detected. Check for update of _cache_dicts and item value.")
+                        self.logger.debug(f"_fill_cache_dicts: 'minmax' item {updated_item.id()} detected. Check for update of _cache_dicts and item value.")
 
                     # check if database item is in cache dict; if not add it
                     if _database_item not in _cache_dict:
                         _cache_dict[_database_item] = {}
                     if _cache_dict[_database_item].get(_func, None) is None:
-                        _cache_dict[_database_item][_func] = self._query_item_single(_func, _database_item, _timeframe, 1, ignore_value=_ignore_value)
-                    if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {_cache_dict[_database_item][_func]} has been added.")
+                        _cache_dict[_database_item][_func] = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=0, end=0, ignore_value=_ignore_value)
+                        if self.on_change_debug:
+                            self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {_cache_dict[_database_item][_func]} has been added.")
 
                     # update cache dicts
                     _update = False
@@ -1036,7 +1036,7 @@ class DatabaseAddOn(SmartPlugin):
                         # set item value and put data into webif update dict
                         value = _cached_value
                         if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
+                            self.logger.debug(f"_fill_cache_dicts: 'on-change' item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
                         self._webdata[item.id()].update({'value': value})
                         item(value, self.get_shortname())
 
@@ -1046,11 +1046,11 @@ class DatabaseAddOn(SmartPlugin):
                     _cache_dict = map_dict1[_timeframe]
 
                     if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: verbrauch item {updated_item.id()} detected. Check for update of _cache_dicts and item value.")
+                        self.logger.debug(f"_fill_cache_dicts: 'verbrauch' item {updated_item.id()} detected. Check for update of _cache_dicts and item value.")
 
-                    # update cache dicts
+                    # check if database item is in cache dict; if not add it
                     if _database_item not in _cache_dict:
-                        value = self._query_item_single('max', _database_item, _timeframe, 1, ignore_value=_ignore_value)
+                        value = self._query_item(func='max', item=_database_item, timeframe=_timeframe, start=0, end=0, ignore_value=_ignore_value)
                         _cache_dict[_database_item] = value
                         if self.on_change_debug:
                             self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with {_timeframe=} not in cache dict. Value {value} has been added.")
@@ -1062,7 +1062,7 @@ class DatabaseAddOn(SmartPlugin):
 
                         # set item value
                         if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: on-change item={item.id()} will be set to value={delta_value}; current item value={item()}.")
+                            self.logger.debug(f"_fill_cache_dicts: 'on-change' item={item.id()} will be set to value={delta_value}; current item value={item()}.")
                         item(delta_value, self.get_shortname())
 
     def _get_itemid(self, item) -> int:
@@ -1272,8 +1272,15 @@ class DatabaseAddOn(SmartPlugin):
         return _ts_start, _ts_end
 
     def _check_query_result(self, item, log):
-        if log[0][0] is None:
-            self.logger.info(f'No entries for Item {item.id()} in DB found for requested end date. Oldest entry will be used instead')
+
+        if not isinstance(log, list):
+            return
+
+        if not isinstance(log[0], tuple):
+            return
+
+        if log[0][0] is None:  # log=[(None, None)]
+            self.logger.info(f'No entries for Item {item.id()} in DB found for requested date. Oldest entry will be used instead')
             value = int(self._get_oldest_value(item))
         else:
             value = log[0][1]
@@ -1298,7 +1305,7 @@ class DatabaseAddOn(SmartPlugin):
         if self.prepare_debug:
             self.logger.debug(f"_zaehlerstand_abfrage called with {item=},{timeframe=},{timedelta=}")
 
-        _result = self._query_item_single('max', item, timeframe, timedelta)
+        _result = self._query_item(func='max', item=item, timeframe=timeframe, start=timedelta, end=timedelta)
 
         if self.prepare_debug:
             self.logger.debug(f"zaehlerstand: {_result=} for {item=},{timeframe=},{timedelta=}")
@@ -1310,8 +1317,8 @@ class DatabaseAddOn(SmartPlugin):
         if self.prepare_debug:
             self.logger.debug(f"_verbrauch_abfrage called with {item=},{timeframe=},{start=},{end=}")
 
-        value_end = self._query_item_single('max', item, timeframe, end)
-        value_start = self._query_item_single('max', item, timeframe, start)
+        value_end = self._query_item(func='max', item=item, timeframe=timeframe, start=end, end=end)
+        value_start = self._query_item(func='max', item=item, timeframe=timeframe, start=start, end=start)
 
         if value_end is None or value_start is None:
             return
@@ -1326,43 +1333,6 @@ class DatabaseAddOn(SmartPlugin):
 
         if _result < 0:
             self.logger.info(f"_verbrauch_abfrage: {_result=} for {item=},{timeframe=},{start=},{end=} is negative. Somethings seems to be wrong.")
-
-        return _result
-
-    def _query_item_single(self, func: str, item, timeframe: str, timedelta: int, group: str = None, ignore_value=None):
-
-        if self.prepare_debug:
-            self.logger.debug(f"_query_item_single called with {func=}, item={item.id()}, {timeframe=}, {timedelta=}, {group=}, {ignore_value=}")
-
-        _ts_start, _ts_end = self._get_query_timeframe_as_timestamp(timeframe, timedelta+1, timedelta)
-        _oldest_log = int(self._get_oldest_log(item) / 1000)
-        timeframe = convert_timeframe(timeframe)
-
-        if self.prepare_debug:
-            self.logger.debug(f"_query_item_single: {_oldest_log=}, {_ts_start=}, {_ts_end=}")
-
-        # Funktionen nur ausführen, wenn die Datenbank auch zum Endzeitpunkt der Abfrage auch Werte enthält
-        if _oldest_log > _ts_end:
-            self.logger.info(f"_query_item_single: Requested end time='{_ts_end}' of query for Item='{item.id()}' is prior to oldest entry='{_oldest_log}'. Query cancelled.")
-            return
-
-        log = self._query_log_single(func, item, timeframe, timedelta, group, ignore_value)
-
-        if self.prepare_debug:
-            self.logger.debug(f"_query_item_single: {log=}")
-
-        if log is None:
-            self.logger.error(f"Error occurred during _query_item_single. Aborting...")
-            return
-        elif len(log) == 0:
-            _result = 0
-            if self.prepare_debug:
-                self.logger.debug(f"No entry found database for requested timeframe. Try to get the valid value prior to given point in time.")
-        else:
-            _result = self._check_query_result(item, log)
-
-        if self.prepare_debug:
-            self.logger.debug(f"_query_item_single: _result={_result}")
 
         return _result
 
@@ -1395,64 +1365,42 @@ class DatabaseAddOn(SmartPlugin):
         _oldest_log = int(self._get_oldest_log(item) / 1000)
 
         if self.prepare_debug:
-            self.logger.debug(f"_query_item_single: {_oldest_log=}, {_ts_start=}, {_ts_end=}")
+            self.logger.debug(f"_query_item: {_oldest_log=}, {_ts_start=}, {_ts_end=}")
 
-        value = None
-        # Function 'max1' nur ausführen, wenn die Datenbank auch zum Startzeitpunkt der Abfrage auch Werte enthält
-        if func == 'max1' and _oldest_log > _ts_start:
-            self.logger.info(f"_query_item: Requested start time='{_ts_start}' of query with function='{func}' for Item='{item.id()}' is prior to oldest entry='{_oldest_log}'. Query cancelled.")
-            return
-        # Alle anderen Funktionen nur ausführen, wenn die Datenbank auch zum Endzeitpunkt der Abfrage auch Werte enthält
-        elif _oldest_log > _ts_end:
-            self.logger.info(f"_query_item: Requested end time='{_ts_end}' of query with function='{func}' for Item='{item.id()}' is prior to oldest entry='{_oldest_log}'. Query cancelled.")
+        # Abfrage abbrechen, wenn Endzeitpunkt in UNIX-timestamp der Abfrage kleiner (und damit jünger) ist, als der UNIX-timestamp des ältesten Eintrages
+        if _ts_end < _oldest_log:
+            self.logger.info(f"_query_item: Requested end time='{_ts_end}' of query for Item='{item.id()}' is prior to oldest entry='{_oldest_log}'. Query cancelled.")
             return
 
-        log = self._query_log(func, item, _timeframe, start=start, end=end, group=_group_new, group2=_group2_new, ignore_value=ignore_value)
+        # decide which query to be used (simple or standard) to get best/quickest result
+        if start == end:
+            if self.prepare_debug:
+                self.logger.debug(f"_query_item: _query_log_simple used")
+            log = self._query_log_simple(func=func, item=item, timeframe=_timeframe, timedelta=end, group=group, ignore_value=ignore_value)
+        else:
+            if self.prepare_debug:
+                self.logger.debug(f"_query_item: _query_log used")
+            log = self._query_log(func=func, item=item, timeframe=_timeframe, start=start, end=end, group=_group_new, group2=_group2_new, ignore_value=ignore_value)
+
         if self.prepare_debug:
             self.logger.debug(f"_query_item: log={log}")
 
-        if log is not None:
-            if len(log) == 0:
-                value = 0
-                if self.prepare_debug:
-                    self.logger.debug(f"No entry found database for requested timeframe. Try to get the valid value prior to given point in time.")
-            else:
-                if log[0][0] is None:
-                    self.logger.info(f'No entries for Item {item.id()} in DB found for requested end date. Oldest entry will be used instead')
-                    value = int(self._get_oldest_value(item))
-                else:
-                    if func == 'max1' and len(log) >= 2:
-                        try:
-                            value = log[1][1] - log[0][1]
-                        except Exception:
-                            pass
-                        if value:
-                            value = round(value, 1)
-                        else:
-                            value = 0
-                        if self.prepare_debug:
-                            self.logger.debug(f"_query_item: value={value} based on A) with value={log[1][1]} at {timestamp_to_timestring(log[1][0])} and B) with value={log[0][1]} at {timestamp_to_timestring(log[0][0])}")
-                    else:
-                        value = log[0][1]
-                        if value:
-                            value = round(value, 1)
-                        if self.prepare_debug:
-                            self.logger.debug(f"_query_item: value={value} at {timestamp_to_timestring(log[0][0])}")
+        if log is None:
+            self.logger.error(f"Error occurred during _query_item. Aborting...")
+            return
         else:
-            self.logger.error(f"Error occurred during _query_log.")
-        
-        if self.prepare_debug:
-            self.logger.debug(f'_query_item: Results={value} for item={item.id()} with {_timeframe=}, {start=}, {end=}, {_group_new=}, {_group2_new=}.')
-        
-        return value
+            _result = self._check_query_result(item, log)
+            if self.prepare_debug:
+                self.logger.debug(f"_query_item: _result={_result}")
+            return _result
 
-    def _query_log(self, func: str, item, timespan: str, start: int, end: int, count: int = None, group: str = None, group2: str = None, ignore_value=None):
+    def _query_log(self, func: str, item, timeframe: str, start: int, end: int, count: int = None, group: str = None, group2: str = None, ignore_value=None):
         """
         Assemble a mysql query str and param dict based on given parameters, get query response and return it
 
         :param func: function to be used at query
         :param item: item object or item_id for which the query should be done
-        :param timespan: time increment for query (start, end, count) (day, week, month, year)
+        :param timeframe: time increment for query (start, end, count) (day, week, month, year)
         :param start: start of timeframe (oldest) for query given in x time increments (default = None, meaning complete database)
         :param end: end of timeframe (newest) for query given in x time increments (default = 0, meaning today for day, end of last week for week, end of last month for month, end of last year for year)
         :param count: start of timeframe (oldest) defined by number of time increments starting from end into the past
@@ -1523,7 +1471,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # DO DEBUG LOG
         if self.prepare_debug:
-            self.logger.debug(f"_query_log: Called with {func=}, item={item.id()}, {timespan=}, {start=}, {end=}, {count=}, {group=}, {group2=}, {ignore_value=}")
+            self.logger.debug(f"_query_log: Called with {func=}, item={item.id()}, {timeframe=}, {start=}, {end=}, {count=}, {group=}, {group2=}, {ignore_value=}")
 
         # CHECK START
         # if start is given and start is <= end, abort
@@ -1543,8 +1491,8 @@ class DatabaseAddOn(SmartPlugin):
             return
 
         # CHECK CORRECTNESS OF TIMESPAN
-        if timespan not in _timespan:
-            self.logger.error(f"_query_log: Requested {timespan=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
+        if timeframe not in _timespan:
+            self.logger.error(f"_query_log: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
             return
 
         # CHECK CORRECTNESS OF GROUP AND GROUP2
@@ -1566,22 +1514,22 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.error(f"_query_log: ItemId for item={item.id()} not found. Query cancelled.")
             return
 
-        # SET PARAMS
-        params = {
-            'item': item_id,
-            'end': int(end),
-            'start': int(start)
-        }
-
         # ADAPT _WHERE DEPENDING ON START, END AND TIMESPAN
         if not (start is None and end == 0):
-            _where = f"{_where}{_timespan[timespan]}"
+            _where = f"{_where}{_timespan[timeframe]}"
 
         # HANDLE IGNORE VALUES
         if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg', 'diff_max']:  # extend _where statement for excluding boolean values = 0 for defined functions
             _where = f'{_where}AND val_bool = 1 '
         if ignore_value:  # if value to be ignored are defined, extend _where statement
             _where = f'{_where}AND val_num != {ignore_value} '
+
+        # SET PARAMS
+        params = {
+            'item': item_id,
+            'end': int(end),
+            'start': int(start)
+        }
 
         # CREATE QUERY
         query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}{_group_by[group]}ORDER BY {_order}{_table_alias[func]}{_group_by[group2]}".strip()
@@ -1593,7 +1541,7 @@ class DatabaseAddOn(SmartPlugin):
         # REQUEST DATABASE AND RETURN RESULT
         return self._fetchall(query, params)
 
-    def _query_log_single(self, func: str, item, timeframe: str, timedelta: int, group: str = None, ignore_value=None):
+    def _query_log_simple(self, func: str, item, timeframe: str, timedelta: int, group: str = None, ignore_value=None):
         """
         Assemble a mysql query str and param dict for 1 increment (year, month, week, day) based on given parameters, get query response and return it
 
@@ -1609,16 +1557,8 @@ class DatabaseAddOn(SmartPlugin):
 
         """
 
-        """
-        SQL Queries
-            SELECT ROUND(MAX(val_num), 1) as value FROM `log` WHERE item_id = 368 AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL :increment YEAR))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :increment MONTH))
-            SELECT ROUND(MAX(val_num), 1) as value FROM `log` WHERE item_id = 368 AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL :increment WEEK))
-            SELECT ROUND(MAX(val_num), 1) as value FROM `log` WHERE item_id = 368 AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL :increment DAY)
-        
-        """
+        # DEFINE GENERIC QUERY PARTS
 
-        # DEFINE STANDARD QUERY PARTS (SQL Standard)
         _select = {
             'avg':       'time as time1, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
             'min':       'time as time1, ROUND(MIN(val_num), 1) as value ',
@@ -1628,14 +1568,24 @@ class DatabaseAddOn(SmartPlugin):
             'integrate': 'time as time1, ROUND(SUM(val_num * duration),1) as value '
         }
 
-        _where = {
+        # DEFINE mySQL QUERY PARTS
+        """
+        SQL Queries
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL :increment YEAR))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :increment MONTH))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL :increment WEEK))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL :increment DAY)
+        
+        """
+
+        _where_sql = {
             'year':  'item_id = :item AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL :increment YEAR)) ',
             'month': 'item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :increment MONTH)) ',
             'week':  'item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL :increment WEEK)) ',
             'day':   'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL :increment DAY) '
         }
 
-        _group_by = {
+        _group_by_sql = {
             'year':  'GROUP BY YEAR(FROM_UNIXTIME(time/1000)) ',
             'month': 'GROUP BY YEAR(FROM_UNIXTIME(time/1000)), MONTH(FROM_UNIXTIME(time/1000)) ',
             'week':  'GROUP BY YEARWEEK(FROM_UNIXTIME(time/1000), 5) ',
@@ -1644,33 +1594,72 @@ class DatabaseAddOn(SmartPlugin):
             None: ''
         }
 
+        # DEFINE SQLITE QUERY PARTS
+        """
+        SQLITE Queries
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-:increment years'))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-:increment months'))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-:increment days'))   weeks unbekannt, daher weeks * 7
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND date((time/1000),'unixepoch') = date('now', '-:increment day')
+
+        """
+
+        _where_sqlite = {
+            "year":  "item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-:increment years')) ",
+            "month": "item_id = :item AND AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-:increment months')) ",
+            "week":  "item_id = :item AND AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-:increment days')) ",
+            "day":   "item_id = :item AND AND date((time/1000),'unixepoch') = date('now', '-:increment day') "
+        }
+
+        _group_by_sqlite = {
+            'year':  "GROUP BY strftime('%Y', date((time/1000),'unixepoch')) ",
+            'month': "GROUP BY strftime('%Y%m', date((time/1000),'unixepoch')) ",
+            'week':  "GROUP BY strftime('%Y%W', date((time/1000),'unixepoch')) ",
+            'day':   "GROUP BY date((time/1000),'unixepoch') ",
+            None: ''
+        }
+
+        # DEFINE SQLITE DB TABLE
         _db_table = 'log '
 
         ######################################
 
         # DO DEBUG LOG
         if self.prepare_debug:
-            self.logger.debug(f"_query_log_single: Called with {func=}, item={item.id()}, {timeframe=}, {timedelta=}, {group=}, {ignore_value=}")
+            self.logger.debug(f"_query_log_simple: Called with {func=}, item={item.id()}, {timeframe=}, {timedelta=}, {group=}, {ignore_value=}")
+
+        # SELECT QUERY PARTS DEPENDING IN DB DRIVER
+        if self.db_driver.lower() == 'pymysql':
+            _where = _where_sql
+            _group_by = _group_by_sql
+        elif self.db_driver.lower() == 'sqlite3':
+            _where = _where_sqlite
+            _group_by = _group_by_sqlite
+            if timeframe == 'week':
+                timedelta = timedelta * 7
+        else:
+            self.logger.error('DB Driver unkown')
+            return
 
         # CHECK CORRECTNESS OF FUNC
         if func not in _select:
-            self.logger.error(f"_query_log_single: Requested {func=} for item={item.id()} not defined. Query cancelled.")
+            self.logger.error(f"_query_log_simple: Requested {func=} for item={item.id()} not defined. Query cancelled.")
             return
 
         # CHECK CORRECTNESS OF TIMESPAN
         if timeframe not in _where:
-            self.logger.error(f"_query_log_single: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
+            self.logger.error(f"_query_log_simple: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
             return
 
         # CHECK CORRECTNESS OF GROUP
         if group not in _group_by:
-            self.logger.error(f"_query_log_single: Requested {group=} for item={item.id()} not defined. Query cancelled.")
+            self.logger.error(f"_query_log_simple: Requested {group=} for item={item.id()} not defined. Query cancelled.")
             return
 
         # DEFINE ITEM_ID  - create item_id from item or string input of item_id and break, if not given
         item_id = self._get_itemid_for_query(item)
         if not item_id:
-            self.logger.error(f"_query_log_single: ItemId for item={item.id()} not found. Query cancelled.")
+            self.logger.error(f"_query_log_simple: ItemId for item={item.id()} not found. Query cancelled.")
             return
 
         # SET WHERE AND HANDLE IGNORE VALUES
@@ -1687,11 +1676,11 @@ class DatabaseAddOn(SmartPlugin):
             }
 
         # ASSEMBLE QUERY
-        query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}".strip()
+        query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}{_group_by[group]}".strip()
 
         # DO DEBUG LOG
         if self.prepare_debug:
-            self.logger.debug(f"_query_log_single: {query=}, {params=}")
+            self.logger.debug(f"_query_log_simple: {query=}, {params=}")
 
         # REQUEST DATABASE AND RETURN RESULT
         return self._fetchall(query, params)
@@ -1975,7 +1964,7 @@ def convert_timeframe(timeframe: str) -> str:
     return convertion.get(timeframe, None)
 
 
-def convert_duration(self, timeframe: str, window_dur: str) -> int:
+def convert_duration(timeframe: str, window_dur: str) -> int:
     # time conversion
     _d_in_y = 365
     _d_in_w = 7
