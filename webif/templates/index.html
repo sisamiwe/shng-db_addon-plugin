@@ -180,96 +180,119 @@
         <thead>
             <tr>
                 <th style="width: 150px">{{ _('dict/list') }}</th>
+                <th style="width: 50px">{{ _('count') }}</th>
                 <th style="width: 500px">{{ _('content') }}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td class="py-1">{{ _('_webdata') }}</td>
+                <td class="py-1">{{ len(p._webdata) }}</td>
                 <td class="py-1">{{ p._webdata }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_item_dict') }}</td>
+                <td class="py-1">{{ len(p._item_dict)}}</td>
                 <td class="py-1">{{ p._item_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_daily_items') }}</td>
+                <td class="py-1">{{ len(p._daily_items) }}</td>
                 <td class="py-1">{{ p._daily_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_weekly_items') }}</td>
+                <td class="py-1">{{ len(p._weekly_items) }}</td>
                 <td class="py-1">{{ p._weekly_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_monthly_items') }}</td>
+                <td class="py-1">{{ len(p._monthly_items) }}</td>
                 <td class="py-1">{{ p._monthly_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_yearly_items') }}</td>
+                <td class="py-1">{{ len(p._yearly_items) }}</td>
                 <td class="py-1">{{ p._yearly_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_onchange_items') }}</td>
+                <td class="py-1">{{ len(p._onchange_items) }}</td>
                 <td class="py-1">{{ p._onchange_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_meter_items') }}</td>
+                <td class="py-1">{{ len(p._meter_items) }}</td>
                 <td class="py-1">{{ p._meter_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_startup_items') }}</td>
+                <td class="py-1">{{ len(p._startup_items) }}</td>
                 <td class="py-1">{{ p._startup_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_database_items') }}</td>
+                <td class="py-1">{{ len(p._database_items) }}</td>
                 <td class="py-1">{{ p._database_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_static_items') }}</td>
+                <td class="py-1">{{ len(p._static_items) }}</td>
                 <td class="py-1">{{ p._static_items }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_itemid_dict') }}</td>
+                <td class="py-1">{{ len(p._itemid_dict) }}</td>
                 <td class="py-1">{{ p._itemid_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('tageswert_dict') }}</td>
+                <td class="py-1">{{ len(p.tageswert_dict) }}</td>
                 <td class="py-1">{{ p.tageswert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('wochenwert_dict') }}</td>
+                <td class="py-1">{{ len(p.wochenwert_dict) }}</td>
                 <td class="py-1">{{ p.wochenwert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('monatswert_dict') }}</td>
+                <td class="py-1">{{ len(p.monatswert_dict) }}</td>
                 <td class="py-1">{{ p.monatswert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('jahreswert_dict') }}</td>
+                <td class="py-1">{{ len(p.jahreswert_dict) }}</td>
                 <td class="py-1">{{ p.jahreswert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('vortagsendwert_dict') }}</td>
+                <td class="py-1">{{ len(p.vortagsendwert_dict) }}</td>
                 <td class="py-1">{{ p.vortagsendwert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('vorwochenendwert_dict') }}</td>
+                <td class="py-1">{{ len(p.vorwochenendwert_dict) }}</td>
                 <td class="py-1">{{ p.vorwochenendwert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('vormonatsendwert_dict') }}</td>
+                <td class="py-1">{{ len(p.vormonatsendwert_dict) }}</td>
                 <td class="py-1">{{ p.vormonatsendwert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('vorjahresendwert_dict') }}</td>
+                <td class="py-1">{{ len(p.vorjahresendwert_dict) }}</td>
                 <td class="py-1">{{ p.vorjahresendwert_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_oldest_log_dict') }}</td>
+                <td class="py-1">{{ len(p._oldest_log_dict) }}</td>
                 <td class="py-1">{{ p._oldest_log_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('_oldest_entry_dict') }}</td>
+                <td class="py-1">{{ len(p._oldest_entry_dict) }}</td>
                 <td class="py-1">{{ p._oldest_entry_dict }}</td>
             </tr>
         </tbody>
