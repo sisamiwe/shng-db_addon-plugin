@@ -159,7 +159,7 @@ class DatabaseAddOn(SmartPlugin):
             self._init_complete = False
             # pass
 
-        if self.db_driver.lower() == 'pymysql':
+        if self.db_driver is not None and self.db_driver.lower() == 'pymysql':
             self._check_db_connection_setting()
 
         # init webinterface
@@ -899,7 +899,6 @@ class DatabaseAddOn(SmartPlugin):
         :param ignore_value: value of val_num, which will be ignored during query
 
         :return: formatted query response
-        :rtype: list
         """
 
         # query
@@ -922,12 +921,9 @@ class DatabaseAddOn(SmartPlugin):
         Fetch database with given query string and params
 
         :param query: database query to be executed
-        :type query: str
         :param params: query parameters
-        :type params: dict
 
         :return: result of database query
-        :rtype: tuples
         """
 
         if params is None:
@@ -1406,6 +1402,10 @@ class DatabaseAddOn(SmartPlugin):
 
         return _result
 
+    ##############################
+    #     DB Query Preparation
+    ##############################
+
     def _query_log(self, func: str, item, timeframe: str, start: int, end: int, count: int = None, group: str = None, group2: str = None, ignore_value=None):
         """
         Assemble a mysql query str and param dict based on given parameters, get query response and return it
@@ -1855,9 +1855,8 @@ class DatabaseAddOn(SmartPlugin):
         Query the database version and provide result
         """
 
-        if self.db_driver.lower() == 'pymysql':
-            query = 'SELECT VERSION()'
-        elif self.db_driver.lower() == 'sqlite3':
+        query = 'SELECT VERSION()'
+        if self.db_driver.lower() == 'sqlite3':
             query = 'SELECT sqlite_version()'
 
         return self._fetchone(query)
