@@ -159,7 +159,8 @@ class DatabaseAddOn(SmartPlugin):
             self._init_complete = False
             # pass
 
-        self._check_db_connection_setting()
+        if self.db_driver.lower() == 'pymysql':
+            self._check_db_connection_setting()
 
         # init webinterface
         if not self.init_webinterface(WebInterface):
@@ -1044,7 +1045,7 @@ class DatabaseAddOn(SmartPlugin):
 
                     # check if database item is in cache dict; if not add it
                     if _database_item not in _cache_dict:
-                        value = self._query_item(func='max', item=_database_item, timeframe=_timeframe, start=0, end=0, ignore_value=_ignore_value)
+                        value = self._query_item(func='max', item=_database_item, timeframe=_timeframe, start=1, end=1, ignore_value=_ignore_value)
                         _cache_dict[_database_item] = value
                         if self.on_change_debug:
                             self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with {_timeframe=} not in cache dict. Value {value} has been added.")
@@ -1325,8 +1326,8 @@ class DatabaseAddOn(SmartPlugin):
                 # query always delivers None or list of tuples
                 value_start = round(log[0][1], 1)
 
-            if self.prepare_debug:
-                self.logger.debug(f"_consumption_calc {value_start=}")
+                if self.prepare_debug:
+                    self.logger.debug(f"_consumption_calc {value_start=}")
 
             _result = round(value_end - value_start, 1)
 
@@ -1780,12 +1781,12 @@ class DatabaseAddOn(SmartPlugin):
         """
         
         if self.prepare_debug:
-            self.logger.debug(f"_fetch_all_item: Called for item={item}")
+            self.logger.debug(f"_read_log_all: Called for item={item}")
 
         # DEFINE ITEM_ID  - create item_id from item or string input of item_id and break, if not given
         item_id = self._get_itemid_for_query(item)
         if not item_id:
-            self.logger.error(f"_query_log_simple: ItemId for item={item.id()} not found. Query cancelled.")
+            self.logger.error(f"_read_log_all: ItemId for item={item.id()} not found. Query cancelled.")
             return
 
         if item_id:
@@ -1850,16 +1851,20 @@ class DatabaseAddOn(SmartPlugin):
             return self._fetchone(query)
 
     def _get_db_version(self) -> str:
-        """ 
+        """
         Query the database version and provide result
         """
-        
-        query = 'SELECT VERSION()'
+
+        if self.db_driver.lower() == 'pymysql':
+            query = 'SELECT VERSION()'
+        elif self.db_driver.lower() == 'sqlite3':
+            query = 'SELECT sqlite_version()'
+
         return self._fetchone(query)
 
     def _get_db_connect_timeout(self) -> str:
         """
-        SHOW GLOBAL connect_timeout
+        Query database timeout
         """
 
         query = "SHOW GLOBAL VARIABLES LIKE 'connect_timeout'"
@@ -1867,7 +1872,7 @@ class DatabaseAddOn(SmartPlugin):
 
     def _get_db_net_read_timeout(self) -> str:
         """
-        SHOW GLOBAL net_read_timeout
+        Query database timeout net_read_timeout
         """
 
         query = "SHOW GLOBAL VARIABLES LIKE 'net_read_timeout'"
