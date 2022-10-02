@@ -12,7 +12,7 @@ plugin:
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
 #    support: https://knx-user-forum.de/forum/supportforen/smarthome-py
 
-    version: 1.0.H                  # Plugin version (must match the version specified in __init__.py)
+    version: 1.0.I                  # Plugin version (must match the version specified in __init__.py)
     sh_minversion: 1.8              # minimum shNG version to use this plugin
 #    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
 #    py_minversion: 3.6             # minimum Python version to use for this plugin
@@ -22,6 +22,13 @@ plugin:
     classname: DatabaseAddOn        # class containing the plugin
 
 parameters:
+    database_plugin_config:
+        type: str
+        default: 'database'
+        description:
+            de: "Konfiguration des Pluign 'Database', für die das Plugin 'DatabaseAddOn' verwendet wird"
+            en: "Config of Plugin 'Database, for which the Plugin 'DatabaseAddOn' should be active"
+
     startup_run_delay:
         type: int
         default: 0
@@ -159,7 +166,7 @@ item_attributes:
             # general
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
-            - 'general_db_version'                          #str    ------      Ausgabe der verwendeten DB-Version
+                # - 'general_db_version'                          #str    ------      Ausgabe der verwendeten DB-Version
             # complex
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
@@ -732,5 +739,10 @@ plugin_functions:
                   - week
                   - month
                   - year
+    db_version:
+        type: str
+        description:
+            de: 'Liefer die verwendete Version der Datenbank'
+            en: 'Return the database version'
 
 logic_parameters: NONE

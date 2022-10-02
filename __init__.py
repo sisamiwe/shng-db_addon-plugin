@@ -79,7 +79,7 @@ class DatabaseAddOn(SmartPlugin):
         'gts':                       {'func': 'max',         'timespan': 'year',  'start': None, 'end': None, 'group': 'day'},
         }
 
-    PLUGIN_VERSION = '1.0.H'
+    PLUGIN_VERSION = '1.0.I'
 
     def __init__(self, sh):
         """
@@ -122,6 +122,7 @@ class DatabaseAddOn(SmartPlugin):
         self._db = None                             # object of database
         self.connection_data = None                 # connection data list to database
         self.db_driver = None                       # driver for database
+        self.db_instance = None                     # instance of database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
         self.duration = 0                           # duration of a calculation cycle
         self.alive = None                           # Is plugin alive?
@@ -137,10 +138,10 @@ class DatabaseAddOn(SmartPlugin):
         self.default_net_read_timeout = 60
 
         # get plugin parameters
+        self.db_configname = self.get_parameter_value('database_plugin_config')
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.ignore_0_at_temp_items = self.get_parameter_value('ignore_0_at_temp_items')
         self.webif_pagelength = self.get_parameter_value('webif_pagelength')
-        # self.db_instance = self.get_parameter_value('db_instance')
 
         # check existence of db-plugin, get parameters, and init connection to db
         if not self._check_db_existence():
@@ -157,7 +158,6 @@ class DatabaseAddOn(SmartPlugin):
 
         if not self._initialize_db():
             self._init_complete = False
-            # pass
 
         if self.db_driver is not None and self.db_driver.lower() == 'pymysql':
             self._check_db_connection_setting()
@@ -230,14 +230,15 @@ class DatabaseAddOn(SmartPlugin):
 
             # get database item
             _database_item = None
-            _lookup_item = item
-            for i in range(3):
-                if self.has_iattr(_lookup_item.conf, 'database'):
-                    _database_item = _lookup_item
-                    break
-                else:
-                    # self.logger.debug(f"Attribut 'database' is not found for item={item} at _lookup_item={_lookup_item}")
-                    _lookup_item = _lookup_item.return_parent()
+            if _database_addon_fct != 'general_db_version':
+                _lookup_item = item
+                for i in range(3):
+                    if self.has_iattr(_lookup_item.conf, 'database'):
+                        _database_item = _lookup_item
+                        break
+                    else:
+                        # self.logger.debug(f"Attribut 'database' is not found for item={item} at _lookup_item={_lookup_item}")
+                        _lookup_item = _lookup_item.return_parent()
 
             # create items sets
             if _database_item is not None:
@@ -301,82 +302,73 @@ class DatabaseAddOn(SmartPlugin):
 
                 # handle all functions with 'summe' like waermesumme, kaeltesumme, gruenlandtemperatursumme
                 elif 'summe' in _database_addon_fct:
-                    if self.db_driver.lower() != 'pymysql':
-                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
-                    else:
-                        if self.has_iattr(item.conf, 'database_addon_params'):
-                            _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
-                            if _database_addon_params is None:
-                                self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
-                            else:
-                                if 'year' in _database_addon_params:
-                                    _database_addon_params['item'] = _database_item
-                                    self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                    self._daily_items.add(item)
-                                    if self.parse_debug:
-                                        self.logger.debug(f"Item '{item.id()}' added to be run daily.")
-                                else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
+                    if self.has_iattr(item.conf, 'database_addon_params'):
+                        _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                        if _database_addon_params is None:
+                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
                         else:
-                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+                            if 'year' in _database_addon_params:
+                                _database_addon_params['item'] = _database_item
+                                self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                self._daily_items.add(item)
+                                if self.parse_debug:
+                                    self.logger.debug(f"Item '{item.id()}' added to be run daily.")
+                            else:
+                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
+                    else:
+                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
                 # handle tagesmitteltemperatur
                 elif _database_addon_fct == 'tagesmitteltemperatur':
-                    if self.db_driver.lower() != 'pymysql':
-                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
+                    if self.has_iattr(item.conf, 'database_addon_params'):
+                        _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
+                        _database_addon_params['item'] = _database_item
+                        self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                        self._daily_items.add(item)
                     else:
-                        if self.has_iattr(item.conf, 'database_addon_params'):
-                            _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
-                            _database_addon_params['item'] = _database_item
-                            self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                            self._daily_items.add(item)
-                        else:
-                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
+                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
                 # handle db_request
                 elif _database_addon_fct == 'db_request':
-                    if self.db_driver.lower() != 'pymysql':
-                        self.logger.warning(f"Functionality of '_database_addon_fct' not given with type of connected database. Item will be ignored.")
-                    else:
-                        if self.has_iattr(item.conf, 'database_addon_params'):
-                            _database_addon_params = self.get_iattr_value(item.conf, 'database_addon_params')
-                            if _database_addon_params in self.std_req_dict:
-                                _database_addon_params = self.std_req_dict[_database_addon_params]
-                            elif '=' in _database_addon_params:
-                                _database_addon_params = params_to_dict(_database_addon_params)
-                            if _database_addon_params is None:
-                                self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
-                            else:
-                                if self.parse_debug:
-                                    self.logger.debug(f"parse_item: _database_addon_fct={_database_addon_fct} for item={item.id()}, _database_addon_params={_database_addon_params}")
-                                if any(k in _database_addon_params for k in ('func', 'timespan')):
-                                    _database_addon_params['item'] = _database_item
-                                    self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                    _timespan = _database_addon_params.get('group', None)
-                                    if not _timespan:
-                                        _timespan = _database_addon_params.get('timespan', None)
-                                    if _timespan == 'day':
-                                        self._daily_items.add(item)
-                                        if self.parse_debug:
-                                            self.logger.debug(f"Item '{item.id()}' added to be run daily.")
-                                    elif _timespan == 'week':
-                                        self._weekly_items.add(item)
-                                        if self.parse_debug:
-                                            self.logger.debug(f"Item '{item.id()}' added to be run weekly.")
-                                    elif _timespan == 'month':
-                                        self._monthly_items.add(item)
-                                        if self.parse_debug:
-                                            self.logger.debug(f"Item '{item.id()}' added to be run monthly.")
-                                    elif _timespan == 'year':
-                                        self._yearly_items.add(item)
-                                        if self.parse_debug:
-                                            self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
-                                    else:
-                                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
-                                else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
+                    if self.has_iattr(item.conf, 'database_addon_params'):
+                        _database_addon_params = self.get_iattr_value(item.conf, 'database_addon_params')
+                        if _database_addon_params in self.std_req_dict:
+                            _database_addon_params = self.std_req_dict[_database_addon_params]
+                        elif '=' in _database_addon_params:
+                            _database_addon_params = params_to_dict(_database_addon_params)
+                        if _database_addon_params is None:
+                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
                         else:
-                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
+                            if self.parse_debug:
+                                self.logger.debug(f"parse_item: _database_addon_fct={_database_addon_fct} for item={item.id()}, _database_addon_params={_database_addon_params}")
+                            if any(k in _database_addon_params for k in ('func', 'timespan')):
+                                _database_addon_params['item'] = _database_item
+                                self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                                _timespan = _database_addon_params.get('group', None)
+                                if not _timespan:
+                                    _timespan = _database_addon_params.get('timespan', None)
+                                if _timespan == 'day':
+                                    self._daily_items.add(item)
+                                    if self.parse_debug:
+                                        self.logger.debug(f"Item '{item.id()}' added to be run daily.")
+                                elif _timespan == 'week':
+                                    self._weekly_items.add(item)
+                                    if self.parse_debug:
+                                        self.logger.debug(f"Item '{item.id()}' added to be run weekly.")
+                                elif _timespan == 'month':
+                                    self._monthly_items.add(item)
+                                    if self.parse_debug:
+                                        self.logger.debug(f"Item '{item.id()}' added to be run monthly.")
+                                elif _timespan == 'year':
+                                    self._yearly_items.add(item)
+                                    if self.parse_debug:
+                                        self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
+                                else:
+                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
+                            else:
+                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
+                    else:
+                        self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
 
                 # handle on_change items
                 else:
@@ -1108,38 +1100,48 @@ class DatabaseAddOn(SmartPlugin):
 
     def _check_db_existence(self) -> bool:
         """
-        Check existence of database plugin and database
-         - Checks if DB Plugin is loaded and if driver is PyMySql
-         - Gets database plugin parameters
-         - Puts database connection parameters to plugin properties
+        Check existence of database plugin with given config name
 
         :return: Status of db existence
         """
 
-        # check if database plugin is loaded
         try:
-            _db_plugin = self.plugins.return_plugin('database')
+            _db_plugin = self.plugins.return_plugin(self.db_configname)
         except Exception as e:
             self.logger.error(f"Database plugin not loaded, Error was {e}. No need for DatabaseAddOn Plugin.")
             return False
         else:
-            self._db_plugin = _db_plugin
+            if not _db_plugin:
+                self.logger.error(f"Database plugin not loaded or given ConfigName {self.db_configname} not correct. No need for DatabaseAddOn Plugin.")
+                return False
+            else:
+                self.logger.debug(f"Corresponding plugin 'database' with given config name '{self.db_configname}' found.")
+                self._db_plugin = _db_plugin
+                return self._get_db_parameter()
 
-        # get driver of database and check if it is PyMySql to ensure existence of MySql DB
+    def _get_db_parameter(self) -> bool:
+        """
+        Get driver of database and connection parameter
+
+        :return: Status of db connection parameters
+        """
+
         try:
-            self.db_driver = _db_plugin.get_parameter_value('driver')
+            self.db_driver = self._db_plugin.get_parameter_value('driver')
         except Exception as e:
             self.logger.error(f"Error {e} occurred during getting database plugin parameter 'driver'. DatabaseAddOn Plugin not loaded.")
             return False
         else:
-            if self.db_driver.lower() != 'pymysql':
-                self.logger.warning(f"Database is of type 'mysql'. Therefore not complete functionality of that plugin given (e.g. db_request not supported).")
+            if self.db_driver.lower() == 'pymysql':
+                self.logger.debug(f"Database is of type 'mysql' found.")
+            if self.db_driver.lower() == 'sqlite3':
+                self.logger.debug(f"Database is of type 'sqlite' found. Functionality of that plugin not yet fully implemented.")
 
         # get database plugin parameters
         try:
-            db_instance = _db_plugin.get_parameter_value('instance')
-            self.connection_data = _db_plugin.get_parameter_value('connect')  # ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
-            self.logger.debug(f"Database Plugin available with instance={db_instance} and connection={self.connection_data}")
+            self.db_instance = self._db_plugin.get_parameter_value('instance')
+            self.connection_data = self._db_plugin.get_parameter_value('connect')  # pymsql ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
+            self.logger.debug(f"Database Plugin available with instance={self.db_instance} and connection={self.connection_data}")
         except Exception as e:
             self.logger.error(f"Error {e} occurred during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
             return False
@@ -1424,7 +1426,7 @@ class DatabaseAddOn(SmartPlugin):
         :rtype: tuples
         """
 
-        # DEFINE STANDARD QUERY PARTS (SQL Standard)
+        # DEFINE GENERIC QUERY PARTS
         _select = {
             'avg': 'time as time1, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
             'avg1': 'time as time1, ROUND(AVG(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num), 1) as value ',
@@ -1438,26 +1440,6 @@ class DatabaseAddOn(SmartPlugin):
             'sum_avg': 'time as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
             'sum_min_neg': 'time as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, IF(min(val_num) < 0, ROUND(MIN(val_num), 1), 0) as value ',
             'diff_max': 'time as time1, ROUND(value1 - LAG(value1), 1) OVER (ORDER BY time) AS value FROM (SELECT time, ROUND(MAX(val_num), 1) as value1 '
-        }
-
-        _where = 'item_id = :item '
-
-        # statements for query certain timespan of DB (query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past)
-        # details see end of file
-        _timespan = {
-            'year': 'AND YEAR(FROM_UNIXTIME(time/1000)) BETWEEN MAKEDATE(YEAR(CURDATE()-interval :start YEAR), 1) AND MAKEDATE(YEAR(CURDATE()-interval :end YEAR), 1) ',
-            'month': 'AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:start -1) MONTH) AND DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:end -1) MONTH) ',
-            'week': 'AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) BETWEEN DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :start WEEK) AND DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :end WEEK) ',
-            'day': 'AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(CURDATE(), INTERVAL :start DAY) AND DATE_SUB(CURDATE(), INTERVAL :end DAY) '
-        }
-
-        _group_by = {
-            'year': 'GROUP BY YEAR(FROM_UNIXTIME(time/1000)) ',
-            'month': 'GROUP BY YEAR(FROM_UNIXTIME(time/1000)), MONTH(FROM_UNIXTIME(time/1000)) ',
-            'week': 'GROUP BY YEARWEEK(FROM_UNIXTIME(time/1000), 5) ',
-            'day': 'GROUP BY DATE(FROM_UNIXTIME(time/1000)) ',
-            'hour': 'GROUP BY DATE(FROM_UNIXTIME(time/1000)), HOUR(FROM_UNIXTIME(time/1000)) ',
-            None: ''
         }
 
         _table_alias = {
@@ -1475,15 +1457,62 @@ class DatabaseAddOn(SmartPlugin):
             'diff_max': ') AS table1 '
         }
 
-        _db_table = 'log '
-
         _order = 'time ASC '
+
+        # DEFINE mySQL QUERY PARTS
+        # statements for query certain timespan of DB (query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past) // details see end of file
+        _where_sql = {
+            "year":  "item_id = :item AND YEAR(FROM_UNIXTIME(time/1000)) BETWEEN MAKEDATE(YEAR(CURDATE()-interval :start YEAR), 1) AND MAKEDATE(YEAR(CURDATE()-interval :end YEAR), 1) ",
+            "month": "item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:start -1) MONTH) AND DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:end -1) MONTH) ",
+            "week":  "item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) BETWEEN DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :start WEEK) AND DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :end WEEK) ",
+            "day":   "item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(CURDATE(), INTERVAL :start DAY) AND DATE_SUB(CURDATE(), INTERVAL :end DAY) "
+        }
+
+        _group_by_sql = {
+            "year":  "GROUP BY YEAR(FROM_UNIXTIME(time/1000)) ",
+            "month": "GROUP BY YEAR(FROM_UNIXTIME(time/1000)), MONTH(FROM_UNIXTIME(time/1000)) ",
+            "week":  "GROUP BY YEARWEEK(FROM_UNIXTIME(time/1000), 5) ",
+            "day":   "GROUP BY DATE(FROM_UNIXTIME(time/1000)) ",
+            "hour":  "GROUP BY DATE(FROM_UNIXTIME(time/1000)), HOUR(FROM_UNIXTIME(time/1000)) ",
+            None: ''
+        }
+
+        # DEFINE SQLITE QUERY PARTS
+        _where_sqlite = {
+            "year":  f"item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-{start} years')) AND strftime('%Y', date('now', '-{end} years')) ",
+            "month": f"item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) BETWEEN strftime('%Y%m', date('now','-{start} months')) AND strftime('%Y%m', date('now','-{end} months')) ",
+            "week":  f"item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) BETWEEN date('now', '-{start * 7} days') AND date('now', '-{end * 7} days') ",
+            "day":   f"item_id = :item AND date((time/1000),'unixepoch') BETWEEN date('now', '-{start} days') AND date('now', '-{end} days') "
+        }
+
+        _group_by_sqlite = {
+            "year":  "GROUP BY strftime('%Y', date((time/1000),'unixepoch')) ",
+            "month": "GROUP BY strftime('%Y%m', date((time/1000),'unixepoch')) ",
+            "week":  "GROUP BY strftime('%Y%W', date((time/1000),'unixepoch')) ",
+            "day":   "GROUP BY date((time/1000),'unixepoch') ",
+            "hour":  "GROUP BY date((time/1000),'unixepoch'), strftime('%H', date((time/1000),'unixepoch')) ",
+            None: ''
+        }
+
+        # DEFINE SQLITE DB TABLE
+        _db_table = 'log '
 
         ######################################
 
         # DO DEBUG LOG
         if self.prepare_debug:
             self.logger.debug(f"_query_log: Called with {func=}, item={item.id()}, {timeframe=}, {start=}, {end=}, {count=}, {group=}, {group2=}, {ignore_value=}")
+
+        # SELECT QUERY PARTS DEPENDING IN DB DRIVER
+        if self.db_driver.lower() == 'pymysql':
+            _where = _where_sql
+            _group_by = _group_by_sql
+        elif self.db_driver.lower() == 'sqlite3':
+            _where = _where_sqlite
+            _group_by = _group_by_sqlite
+        else:
+            self.logger.error('DB Driver unknown')
+            return
 
         # CHECK START
         # if start is given and start is <= end, abort
@@ -1503,7 +1532,7 @@ class DatabaseAddOn(SmartPlugin):
             return
 
         # CHECK CORRECTNESS OF TIMESPAN
-        if timeframe not in _timespan:
+        if timeframe not in _where:
             self.logger.error(f"_query_log: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
             return
 
@@ -1523,7 +1552,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # ADAPT _WHERE DEPENDING ON START, END AND TIMEFRAME
         if not (start is None and end == 0):
-            _where = f"{_where}{_timespan[timeframe]}"
+            _where = f"{_where[timeframe]}"
 
         # HANDLE IGNORE VALUES
         if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg', 'diff_max']:  # extend _where statement for excluding boolean values = 0 for defined functions
@@ -1540,6 +1569,9 @@ class DatabaseAddOn(SmartPlugin):
 
         # CREATE QUERY
         query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}{_group_by[group]}ORDER BY {_order}{_table_alias[func]}{_group_by[group2]}".strip()
+
+        if self.db_driver.lower() == 'sqlite3':
+            query = query.replace('IF', 'IIF')
 
         # DO DEBUG LOG
         if self.prepare_debug:
@@ -1586,10 +1618,10 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         _where_sql = {
-            'year':  'item_id = :item AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL :increment YEAR)) ',
-            'month': 'item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :increment MONTH)) ',
-            'week':  'item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL :increment WEEK)) ',
-            'day':   'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL :increment DAY) '
+            "year":  f"item_id = :item AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL {timedelta} YEAR)) ",
+            "month": f"item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL {timedelta - 1} MONTH)) ",
+            "week":  f"item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL {timedelta} WEEK)) ",
+            "day":   f"item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL {timedelta} DAY) "
         }
 
         _group_by_sql = {
@@ -1604,18 +1636,18 @@ class DatabaseAddOn(SmartPlugin):
         # DEFINE SQLITE QUERY PARTS
         """
         SQLITE Queries
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-:increment years'))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-:increment months'))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-:increment days'))   weeks unbekannt, daher weeks * 7
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND date((time/1000),'unixepoch') = date('now', '-:increment day')
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-1 years'))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-1 months'))
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-7 days'))   weeks unbekannt, daher weeks * 7
+            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND date((time/1000),'unixepoch') = date('now', '-1 days')
 
         """
 
         _where_sqlite = {
-            "year":  "item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-:increment years')) ",
-            "month": "item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-:increment months')) ",
-            "week":  "item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-:increment days')) ",
-            "day":   "item_id = :item AND date((time/1000),'unixepoch') = date('now', '-:increment day') "
+            "year":  f"item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-{timedelta} years')) ",
+            "month": f"item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-{timedelta} months')) ",
+            "week":  f"item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-{timedelta * 7} days')) ",
+            "day":   f"item_id = :item AND date((time/1000),'unixepoch') = date('now', '-{timedelta} day') "
         }
 
         _group_by_sqlite = {
@@ -1642,10 +1674,8 @@ class DatabaseAddOn(SmartPlugin):
         elif self.db_driver.lower() == 'sqlite3':
             _where = _where_sqlite
             _group_by = _group_by_sqlite
-            if timeframe == 'week':
-                timedelta = timedelta * 7
         else:
-            self.logger.error('DB Driver unkown')
+            self.logger.error('DB Driver unknown')
             return
 
         # CHECK CORRECTNESS OF FUNC
@@ -1680,10 +1710,7 @@ class DatabaseAddOn(SmartPlugin):
         query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}{_group_by[group]}".strip()
 
         # SET PARAMS
-        params = {
-            'item': item_id,
-            'increment': int(timedelta)
-        }
+        params = {'item': item_id}
 
         # DO DEBUG LOG
         if self.prepare_debug:
@@ -1710,17 +1737,17 @@ class DatabaseAddOn(SmartPlugin):
         _select = 'time as time1, val_num as value'
 
         _where_sql = {
-            'year':  'item_id = :item AND YEAR(FROM_UNIXTIME(time/1000)) < MAKEDATE(YEAR(CURDATE()-interval :end YEAR), 1)',
-            'month': 'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) < DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:end -1) MONTH)',
-            'week':  'item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) < DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :end WEEK)',
-            'day':   'item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) < DATE_SUB(CURDATE(), INTERVAL :increment DAY)'
+            "year":  f"item_id = :item AND YEAR(FROM_UNIXTIME(time/1000)) < YEAR(DATE_SUB(CURDATE(), INTERVAL {timedelta} YEAR))",
+            "month": f"item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) < EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL {timedelta - 1} MONTH))",
+            "week":  f"item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) < YEARWEEK(DATE_SUB(CURDATE(), INTERVAL {timedelta} WEEK))",
+            "day":   f"item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) < DATE_SUB(CURDATE(), INTERVAL {timedelta} DAY)"
         }
 
         _where_sqlite = {
-            "year":  "item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) < strftime('%Y', date('now', '-:increment years'))",
-            "month": "item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) < strftime('%Y%m', date('now','-:increment months'))",
-            "week":  "item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) < strftime('%Y%W', date('now', '-:increment days'))",
-            "day":   "item_id = :item AND date((time/1000),'unixepoch') < date('now', '-:increment day')"
+            "year":  f"item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) < strftime('%Y', date('now', '-{timedelta} years'))",
+            "month": f"item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) < strftime('%Y%m', date('now','-{timedelta} months'))",
+            "week":  f"item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) < strftime('%Y%W', date('now', '-{timedelta * 7} days'))",
+            "day":   f"item_id = :item AND date((time/1000),'unixepoch') < date('now', '-{timedelta} day')"
         }
 
         # DEFINE SQLITE DB TABLE
@@ -1737,8 +1764,6 @@ class DatabaseAddOn(SmartPlugin):
             _where = _where_sql
         elif self.db_driver.lower() == 'sqlite3':
             _where = _where_sqlite
-            if timeframe == 'week':
-                timedelta = timedelta * 7
         else:
             self.logger.error('DB Driver unkown')
             return
@@ -1758,10 +1783,7 @@ class DatabaseAddOn(SmartPlugin):
         query = f"SELECT {_select} FROM {_db_table} WHERE {_where[_timeframe]} ORDER BY time DESC LIMIT 1".strip()
 
         # SET PARAMS
-        params = {
-            'item': item_id,
-            'increment': int(timedelta)
-        }
+        params = {'item': item_id}
 
         # DO DEBUG LOG
         if self.prepare_debug:
@@ -1859,7 +1881,7 @@ class DatabaseAddOn(SmartPlugin):
         if self.db_driver.lower() == 'sqlite3':
             query = 'SELECT sqlite_version()'
 
-        return self._fetchone(query)
+        return self._fetchone(query)[0]
 
     def _get_db_connect_timeout(self) -> str:
         """
@@ -1956,9 +1978,11 @@ class DatabaseAddOn(SmartPlugin):
             tuples = fetch(query, params, cur=cur)
         except Exception as e:
             self.logger.error(f"_query: Error for query {query_readable}: {e}")
+            self.logger.error(f"_query: Error for query {query} with params {params}: {e}")
         else:
             if self.sql_debug:
                 self.logger.debug(f"_query: Result of {query_readable}: {tuples}")
+                self.logger.debug(f"_query: Result of {query} with params {params}: {tuples}")
             return tuples
         finally:
             if cur is None:
