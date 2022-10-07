@@ -163,10 +163,31 @@ item_attributes:
             - 'minmax_jahr_minus1_min'                      #num    yearly      Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)           
             - 'minmax_jahr_minus1_max'                      #num    yearly      Maximalwert Vorjahr (aktuelles Jahr -1 Jahr)
             - 'minmax_jahr_minus1_avg'                      #num    yearly      Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr)
+            # series
+            - 'serie_minmax_monat_min_15m'                  #list   monthly     monatlicher Minimalwert der letzten 15 Monate (gleitend)
+            - 'serie_minmax_monat_max_15m'                  #list   monthly     monatlicher Maximalwert der letzten 15 Monate (gleitend)
+            - 'serie_minmax_monat_avg_15m'                  #list   monthly     monatlicher Mittelwert der letzten 15 Monate (gleitend)
+            - 'serie_minmax_woche_min_30w'                  #list   weekly      wöchentlicher Minimalwert der letzten 30 Wochen (gleitend)
+            - 'serie_minmax_woche_max_30w'                  #list   weekly      wöchentlicher Maximalwert der letzten 30 Wochen (gleitend)
+            - 'serie_minmax_woche_avg_30w'                  #list   weekly      wöchentlicher Mittelwert der letzten 30 Wochen (gleitend)
+            - 'serie_minmax_tag_min_30d'                    #list   daily       täglicher Minimalwert der letzten 30 Tage (gleitend)
+            - 'serie_minmax_tag_max_30d'                    #list   daily       täglicher Maximalwert der letzten 30 Tage (gleitend)
+            - 'serie_minmax_day_avg_30d'                    #list   daily       täglicher Mittelwert der letzten 30 Tage (gleitend)
+            - 'serie_verbrauch_tag_30d'                     #list   daily       Verbrauch pro Tag der letzten 30 Tage
+            - 'serie_verbrauch_woche_30w'                   #list   weekly      Verbrauch pro Woche der letzten 30 Wochen
+            - 'serie_verbrauch_monat_18m'                   #list   monthly     Verbrauch pro Monat der letzten 18 Monate
+            - 'serie_zaehlerstand_tag_30d'                  #list   daily       Zählerstand am Tagesende der letzten 30 Tage
+            - 'serie_zaehlerstand_woche_30w'                #list   weekly      Zählerstand am Wochenende der letzten 30 Wochen
+            - 'serie_zaehlerstand_monat_18m'                #list   monthly     Zählerstand am Monatsende der letzten 18 Monate
+            - 'serie_waermesumme_monat_24m'                 #list   monthly     monatliche Wärmesumme der letzten 24 Monate
+            - 'serie_kaeltesumme_monat_24m'                 #list   monthly     monatliche Kältesumme der letzten 24 Monate
+
+            - 'serie_tagesmittelwert_stunde_0d'             #list   daily       Stundenmittelwert für den aktuellen Tag
+            - 'serie_tagesmittelwert_tag_stunde_30d'        #list   daily       Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde
+
             # general
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
-                # - 'general_db_version'                          #str    ------      Ausgabe der verwendeten DB-Version
             # complex
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
@@ -662,7 +683,7 @@ item_structs:
 item_attribute_prefixes: NONE
 
 plugin_functions:
-    db_request:
+    fetch_log:
         type: list
         description:
             de: 'Liefert für das angegebene Item und die Parameter das Abfrageergebnis zurück'
@@ -707,12 +728,12 @@ plugin_functions:
             start:
                 type: int
                 description:
-                    de: "Zeitlicher Beginn der DB-Abfrage: x Zeitinkrementen von jetzt in die Verangenheit"
+                    de: "Zeitlicher Beginn der DB-Abfrage: x Zeitinkrementen von jetzt in die Vergangenheit"
                     en: ""
             end:
                 type: int
                 description:
-                    de: "Zeitliches Ende der DB-Abfrage: x Zeitinkrementen von jetzt in die Verangenheit"
+                    de: "Zeitliches Ende der DB-Abfrage: x Zeitinkrementen von jetzt in die Vergangenheit"
                     en: ""
             count:
                 type: int
