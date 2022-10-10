@@ -119,8 +119,9 @@
 
 {% block buttons %}
 	<div>
-		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Recalculation of all items?') }}')) { jQuery.get('recalc_all'); }">{{_('Re-evaluate all')}}</button>
-		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Clean all cache dicts?') }}')) { jQuery.get('clean_cache_dicts'); }">{{_('Clean cache dicts')}}</button>
+		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Neuberechnung aller Items auslösen?') }}')) { jQuery.get('recalc_all'); }">{{_('Neuberechnung')}}</button>
+        <button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }">{{_('Berechnungslauf beenden')}}</button>
+		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }">{{_('Cache löschen')}}</button>
 	</div>
 {% endblock %}
 

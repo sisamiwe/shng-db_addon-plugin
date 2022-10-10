@@ -35,11 +35,12 @@ import lib.db
 
 import sqlvalidator
 import datetime
-from dateutil.relativedelta import *
-from typing import Union
 import time
 import re
 import queue
+from dateutil.relativedelta import *
+from typing import Union
+import threading
 
 #########################################################################
 # ToDo
@@ -119,6 +120,7 @@ class DatabaseAddOn(SmartPlugin):
         self.jahreswert_dict = {}                   # dict to hold min and max value of current year for items
         self._webdata = {}                          # dict to hold information for webif update
         self._item_queue = queue.Queue()            # Queue containing all to be executed items
+        self.work_queue_thread = None              # Working Thread for queue
         self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
         self._db = None                             # object of database
@@ -186,7 +188,8 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.info(f"Set scheduler for calculating startup-items with delay of {self.startup_run_delay + 3}s to {dt}.")
         self.scheduler_add('startup', self.execute_startup_items, next=dt)
 
-        self.work_queue()
+        # start the queue consumer thread
+        self._work_queue_thread_startup()
 
     def stop(self):
         """
@@ -196,6 +199,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug("Stop method called")
         self.scheduler_remove('cyclic')
         self.alive = False
+        self._work_queue_thread_shutdown()
 
     def parse_item(self, item):
         """
@@ -456,7 +460,7 @@ class DatabaseAddOn(SmartPlugin):
                     self.logger.info(f"work_queue: ACTIVATE handling of on-change items calculation.")
                 # set counter
                 if _initial_queue_length > 0:
-                    self.logger.info(f"work_queue: FINISHED calculating values for {_inital_queue_length} items within {int(time.time() - _start_time)} sec.")
+                    self.logger.info(f"work_queue: FINISHED calculating values for {_initial_queue_length} items within {int(time.time() - _start_time)} sec.")
                     _initial_queue_length = 0
                 pass
             else:
@@ -586,8 +590,7 @@ class DatabaseAddOn(SmartPlugin):
 
                 # set item value and put data into webif update dict
                 if _result is not None:
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: Item value of item '{item.id()}' will be set to {_result}")
+                    self.logger.info(f"Item value of item '{item.id()}' will be set to {_result}")
                     self._webdata[item.id()].update({'value': _result})
                     item(_result, self.get_shortname())
 
@@ -701,6 +704,34 @@ class DatabaseAddOn(SmartPlugin):
     ##############################
     #        Support stuff
     ##############################
+
+    def _work_queue_thread_startup(self):
+        """
+        Start a thread to work queue
+        """
+
+        try:
+            _name = 'plugins.' + self.get_fullname() + '.work_queue'
+            self.work_queue_thread = threading.Thread(target=self.work_queue, name=_name)
+            self.work_queue_thread.daemon = False
+            self.work_queue_thread.start()
+            self.logger.debug("Thread for 'work_queue_thread' has been started")
+        except threading.ThreadError:
+            self.logger.error("Unable to launch thread for 'work_queue_thread'.")
+            self.work_queue_thread = None
+
+    def _work_queue_thread_shutdown(self):
+        """
+        Shut down the thread to work queue
+        """
+
+        if self.work_queue_thread:
+            self.work_queue_thread.join()
+            if self.work_queue_thread.is_alive():
+                self.logger.error("Unable to shut down 'work_queue_thread' thread")
+            else:
+                self.logger.info("Thread 'work_queue_thread' has been terminated.")
+                self.work_queue_thread = None
 
     def _check_db_connection_setting(self) -> None:
         """
@@ -1395,9 +1426,6 @@ class DatabaseAddOn(SmartPlugin):
 
         """
 
-        if self.prepare_debug:
-            self.logger.debug(f"_handle_query_result called")
-
         # if query delivers None, abort
         if query_result is None:
             # if query delivers None, abort
@@ -1405,13 +1433,13 @@ class DatabaseAddOn(SmartPlugin):
             _result = [[None, None]]
         elif len(query_result) == 0:
             _result = [[0, 0]]
-            self.logger.info(f" No values for item in requesrted timeframe in database found.")
+            self.logger.info(f" No values for item in requested timeframe in database found.")
         else:
             _result = []
             for element in query_result:
                 timestamp = element[0]
                 value = element[1]
-                if timestamp and value:
+                if timestamp and value is not None:
                     _result.append([timestamp, round(value, 1)])
             if not _result:
                 _result = [[None, None]]
@@ -1471,8 +1499,8 @@ class DatabaseAddOn(SmartPlugin):
         if self.prepare_debug:
             self.logger.debug(f"_consumption_calc: {_result=} for {item=},{timeframe=},{start=},{end=}")
 
-        if _result < 0:
-            self.logger.info(f"_consumption_calc: {_result=} for {item=},{timeframe=},{start=},{end=} is negative. Somethings seems to be wrong.")
+        # if _result < 0:
+        #    self.logger.info(f"_consumption_calc: {_result=} for {item=},{timeframe=},{start=},{end=} is negative. Somethings seems to be wrong.")
 
         return _result
 
@@ -1543,7 +1571,7 @@ class DatabaseAddOn(SmartPlugin):
         Clean all cache dicts
         """
 
-        self.logger.debug(f"_clean_cache_dicts called. All cache_dicts will be cleaned.")
+        self.logger.info(f"All cache_dicts will be cleaned.")
 
         # self._itemid_dict = {}
         # self._oldest_log_dict = {}
@@ -1556,6 +1584,15 @@ class DatabaseAddOn(SmartPlugin):
         self.wochenwert_dict = {}
         self.monatswert_dict = {}
         self.jahreswert_dict = {}
+
+    def _clear_queue(self) -> None:
+        """
+        Clear working queue
+        """
+
+        self.logger.info(f"Working queue will be cleared. Calculation run will end.")
+
+        self._item_queue.queue.clear()
 
     ##############################
     #     DB Query Preparation
