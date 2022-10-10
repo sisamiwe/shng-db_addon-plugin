@@ -172,7 +172,7 @@ item_attributes:
             - 'serie_minmax_woche_avg_30w'                  #list   weekly      wöchentlicher Mittelwert der letzten 30 Wochen (gleitend)
             - 'serie_minmax_tag_min_30d'                    #list   daily       täglicher Minimalwert der letzten 30 Tage (gleitend)
             - 'serie_minmax_tag_max_30d'                    #list   daily       täglicher Maximalwert der letzten 30 Tage (gleitend)
-            - 'serie_minmax_day_avg_30d'                    #list   daily       täglicher Mittelwert der letzten 30 Tage (gleitend)
+            - 'serie_minmax_tag_avg_30d'                    #list   daily       täglicher Mittelwert der letzten 30 Tage (gleitend)
             - 'serie_verbrauch_tag_30d'                     #list   daily       Verbrauch pro Tag der letzten 30 Tage
             - 'serie_verbrauch_woche_30w'                   #list   weekly      Verbrauch pro Woche der letzten 30 Wochen
             - 'serie_verbrauch_monat_18m'                   #list   monthly     Verbrauch pro Monat der letzten 18 Monate
