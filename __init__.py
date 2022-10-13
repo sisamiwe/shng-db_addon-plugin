@@ -754,11 +754,11 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         connect_timeout = int(self._get_db_connect_timeout()[1])
-        if connect_timeout != self.default_connect_timeout:
+        if connect_timeout < self.default_connect_timeout:
             self.logger.warning(f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
         net_read_timeout = int(self._get_db_net_read_timeout()[1])
-        if net_read_timeout != self.default_net_read_timeout:
+        if net_read_timeout < self.default_net_read_timeout:
             self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
     def _fill_cache_dicts(self, updated_item, value: float) -> None:
