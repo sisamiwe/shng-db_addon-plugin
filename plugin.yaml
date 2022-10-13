@@ -64,12 +64,6 @@ parameters:
             en: 'Amount of items being listed in a web interface table per page by default.\n
                  0 adjusts the table height automatically based on the height of the browser windows.\n
                  -1 shows all table entries on one page.'
-            
-#    db_instance:
-#        type: str
-#        description:
-#            de: 'Instanz of mysql-DB, die verwendet werden soll'
-#            en: 'Instance of mysql-DB to be used'
 
 item_attributes:
     database_addon_fct:
@@ -109,7 +103,6 @@ item_attributes:
             - 'verbrauch_vorjahreszeitraum_minus1'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
             - 'verbrauch_vorjahreszeitraum_minus2'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren
             # Zaehlerstand
-            # - 'zaehlerstand_tagesende'
             - 'zaehlerstand_heute_minus1'                   #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
             - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
             - 'zaehlerstand_woche_minus2'                   #num    weekly      Zählerstand / Wert am Ende der vorletzten Woche (aktuelle Woche -2 Woche)        
@@ -181,7 +174,6 @@ item_attributes:
             - 'serie_zaehlerstand_monat_18m'                #list   monthly     Zählerstand am Monatsende der letzten 18 Monate
             - 'serie_waermesumme_monat_24m'                 #list   monthly     monatliche Wärmesumme der letzten 24 Monate
             - 'serie_kaeltesumme_monat_24m'                 #list   monthly     monatliche Kältesumme der letzten 24 Monate
-
             - 'serie_tagesmittelwert_stunde_0d'             #list   daily       Stundenmittelwert für den aktuellen Tag
             - 'serie_tagesmittelwert_tag_stunde_30d'        #list   daily       Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde
 
@@ -689,8 +681,8 @@ plugin_functions:
             de: 'Liefert für das angegebene Item und die Parameter das Abfrageergebnis zurück'
             en: 'Return the database request result for the given item and parameters'
             # mit dieser Funktion ist es möglich, eine Liste der "func" Werte pro "group" / "group2" eines "item" von "start""timespan" bis "end""timespan" oder von "start""timespan" bis "count" ausgegeben zu lassen
-            # bspw: minimale Tagestemperatur vom Item "outdoor.temp" der letzten 10 Tage startend von gestern davor --> func=min, item=outdoor.temp, timespan=day, start=1, count=10, group=day
-            # bspw: maximal Tagestemperatur vom Item "outdoor.temp" von jetzt bis 2 Monate davor --> func=max, item=outdoor.temp, timespan=month, start=0, end=2, group=day
+            # bspw. minimale Tagestemperatur vom Item "outdoor.temp" der letzten 10 Tage startend von gestern davor --> func=min, item=outdoor.temp, timespan=day, start=1, count=10, group=day
+            # bspw. maximal Tagestemperatur vom Item "outdoor.temp" von jetzt bis 2 Monate davor --> func=max, item=outdoor.temp, timespan=month, start=0, end=2, group=day
         parameters:
             func:
                 type: str

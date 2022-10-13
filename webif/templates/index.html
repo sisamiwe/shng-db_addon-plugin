@@ -1,6 +1,6 @@
 {% extends "base_plugin.html" %}
 {% set logo_frame = false %}
-{% set update_interval = 10000 %}
+{% set update_interval = 5000 %}
 
 {% block pluginstyles %}
 <style>
@@ -27,6 +27,9 @@
 
 {% block pluginscripts %}
 <script>
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
   $(document).ready( function () {
     $(window).trigger('datatables_defaults');
     
@@ -66,17 +69,19 @@
     function handleUpdatedData(response, dataSet=null) {
         if (dataSet === 'devices_info' || dataSet === null) {
             var objResponse = JSON.parse(response);
-            myProto = document.getElementById(dataSet);
+            var item_data = objResponse['items']
 
-            for (var item in objResponse) {
-                value = objResponse[item]['value']
+            for (var item in item_data) {
+                value = item_data[item]['value']
                 if(typeof value == 'number') {
                     value = value.toFixed(1);
                 }
                 shngInsertText(item+'_value', value, 'maintable');
-                shngInsertText(item+'_last_update', objResponse[item]['last_update'], 'maintable');
-                shngInsertText(item+'_last_change', objResponse[item]['last_change'], 'maintable');
+                shngInsertText(item+'_last_update', item_data[item]['last_update'], 'maintable');
+                shngInsertText(item+'_last_change', item_data[item]['last_change'], 'maintable');
             }
+            console.log("plugin_suspended: " +objResponse['plugin_suspended']);
+            console.log("maintenance: " +objResponse['maintenance']);
         }
     }
 </script>
@@ -119,9 +124,20 @@
 
 {% block buttons %}
 	<div>
-		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Neuberechnung aller Items auslösen?') }}')) { jQuery.get('recalc_all'); }">{{_('Neuberechnung')}}</button>
-        <button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }">{{_('Berechnungslauf beenden')}}</button>
-		<button type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }">{{_('Cache löschen')}}</button>
+		<button id="recalc" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Neuberechnung aller Items auslösen?') }}')) { jQuery.get('recalc_all'); }"><i class="fas fa-reply-all"></i>&nbsp;&nbsp;&nbsp;{{_('Neuberechnung')}}&nbsp;</button>
+        <button id="clear_queue" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }"><i class="fas fa-times"></i>&nbsp;&nbsp;&nbsp;{{_('Berechnungslauf abbrechen')}}&nbsp;</button>
+		<button id="clear_cache" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }"><i class="fas fa-trash"></i>&nbsp;&nbsp;&nbsp;{{_('Cachedaten löschen')}}&nbsp;</button>
+        {% if not p.suspended %}
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <button id="play" type="button" class="btn btn-outline-success btn-sm" disabled ><i class="fas fa-play"></i></button>
+                <button id="pause" type="button" class="btn btn-outline-danger btn-sm" onclick="if (confirm('{{ _('Plugins pausieren?') }}')) { jQuery.get('suspend'); }" ><i class="fas fa-pause"></i></button>
+            </div>
+        {% else %}
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <button id="play" type="button" class="btn btn-outline-success btn-sm" onclick="if (confirm('{{ _('Plugin fortsetzen?') }}')) { jQuery.get('activate'); }"><i class="fas fa-play"></i></button>
+                <button id="pause" type="button" class="btn btn-outline-danger btn-sm" disabled><i class="fas fa-pause"></i></button>
+            </div>
+        {% endif %}
 	</div>
 {% endblock %}
 
@@ -186,6 +202,11 @@
             </tr>
         </thead>
         <tbody>
+            <tr>
+                <td class="py-1">{{ _('suspended') }}</td>
+                <td class="py-1">{{ _('') }}</td>
+                <td class="py-1">{{ p.suspended }}</td>
+            </tr>
             <tr>
                 <td class="py-1">{{ _('_webdata') }}</td>
                 <td class="py-1">{{ len(p._webdata) }}</td>

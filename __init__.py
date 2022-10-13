@@ -46,7 +46,6 @@ import threading
 # ToDo
 #   - 'avg' for on-chance items implementieren
 #   - on-change items last... implementieren
-#   - zaehlerstand_tagesende implementieren
 #########################################################################
 
 
@@ -120,7 +119,7 @@ class DatabaseAddOn(SmartPlugin):
         self.jahreswert_dict = {}                   # dict to hold min and max value of current year for items
         self._webdata = {}                          # dict to hold information for webif update
         self._item_queue = queue.Queue()            # Queue containing all to be executed items
-        self.work_queue_thread = None              # Working Thread for queue
+        self.work_queue_thread = None               # Working Thread for queue
         self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
         self._db = None                             # object of database
@@ -132,6 +131,7 @@ class DatabaseAddOn(SmartPlugin):
         self.alive = None                           # Is plugin alive?
         self.startup_finished = False               # Startup of Plugin finished
         self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
+        self.suspended = False                      # Is plugin activity suspended
         self.execute_items_active = False           # Is there a running _execute_items method
         self.further_item_list = []                 # Buffer for item_list, used if _execute_items is still running
         self.parse_debug = True                     # Enable / Disable debug logging for method 'parse item'
@@ -166,6 +166,14 @@ class DatabaseAddOn(SmartPlugin):
 
         if self.db_driver is not None and self.db_driver.lower() == 'pymysql':
             self._check_db_connection_setting()
+
+        # activate debug logger
+        if self.get_log_level <= 20:
+            self.parse_debug = False
+            self.execute_debug = False
+            self.sql_debug = False
+            self.on_change_debug = False
+            self.prepare_debug = False
 
         # init webinterface
         if not self.init_webinterface(WebInterface):
@@ -258,14 +266,8 @@ class DatabaseAddOn(SmartPlugin):
                 else:
                     self._webdata[item.id()].update({'startup': False})
 
-                # handle items starting with 'zaehlerstand_tagesende'
-                if _database_addon_fct == 'zaehlerstand_tagesende':
-                    self._meter_items.add(item)
-                    if self.parse_debug:
-                        self.logger.debug(f"Function not implemented yet.")
-
                 # handle items with for daily run
-                elif ('heute_minus' or 'last_' or 'vorjahreszeitraum' or ('serie' and 'tag') or ('serie' and 'stunde')) in _database_addon_fct:
+                if ('heute_minus' or 'last_' or 'vorjahreszeitraum' or ('serie' and 'tag') or ('serie' and 'stunde')) in _database_addon_fct:
                     self._daily_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run daily.")
@@ -402,7 +404,9 @@ class DatabaseAddOn(SmartPlugin):
         if self.alive and caller != self.get_shortname() and item in self._database_items:
             self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
             if not self.activate_update:
-                self.logger.debug(f"update_item: Update method is paused for startup or cyclic run.")
+                self.logger.info(f"Update method is paused for startup or cyclic run.")
+            elif self.suspended:
+                self.logger.info(f"Plugin is suspended. No items will be calculated.")
             else:
                 self._fill_cache_dicts(item, item())
 
@@ -414,10 +418,12 @@ class DatabaseAddOn(SmartPlugin):
         if self.execute_debug:
             self.logger.debug("execute_due_items called")
 
-        _todo_items = list(self._create_due_items())
-        self.logger.info(f"execute_due_items: Following {len(_todo_items)} items will be calculated: {_todo_items}")
-
-        [self._item_queue.put(i) for i in list(self._create_due_items())]
+        if not self.suspended:
+            _todo_items = list(self._create_due_items())
+            self.logger.info(f"Following {len(_todo_items)} items are due and will be calculated: {_todo_items}")
+            [self._item_queue.put(i) for i in list(self._create_due_items())]
+        else:
+            self.logger.info(f"Plugin is suspended. No items will be calculated.")
 
     def execute_startup_items(self) -> None:
         """
@@ -426,18 +432,22 @@ class DatabaseAddOn(SmartPlugin):
         if self.execute_debug:
             self.logger.debug("execute_startup_items called")
 
-        [self._item_queue.put(i) for i in list(self._startup_items)]
-
-        self.startup_finished = True
+        if not self.suspended:
+            [self._item_queue.put(i) for i in list(self._startup_items)]
+            self.startup_finished = True
+        else:
+            self.logger.info(f"Plugin is suspended. No items will be calculated.")
 
     def execute_all_items(self) -> None:
         """
         Execute all items
         """
 
-        self.logger.info(f"Values for all {len(list(self._item_dict.keys()))} items with 'database_addon_fct' attribute will be calculated!")
-
-        [self._item_queue.put(i) for i in list(self._item_dict.keys())]
+        if not self.suspended:
+            self.logger.info(f"Values for all {len(list(self._item_dict.keys()))} items with 'database_addon_fct' attribute will be calculated!")
+            [self._item_queue.put(i) for i in list(self._item_dict.keys())]
+        else:
+            self.logger.info(f"Plugin is suspended. No items will be calculated.")
 
     def work_queue(self):
         """
@@ -593,6 +603,17 @@ class DatabaseAddOn(SmartPlugin):
                     self.logger.info(f"Item value of item '{item.id()}' will be set to {_result}")
                     self._webdata[item.id()].update({'value': _result})
                     item(_result, self.get_shortname())
+
+    def activate(self):
+        if self.execute_debug:
+            self.logger.debug("Activate method called, queries to database will be resumed")
+        self.suspended = False
+
+    def suspend(self):
+        if self.execute_debug:
+            self.logger.debug("Suspend method called, queries to database will not be made.")
+        self.suspended = True
+        self._clear_queue()
 
     @property
     def get_log_level(self):

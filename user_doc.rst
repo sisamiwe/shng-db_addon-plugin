@@ -10,7 +10,7 @@ Diese Auswertungen werden zyklisch zum Tageswechsel, Wochenwechsel, Monatswechse
 Um die Zugriffe auf die Datenbank zu minimieren, werden diverse Daten zwischengespeichert.
 
 Die Items mit einem DatabaseAddon-Attribut müssen im gleichen Pfad sein, wie das Item, für das das Database Attribut konfiguriert ist.
-Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen im Kinder oder Kindeskinder oder Kindeskinderkinder des Items sein, für das das Database Attribut konfiguriert ist
+Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items sein, für das das Database Attribut konfiguriert ist
 Bsp:
 
 .. code-block:: yaml
@@ -35,7 +35,7 @@ Anforderungen
 -------------
 Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
 
-Zudem sollten einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
+Zudem sollten by Verwendung von mysql einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
 Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
 
 .. code-block:: bash
@@ -83,8 +83,17 @@ Hier können ausführlichere Beispiele und Anwendungsfälle beschrieben werden.
 Web Interface
 -------------
 
-Ein KLick auf den Button "Recalc all" stößt die Berechnung aller Items, für die ein Attribut gesetzt ist, an.
+Der Button "Neuberechnung" stößt die Berechnung aller Items, für die ein Attribut gesetzt ist, an.
 Achtung: Das kann zu einer starken Belastung der Datenbank aufgrund vieler Leseanfragen führen.
+
+Der Button "" beendet einen aktiven Berechnungslauf.
+
+Der Button "" lösche alle zwischengespeicherten Werte.
+
+Der Button "" deaktiviert alle Funktionen des Plugins.
+
+Der Button "" aktiviert alle Funktionen des Plugins.
+
 
 DatabaseAddOn Items
 ^^^^^^^^^^^^^^^^^^^

@@ -71,6 +71,7 @@ class WebInterface(SmartPluginWebIf):
 
         return tmpl.render(p=self.plugin,
                            webif_pagelength=pagelength,
+                           suspended=self.plugin.suspended,
                            items=sorted(self.plugin.item_list, key=lambda k: str.lower(k['_path'])),
                            item_count=len(self.plugin.item_list),
                            plugin_shortname=self.plugin.get_shortname(),
@@ -91,12 +92,16 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = self.plugin._webdata
+            data = {}
+            data['items'] = self.plugin._webdata
             for item in self.plugin._item_dict:
-                if data.get(item.id(), None):
-                    data[item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
-                    data[item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
+                if data['items'].get(item.id(), None):
+                    data['items'][item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
+                    data['items'][item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
+            data['plugin_suspended'] = self.plugin.suspended
+            data['maintenance'] = True if self.plugin.get_log_level <= 20 else False
             try:
+                self.logger.warning(data)
                 return json.dumps(data, default=str)
             except Exception as e:
                 self.logger.error(f"get_data_html exception: {e}")
@@ -116,3 +121,13 @@ class WebInterface(SmartPluginWebIf):
     def clear_queue(self):
         self.logger.debug(f"_clear_queue called")
         self.plugin._clear_queue()
+
+    @cherrypy.expose
+    def activate(self):
+        self.logger.debug(f"active called")
+        self.plugin.activate()
+
+    @cherrypy.expose
+    def suspend(self):
+        self.logger.debug(f"suspend called")
+        self.plugin.suspend()
