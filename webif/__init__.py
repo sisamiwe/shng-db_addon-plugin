@@ -92,7 +92,7 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = {}
+            data = dict()
             data['items'] = self.plugin._webdata
             for item in self.plugin._item_dict:
                 if data['items'].get(item.id(), None):

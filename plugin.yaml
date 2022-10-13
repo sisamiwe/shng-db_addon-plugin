@@ -3,10 +3,10 @@ plugin:
     # Global plugin attributes
     type: system                   # plugin type (gateway, interface, protocol, system, web)
     description:
-        de: 'AddOn für Database-Plugin mit mysql driver für Datenauswertung'
-        en: 'AddOn for Database-Plugin using mysql driver for data evaluation'
+        de: 'AddOn für Database-Plugin für Datenauswertung'
+        en: 'AddOn for Database-Plugin for data evaluation'
     maintainer: sisamiwe
-#    tester:                         # Who tests this plugin?
+    tester: bmx, onkelandy          # Who tests this plugin?
     state: develop                  # change to ready when done with development
 #    keywords: iot xyz
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
@@ -26,7 +26,7 @@ parameters:
         type: str
         default: 'database'
         description:
-            de: "Konfiguration des Pluign 'Database', für die das Plugin 'DatabaseAddOn' verwendet wird"
+            de: "Konfiguration des Plugin 'Database', für die das Plugin 'DatabaseAddOn' verwendet wird"
             en: "Config of Plugin 'Database, for which the Plugin 'DatabaseAddOn' should be active"
 
     startup_run_delay:
@@ -97,7 +97,7 @@ item_attributes:
             - 'verbrauch_jahr_minus2'                       #num    yearly      Verbrauch aktuelles Jahr -2 Jahre
             - 'verbrauch_rolling_12m_heute_minus1'          #num    daily       Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Tages
             - 'verbrauch_rolling_12m_woche_minus1'          #num    weekly      Verbrauch der letzten 12 Monate ausgehend im Ende der letzten Woche
-            - 'verbrauch_rolling_12m_monat_minus1'          #num    montly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats
+            - 'verbrauch_rolling_12m_monat_minus1'          #num    monthly     Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats
             - 'verbrauch_rolling_12m_jahr_minus1'           #num    yearly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Jahres
             - 'verbrauch_vorjahreszeitraum_minus0'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres
             - 'verbrauch_vorjahreszeitraum_minus1'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
@@ -184,7 +184,7 @@ item_attributes:
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'gruendlandtempsumme'                         #num    daily       Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params: (year=mandatory)
-            - 'tagesmitteltemperatur'                       #list   daily       Berechnet die Tagesmitteltemperatur auf basis der stündlichen Durchschnittswerte eines Tages für die angegbene Anzahl von Tagen (days=optional)
+            - 'tagesmitteltemperatur'                       #list   daily       Berechnet die Tagesmitteltemperatur auf basis der stündlichen Durchschnittswerte eines Tages für die angegebene Anzahl von Tagen (days=optional)
             - 'db_request'                                  #list  'group'      Abfrage der DB: database_addon_params: (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional):
 
     database_addon_params:
@@ -298,7 +298,7 @@ item_structs:
             # cache: yes
 
         verbrauch_vorjahreszeitraum:
-            name: Verbrauch im Vorjahrzeitraum 1.1. bis jetzt vor einem Jahr
+            name: Verbrauch im Vorjahreszeitraum 1.1. bis jetzt vor einem Jahr
             database_addon_fct: verbrauch_vorjahreszeitraum_minus0
             database_addon_startup: yes
             type: num

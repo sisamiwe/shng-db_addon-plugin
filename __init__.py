@@ -42,12 +42,6 @@ from dateutil.relativedelta import *
 from typing import Union
 import threading
 
-#########################################################################
-# ToDo
-#   - 'avg' for on-chance items implementieren
-#   - on-change items last... implementieren
-#########################################################################
-
 
 class DatabaseAddOn(SmartPlugin):
     """
