@@ -101,7 +101,6 @@ class WebInterface(SmartPluginWebIf):
             data['plugin_suspended'] = self.plugin.suspended
             data['maintenance'] = True if self.plugin.get_log_level <= 20 else False
             try:
-                self.logger.warning(data)
                 return json.dumps(data, default=str)
             except Exception as e:
                 self.logger.error(f"get_data_html exception: {e}")
