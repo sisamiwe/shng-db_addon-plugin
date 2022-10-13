@@ -82,6 +82,8 @@
             }
             console.log("plugin_suspended: " +objResponse['plugin_suspended']);
             console.log("maintenance: " +objResponse['maintenance']);
+            shngInsertText('maintenance', objResponse['maintenance']);
+
         }
     }
 </script>
@@ -152,7 +154,7 @@
 {% if maintenance %}
     {% set tab2title = "<strong>" ~ plugin_shortname ~ " Maintenance</strong>" %}
 {% else %}
-    {% set tab4title = "hidden" %}
+    {% set tab2title = "hidden" %}
 {% endif %}
 
 
