@@ -22,45 +22,37 @@
   .value {
     max-width: 150px;
   }
+  .shng_effect_highlight {
+    background-color: #FFFFE0;
+  }
+  .shng_effect_standard {
+    background-color: none;
+  }
 </style>
 {% endblock pluginstyles %}
 
 {% block pluginscripts %}
 <script>
   $(document).ready( function () {
-    $(window).trigger('datatables_defaults');
+      $(window).trigger('datatables_defaults');
     
-    try {
-      webif_pagelength = parseInt(document.getElementById('webif_pagelength').innerHTML);
-      
-      if (webif_pagelength == 0) {
-        resize = true;
-        webif_pagelength = -1;
+      try {
+        /* get pagelength from plugin. Also see hidden span element in headtable block! */
+        webif_pagelength = parseInt(document.getElementById('webif_pagelength').innerHTML);
+        if (isNaN(parseFloat(webif_pagelength)) || webif_pagelength == 0) {
+          resize = true;
+          webif_pagelength = -1;
+  				console.log('Activating automatic table resize');
+        }
+        else {
+          resize = false;
+        }
       }
-      else {
+      catch (e) {
+        webif_pagelength = 100;
         resize = false;
+        console.log("Using default values for page length " + webif_pagelength + ", pageResize: " + resize);
       }
-    }
-    catch (e) {
-      webif_pagelength = 100;
-      resize = false;
-      console.log("Using default values for page length " + webif_pagelength + ", pageResize: " + resize);
-      console.log("Error was " + e);
-    }
-    
-    suspended = document.getElementById('suspended').innerHTML ? false : true
-    if (suspended == false) {
-        document.getElementById('play').classList = 'btn btn-success btn-sm';
-        document.getElementById('play').disabled = true;
-        document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
-        document.getElementById('pause').disabled = false;
-    }
-    else {
-        document.getElementById('play').classList = 'btn btn-outline-success btn-sm';
-        document.getElementById('play').disabled = false;
-        document.getElementById('pause').classList = 'btn btn-danger btn-sm';
-        document.getElementById('pause').disabled = true;
-    }
     
     try {
       table1 = $('#maintable').DataTable( {
@@ -74,6 +66,21 @@
     catch (e) {
         console.log("Datatable JS not loaded, showing standard table without reorder option " +e);
     }
+    
+    suspended = (document.getElementById('suspended').innerHTML.toLowerCase() === 'true')
+    if (suspended == false) {
+        document.getElementById('play').classList = 'btn btn-success btn-sm';
+        document.getElementById('play').disabled = true;
+        document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
+        document.getElementById('pause').disabled = false;
+    }
+    else {
+        document.getElementById('play').classList = 'btn btn-outline-success btn-sm';
+        document.getElementById('play').disabled = false;
+        document.getElementById('pause').classList = 'btn btn-danger btn-sm';
+        document.getElementById('pause').disabled = true;
+    }
+    
    });
 </script>
 
@@ -81,47 +88,36 @@
     function handleUpdatedData(response, dataSet=null) {
         if (dataSet === 'devices_info' || dataSet === null) {
             var objResponse = JSON.parse(response);
+            myProto = document.getElementById(dataSet);
             var item_data = objResponse['items']
 
-            for (var item in item_data) {
+            for (item in item_data) {
                 value = item_data[item]['value']
                 if(typeof value == 'number') {
                     value = value.toFixed(1);
                 }
-                shngInsertText(item+'_value', value, 'maintable');
+                shngInsertText(item+'_value', value, 'maintable', 5);
                 shngInsertText(item+'_last_update', item_data[item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', item_data[item]['last_change'], 'maintable');
             }
-            <!-- console.log("plugin_suspended: " +objResponse['plugin_suspended']); -->
-            <!-- console.log("maintenance: " +objResponse['maintenance']); -->
-            shngInsertText('maintenance', objResponse['maintenance']);
             
-            
-            console.log("suspended2: " + objResponse['plugin_suspended'])
-            
-            if (objResponse['plugin_suspended'] == false) {
+            if (objResponse['plugin_suspended'].toLowerCase() === 'false') {
 				document.getElementById('play').classList = 'btn btn-success btn-sm';
                 document.getElementById('play').disabled = true;
                 document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
                 document.getElementById('pause').disabled = false;
-                <!-- document.getElementById('suspended').classList = 'btn btn-success btn-sm'; -->
-                <!-- document.getElementById('suspended').innerHTML = '<i class="fas fa-play"></i>'; -->
-                <!-- document.getElementById('suspended').value = 0; -->
 			}
 			else {
 				document.getElementById('play').classList = 'btn btn-outline-success btn-sm';
                 document.getElementById('play').disabled = false;
                 document.getElementById('pause').classList = 'btn btn-danger btn-sm';
                 document.getElementById('pause').disabled = true;
-                <!-- document.getElementById('suspended').classList = 'btn btn-danger btn-sm'; -->
-                <!-- document.getElementById('suspended').innerHTML='<i class="fas fa-pause"></i>'; -->
-                <!-- document.getElementById('suspended').value = 1; -->
 			}
         }
     }
 </script>
 
-<script type="text/javascript">
+<script>
   function reply_click(button_value)
   {
       if (button_value == 0) {
@@ -133,12 +129,28 @@
   }
 </script>
 
+<!--
+This is an example on how to update the page refresh method. You can set the dataSet, update interval, special parameters or (de)activate the auto refresh
+In the example the update is deactivated on the 12th of December 2022 (what might make no sense at all)
+<script>
+  var today = new Date();
+  var today_date = String(today.getDate()) + String(today.getMonth() + 1) + today.getFullYear();
+  let test_date = "12122022";
+  if (today_date === test_date)
+      window.refresh.update({dataSet:'test', update_params:'specialitem', update_interval: 2000, update_active:false});
+  </script>
+-->
+
 {% endblock pluginscripts %}
 
 
 {% block headtable %}
+<!--
+	This span needs to be put somewhere on the page to read the table pagelength from the plugin / users' plugin.yaml
+-->
 <span id='webif_pagelength' style="display:none">{{ webif_pagelength }}</span>
 <span id='suspended' style="display:none">{{ p.suspended }}</span>
+
 <table class="table table-striped table-hover">
 	<tbody>
 		<tr>
@@ -173,12 +185,12 @@
 
 {% block buttons %}
 	<div>
-		<button id="recalc" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Neuberechnung aller Items auslösen?') }}')) { jQuery.get('recalc_all'); }"><i class="fas fa-reply-all"></i>&nbsp;&nbsp;&nbsp;{{_('Neuberechnung')}}&nbsp;</button>
-        <button id="clear_queue" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }"><i class="fas fa-times"></i>&nbsp;&nbsp;&nbsp;{{_('Berechnungslauf abbrechen')}}&nbsp;</button>
-		<button id="clear_cache" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }"><i class="fas fa-trash"></i>&nbsp;&nbsp;&nbsp;{{_('Cachedaten löschen')}}&nbsp;</button>
+        <button id="recalc" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Neuberechnung aller Items auslösen?') }}')) { jQuery.get('recalc_all'); }" title="Ausführen einer Neuberechnung aller Items"><i class="fas fa-redo"></i></button>
+        <button id="clear_queue" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }" title="Abbrechen des aktuellen Berechnungslaufes"><i class="fas fa-times"></i></button>
+		<button id="clear_cache" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }" title="Löschen alle Cache-Daten des Plugins"><i class="fas fa-trash"></i></button>
         <div class="btn-group btn-group-toggle" data-toggle="buttons">
-            <button id="play" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value = 1 title="Aktiviert das Plugin"><i class="fas fa-play"></i></i></button>
-            <button id="pause" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value = 0 title="Pausiert das Plugin"><i class="fas fa-pause"></i></button>
+            <button id="play" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=1 title="Aktiviert die Berechnungen des Plugin"><i class="fas fa-play"></i></i></button>
+            <button id="pause" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=0 title="Pausiert die Berechnungen des Plugin"><i class="fas fa-pause"></i></button>
         </div>
 	</div>
 {% endblock %}
@@ -199,7 +211,7 @@
 
 
 {% block bodytab1 %}
-<div class="container-fluid m-2 table-resize">
+<div class="container-fluid m-2" id="resize_wrapper">
     <table id="maintable" class="table table-striped table-hover pluginList display">
         <thead>
             <tr>
@@ -234,7 +246,7 @@
 
 
 {% block bodytab2 %}
-<div class="container-fluid m-2 table-resize">
+<div class="container-fluid m-2" id="resize_wrapper">
     <table id="mtable2" class="table table-striped table-hover pluginList display">
         <thead>
             <tr>

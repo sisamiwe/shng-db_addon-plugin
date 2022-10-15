@@ -25,10 +25,20 @@
 #
 #########################################################################
 
-import json
-import cherrypy
+import datetime
+import time
+import os
+
 from lib.item import Items
 from lib.model.smartplugin import SmartPluginWebIf
+
+
+# ------------------------------------------
+#    Webinterface of the plugin
+# ------------------------------------------
+
+import cherrypy
+import csv
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -47,6 +57,7 @@ class WebInterface(SmartPluginWebIf):
         self.webif_dir = webif_dir
         self.plugin = plugin
         self.items = Items.get_instance()
+        
         self.tplenv = self.init_template_environment()
 
     @cherrypy.expose
@@ -59,16 +70,14 @@ class WebInterface(SmartPluginWebIf):
         :return: contents of the template after beeing rendered
         """
 
-        # get webif_pagelength
+        tmpl = self.tplenv.get_template('index.html')
+        # Setting pagelength (max. number of table entries per page) for web interface
         try:
             pagelength = self.plugin.webif_pagelength
         except Exception:
             pagelength = 100
 
-        maintenance = True if self.plugin.get_log_level <= 20 else False
-
-        tmpl = self.tplenv.get_template('index.html')
-
+        # add values to be passed to the Jinja2 template eg: tmpl.render(p=self.plugin, interface=interface, ...)
         return tmpl.render(p=self.plugin,
                            webif_pagelength=pagelength,
                            suspended=self.plugin.suspended,
@@ -77,7 +86,7 @@ class WebInterface(SmartPluginWebIf):
                            plugin_shortname=self.plugin.get_shortname(),
                            plugin_version=self.plugin.get_version(),
                            plugin_info=self.plugin.get_info(),
-                           maintenance=maintenance,
+                           maintenance=True if self.plugin.get_log_level <= 20 else False,
                            )
 
     @cherrypy.expose
@@ -92,7 +101,7 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = dict()
+            data = {}
             data['items'] = self.plugin._webdata
             for item in self.plugin._item_dict:
                 if data['items'].get(item.id(), None):
