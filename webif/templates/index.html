@@ -189,7 +189,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
         <button id="clear_queue" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }" title="Abbrechen des aktuellen Berechnungslaufes"><i class="fas fa-times"></i></button>
 		<button id="clear_cache" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }" title="Löschen alle Cache-Daten des Plugins"><i class="fas fa-trash"></i></button>
         <div class="btn-group btn-group-toggle" data-toggle="buttons">
-            <button id="play" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=1 title="Aktiviert die Berechnungen des Plugin"><i class="fas fa-play"></i></i></button>
+            <button id="play" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=1 title="Aktiviert die Berechnungen des Plugin"><i class="fas fa-play"></i></button>
             <button id="pause" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=0 title="Pausiert die Berechnungen des Plugin"><i class="fas fa-pause"></i></button>
         </div>
 	</div>
