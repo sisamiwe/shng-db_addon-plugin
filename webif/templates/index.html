@@ -67,7 +67,7 @@
         console.log("Datatable JS not loaded, showing standard table without reorder option " +e);
     }
     
-    suspended = (document.getElementById('suspended').innerHTML.toLowerCase() === 'true')
+    var suspended = (document.getElementById('suspended').innerHTML.toLowerCase() === 'true')
     if (suspended == false) {
         document.getElementById('play').classList = 'btn btn-success btn-sm';
         document.getElementById('play').disabled = true;
@@ -80,7 +80,6 @@
         document.getElementById('pause').classList = 'btn btn-danger btn-sm';
         document.getElementById('pause').disabled = true;
     }
-    
    });
 </script>
 
@@ -89,19 +88,14 @@
         if (dataSet === 'devices_info' || dataSet === null) {
             var objResponse = JSON.parse(response);
             myProto = document.getElementById(dataSet);
-            var item_data = objResponse['items']
 
-            for (item in item_data) {
-                value = item_data[item]['value']
-                if(typeof value == 'number') {
-                    value = value.toFixed(1);
-                }
-                shngInsertText(item+'_value', value, 'maintable', 5);
-                shngInsertText(item+'_last_update', item_data[item]['last_update'], 'maintable');
-                shngInsertText(item+'_last_change', item_data[item]['last_change'], 'maintable');
+            for (item in objResponse['items']) {
+                shngInsertText(item+'_value', objResponse['items'][item]['value'], 'maintable', 5);
+                shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
+                shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
             
-            if (objResponse['plugin_suspended'].toLowerCase() === 'false') {
+            if (objResponse['plugin_suspended'] === 'false') {
 				document.getElementById('play').classList = 'btn btn-success btn-sm';
                 document.getElementById('play').disabled = true;
                 document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
@@ -188,7 +182,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
         <button id="recalc" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Neuberechnung aller Items auslösen?') }}')) { jQuery.get('recalc_all'); }" title="Ausführen einer Neuberechnung aller Items"><i class="fas fa-redo"></i></button>
         <button id="clear_queue" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Berechnungslauf abbrechen?') }}')) { jQuery.get('clear_queue'); }" title="Abbrechen des aktuellen Berechnungslaufes"><i class="fas fa-times"></i></button>
 		<button id="clear_cache" type="button" class="btn btn-shng btn-sm" onclick="if (confirm('{{ _('Leeren aller cache_dicts auslösen?') }}')) { jQuery.get('clean_cache_dicts'); }" title="Löschen alle Cache-Daten des Plugins"><i class="fas fa-trash"></i></button>
-        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+        <div class="btn-group btn-group-toggle">
             <button id="play" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=1 title="Aktiviert die Berechnungen des Plugin"><i class="fas fa-play"></i></button>
             <button id="pause" type="button" class="btn btn-shng btn-sm" onclick="reply_click(this.value)" value=0 title="Pausiert die Berechnungen des Plugin"><i class="fas fa-pause"></i></button>
         </div>
@@ -229,14 +223,14 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
             {% for item in items %}
                 {% set item_id = item.id() %}
                 <tr>
-                    <td class="py-1">{{ item_id }}</td>
+                    <td class="py-1">{{ item._path }}</td>
                     <td class="py-1">{{ item.property.type }}</td>
-                    <td class="py-1">{{ p._webdata[item_id]['attribute'] }}</td>
+                    <td class="py-1">{{ p.get_iattr_value(item.conf, 'database_addon_fct') }}</td>
                     <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['cycle'] }}</td>
                     <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['startup'] }}</td>
-                    <td class="py-1" id="{{ item_id }}_value" style="text-align: right">{{ item.property.value | float }}</td>
-                    <td class="py-1" id="{{ item_id }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
-                    <td class="py-1" id="{{ item_id }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                    <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item.property.value | float }}</td>
+                    <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
+                    <td class="py-1" id="{{ item._path }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                 </tr>
              {% endfor %}
         </tbody>

@@ -205,7 +205,6 @@ item_attributes:
             de: 'Wert der bei Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert werden soll'
             en: 'Value which will be ignored at database query'
 
-
 item_structs:
     verbrauch_1:
         name: Struct für Verbrauchsauswertung bei Zählern mit stetig ansteigendem Zählerstand (Teil 1)
@@ -757,5 +756,10 @@ plugin_functions:
         description:
             de: 'Liefer die verwendete Version der Datenbank'
             en: 'Return the database version'
+    suspend:
+        type: bool
+        description:
+            de: 'Pausiert die Berechnungen des Plugins'
+            en: 'Suspends value evaluation of plugin'
 
 logic_parameters: NONE

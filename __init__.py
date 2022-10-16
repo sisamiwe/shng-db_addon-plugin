@@ -598,20 +598,13 @@ class DatabaseAddOn(SmartPlugin):
                     self._webdata[item.id()].update({'value': _result})
                     item(_result, self.get_shortname())
 
-    def activate(self):
-        if self.execute_debug:
-            self.logger.debug("Activate method called, queries to database will be resumed")
-        self.suspended = False
-
-    def suspend(self):
-        if self.execute_debug:
-            self.logger.debug("Suspend method called, queries to database will not be made.")
-        self.suspended = True
-        self._clear_queue()
-
     @property
     def get_log_level(self):
         return self.logger.getEffectiveLevel()
+
+    @property
+    def item_list(self):
+        return list(self._item_dict.keys())
 
     ##############################
     #       Public functions
@@ -712,9 +705,16 @@ class DatabaseAddOn(SmartPlugin):
         # return request of database
         return self._fetchall(query, params)
 
-    @property
-    def item_list(self):
-        return list(self._item_dict.keys())
+    def suspend(self, state: bool = False):
+        if state:
+            if self.execute_debug:
+                self.logger.debug("Suspend method called, queries to database will not be made.")
+            self.suspended = True
+            self._clear_queue()
+        else:
+            if self.execute_debug:
+                self.logger.debug("Activate method called, queries to database will be resumed")
+            self.suspended = False
 
     ##############################
     #        Support stuff

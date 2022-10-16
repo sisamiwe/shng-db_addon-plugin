@@ -28,6 +28,7 @@
 import datetime
 import time
 import os
+import json
 
 from lib.item import Items
 from lib.model.smartplugin import SmartPluginWebIf
@@ -101,19 +102,22 @@ class WebInterface(SmartPluginWebIf):
         """
         if dataSet is None:
             # get the new data
-            data = {}
-            data['items'] = self.plugin._webdata
-            for item in self.plugin._item_dict:
-                if data['items'].get(item.id(), None):
-                    data['items'][item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
-                    data['items'][item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
+            data = dict()
+            data['items'] = {}
+
+            for item in self.plugin.item_list:
+                data['items'][item.id()] = {}
+                data['items'][item.id()]['value'] = item.property.value
+                data['items'][item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
+                data['items'][item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
+
             data['plugin_suspended'] = self.plugin.suspended
             data['maintenance'] = True if self.plugin.get_log_level <= 20 else False
+
             try:
                 return json.dumps(data, default=str)
             except Exception as e:
                 self.logger.error(f"get_data_html exception: {e}")
-        return {}
 
     @cherrypy.expose
     def recalc_all(self):
@@ -133,9 +137,9 @@ class WebInterface(SmartPluginWebIf):
     @cherrypy.expose
     def activate(self):
         self.logger.debug(f"active called")
-        self.plugin.activate()
+        self.plugin.suspend(False)
 
     @cherrypy.expose
     def suspend(self):
         self.logger.debug(f"suspend called")
-        self.plugin.suspend()
+        self.plugin.suspend(True)
