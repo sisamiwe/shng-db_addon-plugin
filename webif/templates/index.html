@@ -37,7 +37,6 @@
       $(window).trigger('datatables_defaults');
     
       try {
-        /* get pagelength from plugin. Also see hidden span element in headtable block! */
         webif_pagelength = parseInt(document.getElementById('webif_pagelength').innerHTML);
         if (isNaN(parseFloat(webif_pagelength)) || webif_pagelength == 0) {
           resize = true;
