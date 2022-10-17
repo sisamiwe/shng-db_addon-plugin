@@ -114,7 +114,7 @@ class DatabaseAddOn(SmartPlugin):
         self.jahreswert_dict = {}                   # dict to hold min and max value of current year for items
         self._webdata = {}                          # dict to hold information for webif update
         self._item_queue = queue.Queue()            # Queue containing all to be executed items
-        self.work_queue_thread = None               # Working Thread for queue
+        self.work_item_queue_thread = None          # Working Thread for queue
         self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
         self._db = None                             # object of database
@@ -122,18 +122,14 @@ class DatabaseAddOn(SmartPlugin):
         self.db_driver = None                       # driver for database
         self.db_instance = None                     # instance of database
         self.last_connect_time = 0                  # mechanism for limiting db connection requests
-        self.duration = 0                           # duration of a calculation cycle
         self.alive = None                           # Is plugin alive?
         self.startup_finished = False               # Startup of Plugin finished
-        self.activate_update = False                # Item updates for outside this plugin will be ignored until startup will be called
         self.suspended = False                      # Is plugin activity suspended
-        self.execute_items_active = False           # Is there a running _execute_items method
-        self.further_item_list = []                 # Buffer for item_list, used if _execute_items is still running
-        self.parse_debug = False                     # Enable / Disable debug logging for method 'parse item'
-        self.execute_debug = False                   # Enable / Disable debug logging for method 'execute items'
-        self.sql_debug = False                       # Enable / Disable debug logging for sql stuff
-        self.on_change_debug = False                 # Enable / Disable debug logging for method '_handle_onchange'
-        self.prepare_debug = False                   # Enable / Disable debug logging for query preparation
+        self.parse_debug = False                    # Enable / Disable debug logging for method 'parse item'
+        self.execute_debug = False                  # Enable / Disable debug logging for method 'execute items'
+        self.sql_debug = False                      # Enable / Disable debug logging for sql stuff
+        self.on_change_debug = False                # Enable / Disable debug logging for method '_handle_onchange'
+        self.prepare_debug = False                  # Enable / Disable debug logging for query preparation
         self.default_connect_timeout = 60
         self.default_net_read_timeout = 60
 
@@ -192,7 +188,7 @@ class DatabaseAddOn(SmartPlugin):
         self.scheduler_add('startup', self.execute_startup_items, next=dt)
 
         # start the queue consumer thread
-        self._work_queue_thread_startup()
+        self._work_item_queue_thread_startup()
 
         # check for admin items to be set
         self._check_admin_items()
@@ -205,7 +201,7 @@ class DatabaseAddOn(SmartPlugin):
         self.logger.debug("Stop method called")
         self.scheduler_remove('cyclic')
         self.alive = False
-        self._work_queue_thread_shutdown()
+        self._work_item_queue_thread_shutdown()
 
     def parse_item(self, item):
         """
@@ -408,12 +404,14 @@ class DatabaseAddOn(SmartPlugin):
         if self.alive and caller != self.get_shortname():
             if item in self._database_items:
                 self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
-                if not self.activate_update:
-                    self.logger.info(f"Update method is paused for startup or cyclic run.")
+                if not self.startup_finished:
+                    self.logger.info(f"Update method is paused for startup. Update of {item.property.path} with value {item()} will be ignored.")
                 elif self.suspended:
                     self.logger.info(f"Plugin is suspended. No items will be calculated.")
                 else:
-                    self._handle_onchange(item, item())
+                    self._item_queue.put((item, item()))
+
+            # write value back to item
             elif self.has_iattr(item.conf, 'database_addon_admin'):
                 self.logger.debug(f"update_item was called with item {item.property.path} from caller {caller}, source {source} and dest {dest}")
                 if self.get_iattr_value(item.conf, 'database_addon_admin') == 'suspend':
@@ -458,9 +456,9 @@ class DatabaseAddOn(SmartPlugin):
         else:
             self.logger.info(f"Plugin is suspended. No items will be calculated.")
 
-    def work_queue(self):
+    def work_item_queue(self):
         """
-        Handles queue were all to be executed items will be placed in.
+        Handles item queue were all to be executed items were be placed in.
 
         """
 
@@ -471,147 +469,28 @@ class DatabaseAddOn(SmartPlugin):
         # handle queue in loop
         while self.alive:
             try:
-                item = self._item_queue.get(True, 10)
+                queue_entry = self._item_queue.get(True, 10)
             except queue.Empty:
-                # activate handling of onchange
-                if not self.activate_update and self.startup_finished:
-                    self.activate_update = True
-                    self.logger.info(f"work_queue: ACTIVATE handling of on-change items calculation.")
                 # set counter
                 if _initial_queue_length > 0:
-                    self.logger.info(f"work_queue: FINISHED calculating values for {_initial_queue_length} items within {int(time.time() - _start_time)} sec.")
+                    self.logger.info(f"work_item_queue: FINISHED calculating values for {_initial_queue_length} items within {int(time.time() - _start_time)} sec.")
                     _initial_queue_length = 0
                 pass
             else:
-                # deactivate handling of onchange
-                if self.activate_update:
-                    self.activate_update = False
-                    self.logger.info(f"work_queue: DEACTIVATE handling of on-change items calculation.")
-
                 # set counter
                 if _initial_queue_length == 0 or self._item_queue.qsize() > _initial_queue_length:
                     _initial_queue_length = self._item_queue.qsize() + 1
                     _start_time = time.time()
 
-                # set/get parameters
-                _database_addon_fct = self._item_dict[item][0]
-                # _database_addon_params = None
-                _database_item = self._item_dict[item][1]
-                _var = _database_addon_fct.split('_')
-                _ignore_value = self._item_dict[item][2]
-                _result = None
-
                 # do logging
-                self.logger.info(f"Item No. {_initial_queue_length - self._item_queue.qsize()}/{_initial_queue_length} '{item.id()}' will be processed with {_database_addon_fct=} _database_item={_database_item.id()}")
-
-                # handle general functions
-                if _database_addon_fct.startswith('general_'):
-                    # handle oldest_value
-                    if _database_addon_fct == 'general_oldest_value':
-                        _result = self._get_oldest_value(_database_item)
-
-                    # handle oldest_log
-                    elif _database_addon_fct == 'general_oldest_log':
-                        _result = self._get_oldest_log(_database_item)
-
-                # handle item starting with 'verbrauch_'
-                elif _database_addon_fct.startswith('verbrauch_'):
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: 'verbrauch' detected.")
-
-                    _result = self._handle_verbrauch(_database_item, _database_addon_fct)
-
-                    if _result and _result < 0:
-                        self.logger.warning(f"Result of item {item.id()} with {_database_addon_fct=} was negativ. Something seems to be wrong.")
-
-                # handle item starting with 'zaehlerstand_' of format 'zaehlerstand_timeframe_timedelta' like 'zaehlerstand_woche_minus1'
-                elif _database_addon_fct.startswith('zaehlerstand_') and len(_var) == 3 and _var[2].startswith('minus'):
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: 'zaehlerstand' detected.")
-
-                    _result = self._handle_zaehlerstand(_database_item, _database_addon_fct)
-
-                # handle item starting with 'minmax_'
-                elif _database_addon_fct.startswith('minmax_'):
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: 'minmax' detected.")
-
-                    _result = self._handle_min_max(_database_item, _database_addon_fct, _ignore_value)
-
-                # handle item starting with 'serie_'
-                elif _database_addon_fct.startswith('serie_'):
-                    _database_addon_params = self.std_request_dict[_database_addon_fct]
-                    _database_addon_params['item'] = _database_item
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: 'serie' detected with {_database_addon_params=}")
-
-                    _result = self._handle_serie(_database_addon_params)
-
-                # handle kaeltesumme
-                elif 'kaeltesumme' in _database_addon_fct:
-                    _database_addon_params = self._item_dict[item][3]
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: {_database_addon_fct=} detected; {_database_addon_params=}")
-
-                    _result = self._handle_kaeltesumme(**_database_addon_params)
-
-                # handle waermesumme
-                elif 'waermesumme' in _database_addon_fct:
-                    _database_addon_params = self._item_dict[item][3]
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: {_database_addon_fct=} detected; {_database_addon_params=}")
-
-                    _result = self._handle_waermesumme(**_database_addon_params)
-
-                # handle gruendlandtempsumme
-                elif 'gruendlandtempsumme' in _database_addon_fct:
-                    _database_addon_params = self._item_dict[item][3]
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: {_database_addon_fct=} detected; {_database_addon_params=}")
-
-                    _result = self._handle_gruenlandtemperatursumme(**_database_addon_params)
-
-                # handle tagesmitteltemperatur
-                elif _database_addon_fct == 'tagesmitteltemperatur':
-                    _database_addon_params = self._item_dict[item][3]
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: {_database_addon_fct=} detected; {_database_addon_params=}")
-
-                    _result = self._handle_tagesmitteltemperatur(**_database_addon_params)
-
-                # handle db_request
-                elif _database_addon_fct == 'db_request':
-                    _database_addon_params = self._item_dict[item][3]
-
-                    if self.execute_debug:
-                        self.logger.debug(f"work_queue: {_database_addon_fct=} detected with {_database_addon_params=}")
-
-                    if _database_addon_params.keys() & {'func', 'item', 'timeframe'}:
-                        _result = self._query_item(**_database_addon_params)
-                    else:
-                        self.logger.error(f"Attribute 'database_addon_params' not containing needed params for Item {item.id} with {_database_addon_fct=}.")
-
-                # handle everything else
+                self.logger.debug(f"{self._item_queue.qsize()} items remaining in queue")
+                if isinstance(queue_entry, tuple):
+                    item, value = queue_entry
+                    self.logger.info(f"Item No. {_initial_queue_length - self._item_queue.qsize()}/{_initial_queue_length} '{item.id()}' as 'on-change' with {value=} will be processed.")
+                    self._handle_onchange(item, value)
                 else:
-                    self.logger.warning(f"work_queue: Function {_database_addon_fct} for item {item.id()} not defined or found")
-
-                # log result
-                if self.execute_debug:
-                    self.logger.debug(f"work_queue: result is {_result} for item '{item.id()}' with {_database_addon_fct=} _database_item={_database_item.id()}")
-
-                # set item value and put data into webif update dict
-                if _result is not None:
-                    self.logger.info(f"Item value of item '{item.id()}' will be set to {_result}")
-                    self._webdata[item.id()].update({'value': _result})
-                    item(_result, self.get_shortname())
+                    self.logger.info(f"Item No. {_initial_queue_length - self._item_queue.qsize()}/{_initial_queue_length} '{queue_entry.id()}' as 'calculated' will be processed.")
+                    self._handle_item_calculation(queue_entry)
 
     @property
     def log_level(self):
@@ -723,6 +602,7 @@ class DatabaseAddOn(SmartPlugin):
     def suspend(self, state: bool = False) -> bool:
         """
         Will pause value evaluation of plugin
+
         """
 
         if state:
@@ -743,33 +623,33 @@ class DatabaseAddOn(SmartPlugin):
     #        Support stuff
     ##############################
 
-    def _work_queue_thread_startup(self):
+    def _work_item_queue_thread_startup(self):
         """
-        Start a thread to work queue
+        Start a thread to work item queue
         """
 
         try:
-            _name = 'plugins.' + self.get_fullname() + '.work_queue'
-            self.work_queue_thread = threading.Thread(target=self.work_queue, name=_name)
-            self.work_queue_thread.daemon = False
-            self.work_queue_thread.start()
-            self.logger.debug("Thread for 'work_queue_thread' has been started")
+            _name = 'plugins.' + self.get_fullname() + '.work_item_queue'
+            self.work_item_queue_thread = threading.Thread(target=self.work_item_queue, name=_name)
+            self.work_item_queue_thread.daemon = False
+            self.work_item_queue_thread.start()
+            self.logger.debug("Thread for 'work_item_queue_thread' has been started")
         except threading.ThreadError:
-            self.logger.error("Unable to launch thread for 'work_queue_thread'.")
-            self.work_queue_thread = None
+            self.logger.error("Unable to launch thread for 'work_item_queue_thread'.")
+            self.work_item_queue_thread = None
 
-    def _work_queue_thread_shutdown(self):
+    def _work_item_queue_thread_shutdown(self):
         """
-        Shut down the thread to work queue
+        Shut down the thread to work item queue
         """
 
-        if self.work_queue_thread:
-            self.work_queue_thread.join()
-            if self.work_queue_thread.is_alive():
-                self.logger.error("Unable to shut down 'work_queue_thread' thread")
+        if self.work_item_queue_thread:
+            self.work_item_queue_thread.join()
+            if self.work_item_queue_thread.is_alive():
+                self.logger.error("Unable to shut down 'work_item_queue_thread' thread")
             else:
-                self.logger.info("Thread 'work_queue_thread' has been terminated.")
-                self.work_queue_thread = None
+                self.logger.info("Thread 'work_item_queue_thread' has been terminated.")
+                self.work_item_queue_thread = None
 
     def _check_db_connection_setting(self) -> None:
         """
@@ -783,6 +663,124 @@ class DatabaseAddOn(SmartPlugin):
         net_read_timeout = int(self._get_db_net_read_timeout()[1])
         if net_read_timeout < self.default_net_read_timeout:
             self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
+
+    def _handle_item_calculation(self, item):
+
+        # set/get parameters
+        _database_addon_fct = self._item_dict[item][0]
+        _database_item = self._item_dict[item][1]
+        _var = _database_addon_fct.split('_')
+        _ignore_value = self._item_dict[item][2]
+        _result = None
+
+        # handle general functions
+        if _database_addon_fct.startswith('general_'):
+            # handle oldest_value
+            if _database_addon_fct == 'general_oldest_value':
+                _result = self._get_oldest_value(_database_item)
+
+            # handle oldest_log
+            elif _database_addon_fct == 'general_oldest_log':
+                _result = self._get_oldest_log(_database_item)
+
+        # handle item starting with 'verbrauch_'
+        elif _database_addon_fct.startswith('verbrauch_'):
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: 'verbrauch' detected.")
+
+            _result = self._handle_verbrauch(_database_item, _database_addon_fct)
+
+            if _result and _result < 0:
+                self.logger.warning(f"Result of item {item.id()} with {_database_addon_fct=} was negativ. Something seems to be wrong.")
+
+        # handle item starting with 'zaehlerstand_' of format 'zaehlerstand_timeframe_timedelta' like 'zaehlerstand_woche_minus1'
+        elif _database_addon_fct.startswith('zaehlerstand_') and len(_var) == 3 and _var[2].startswith('minus'):
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: 'zaehlerstand' detected.")
+
+            _result = self._handle_zaehlerstand(_database_item, _database_addon_fct)
+
+        # handle item starting with 'minmax_'
+        elif _database_addon_fct.startswith('minmax_'):
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: 'minmax' detected.")
+
+            _result = self._handle_min_max(_database_item, _database_addon_fct, _ignore_value)
+
+        # handle item starting with 'serie_'
+        elif _database_addon_fct.startswith('serie_'):
+            _database_addon_params = self.std_request_dict[_database_addon_fct]
+            _database_addon_params['item'] = _database_item
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: 'serie' detected with {_database_addon_params=}")
+
+            _result = self._handle_serie(_database_addon_params)
+
+        # handle kaeltesumme
+        elif 'kaeltesumme' in _database_addon_fct:
+            _database_addon_params = self._item_dict[item][3]
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: {_database_addon_fct=} detected; {_database_addon_params=}")
+
+            _result = self._handle_kaeltesumme(**_database_addon_params)
+
+        # handle waermesumme
+        elif 'waermesumme' in _database_addon_fct:
+            _database_addon_params = self._item_dict[item][3]
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: {_database_addon_fct=} detected; {_database_addon_params=}")
+
+            _result = self._handle_waermesumme(**_database_addon_params)
+
+        # handle gruendlandtempsumme
+        elif 'gruendlandtempsumme' in _database_addon_fct:
+            _database_addon_params = self._item_dict[item][3]
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: {_database_addon_fct=} detected; {_database_addon_params=}")
+
+            _result = self._handle_gruenlandtemperatursumme(**_database_addon_params)
+
+        # handle tagesmitteltemperatur
+        elif _database_addon_fct == 'tagesmitteltemperatur':
+            _database_addon_params = self._item_dict[item][3]
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: {_database_addon_fct=} detected; {_database_addon_params=}")
+
+            _result = self._handle_tagesmitteltemperatur(**_database_addon_params)
+
+        # handle db_request
+        elif _database_addon_fct == 'db_request':
+            _database_addon_params = self._item_dict[item][3]
+
+            if self.execute_debug:
+                self.logger.debug(f"_handle_item_calculation: {_database_addon_fct=} detected with {_database_addon_params=}")
+
+            if _database_addon_params.keys() & {'func', 'item', 'timeframe'}:
+                _result = self._query_item(**_database_addon_params)
+            else:
+                self.logger.error(f"Attribute 'database_addon_params' not containing needed params for Item {item.id} with {_database_addon_fct=}.")
+
+        # handle everything else
+        else:
+            self.logger.warning(f"_handle_item_calculation: Function {_database_addon_fct} for item {item.id()} not defined or found")
+
+        # log result
+        if self.execute_debug:
+            self.logger.debug(f"_handle_item_calculation: result is {_result} for item '{item.id()}' with {_database_addon_fct=} _database_item={_database_item.id()}")
+
+        # set item value and put data into webif update dict
+        if _result is not None:
+            self.logger.info(f"Item value of item '{item.id()}' will be set to {_result}")
+            self._webdata[item.id()].update({'value': _result})
+            item(_result, self.get_shortname())
 
     def _handle_onchange(self, updated_item, value: float) -> None:
         """
@@ -851,7 +849,7 @@ class DatabaseAddOn(SmartPlugin):
                         # set item value and put data into webif update dict
                         value = _cached_value
                         if self.on_change_debug:
-                            self.logger.debug(f"_handle_onchange: 'on-change' item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
+                            self.logger.debug(f"_handle_onchange: item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
                         self._webdata[item.id()].update({'value': value})
                         item(value, self.get_shortname())
 
@@ -1348,11 +1346,10 @@ class DatabaseAddOn(SmartPlugin):
 
     def _get_oldest_log(self, item) -> int:
         """
-        Get timestamp of oldest entry of item from cache dict or get value from db and put it to cache dict
+        Get timestamp of the oldest entry of item from cache dict or get value from db and put it to cache dict
 
         :param item: Item, for which query should be done
-
-        :return: timestamp of oldest log
+        :return: timestamp of the oldest log
         """
 
         if self.prepare_debug:
@@ -1373,10 +1370,9 @@ class DatabaseAddOn(SmartPlugin):
 
     def _get_oldest_value(self, item) -> Union[int, float, bool]:
         """
-        Get value of oldest log of item from cache dict or get value from db and put it to cache dict
+        Get value of the oldest log of item from cache dict or get value from db and put it to cache dict
 
         :param item: Item, for which query should be done
-
         :return: oldest value
         """
 
