@@ -97,7 +97,6 @@ class DatabaseAddOn(SmartPlugin):
         self._monthly_items = set()                 # set of items, for which the _database_addon_fct shall be executed monthly
         self._yearly_items = set()                  # set of items, for which the _database_addon_fct shall be executed yearly
         self._onchange_items = set()                # set of items, for which the _database_addon_fct shall be executed if the database item has changed
-        self._meter_items = set()                   # set of items, for which the _database_addon_fct shall be executed separately (create db entry short before midnight)
         self._startup_items = set()                 # set of items, for which the _database_addon_fct shall be executed on startup
         self._database_items = set()                # set of items with database attribute, relevant for plugin
         self._static_items = set()                  # set of items, for which the _database_addon_fct shall be executed just on startup
@@ -115,7 +114,6 @@ class DatabaseAddOn(SmartPlugin):
         self._webdata = {}                          # dict to hold information for webif update
         self._item_queue = queue.Queue()            # Queue containing all to be executed items
         self.work_item_queue_thread = None          # Working Thread for queue
-        self._todo_items = set()                    # set of items, witch are due for calculation
         self._db_plugin = None                      # object if database plugin
         self._db = None                             # object of database
         self.connection_data = None                 # connection data list to database
@@ -159,7 +157,7 @@ class DatabaseAddOn(SmartPlugin):
             self._check_db_connection_setting()
 
         # activate debug logger
-        if self.log_level == 10:        # info: 20  # debug: 10
+        if self.log_level == 10:        # info: 20  debug: 10
             self.parse_debug = True
             self.execute_debug = True
             self.sql_debug = True
@@ -409,6 +407,7 @@ class DatabaseAddOn(SmartPlugin):
                 elif self.suspended:
                     self.logger.info(f"Plugin is suspended. No items will be calculated.")
                 else:
+                    self.logger.info(f"Updated item '{item.id()}' with value {item()} will be put to queue for processing.")
                     self._item_queue.put((item, item()))
 
             # write value back to item
@@ -923,7 +922,8 @@ class DatabaseAddOn(SmartPlugin):
 
         # handle all on_change functions of format 'minmax_timeframe_function' like 'minmax_heute_max'
         if len(_var) == 3 and _var[1] in ['heute', 'woche', 'monat', 'jahr'] and _var[2] in ['min', 'max']:
-            self.logger.info(f"on_change function={_var[0]} with {_var[1]} detected; will be calculated by next change of database item")
+            if self.execute_debug:
+                self.logger.debug(f"on_change function={_var[0]} with {_var[1]} detected; will be calculated by next change of database item")
 
         # handle all 'last' functions in format 'minmax_last_window_function' like 'minmax_last_24h_max'
         elif len(_var) == 4 and _var[1] == 'last':
