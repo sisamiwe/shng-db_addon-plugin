@@ -90,8 +90,7 @@
             myProto = document.getElementById(dataSet);
 
             for (item in objResponse['items']) {
-                console.log('Item to be updated: '+item+' with value '+objResponse['items'][item]['value'])
-                shngInsertText(item+'_value', objResponse['items'][item]['value'], 'maintable', 5);
+                shngInsertText(item+'_value', String(objResponse['items'][item]['value']), 'maintable', 5);
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
