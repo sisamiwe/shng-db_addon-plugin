@@ -132,7 +132,7 @@ class DatabaseAddOn(SmartPlugin):
         self.parse_debug = False                     # Enable / Disable debug logging for method 'parse item'
         self.execute_debug = False                   # Enable / Disable debug logging for method 'execute items'
         self.sql_debug = False                       # Enable / Disable debug logging for sql stuff
-        self.on_change_debug = False                 # Enable / Disable debug logging for method '_fill_cache_dicts'
+        self.on_change_debug = False                 # Enable / Disable debug logging for method '_handle_onchange'
         self.prepare_debug = False                   # Enable / Disable debug logging for query preparation
         self.default_connect_timeout = 60
         self.default_net_read_timeout = 60
@@ -413,7 +413,7 @@ class DatabaseAddOn(SmartPlugin):
                 elif self.suspended:
                     self.logger.info(f"Plugin is suspended. No items will be calculated.")
                 else:
-                    self._fill_cache_dicts(item, item())
+                    self._handle_onchange(item, item())
             elif self.has_iattr(item.conf, 'database_addon_admin'):
                 self.logger.debug(f"update_item was called with item {item.property.path} from caller {caller}, source {source} and dest {dest}")
                 if self.get_iattr_value(item.conf, 'database_addon_admin') == 'suspend':
@@ -784,7 +784,7 @@ class DatabaseAddOn(SmartPlugin):
         if net_read_timeout < self.default_net_read_timeout:
             self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
-    def _fill_cache_dicts(self, updated_item, value: float) -> None:
+    def _handle_onchange(self, updated_item, value: float) -> None:
         """
         Get item and item value for which an update has been detected, fill cache dicts and set item value.
 
@@ -793,7 +793,7 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if self.on_change_debug:
-            self.logger.debug(f"_fill_cache_dicts called with updated_item={updated_item.id()} and value={value}.")
+            self.logger.debug(f"_handle_onchange called with updated_item={updated_item.id()} and value={value}.")
 
         map_dict = {
             'day': self.tageswert_dict,
@@ -823,7 +823,7 @@ class DatabaseAddOn(SmartPlugin):
                     _cache_dict = map_dict[_timeframe]
 
                     if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: 'minmax' item {updated_item.id()} with {_func=} detected. Check for update of _cache_dicts and item value.")
+                        self.logger.debug(f"_handle_onchange: 'minmax' item {updated_item.id()} with {_func=} detected. Check for update of _cache_dicts and item value.")
 
                     # check if database item is in cache dict; if not add it
                     if _database_item not in _cache_dict:
@@ -831,7 +831,7 @@ class DatabaseAddOn(SmartPlugin):
                     if _cache_dict[_database_item].get(_func, None) is None:
                         _cache_dict[_database_item][_func] = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=0, end=0, ignore_value=_ignore_value)[0][1]
                         if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {_cache_dict[_database_item][_func]} has been added.")
+                            self.logger.debug(f"_handle_onchange: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {_cache_dict[_database_item][_func]} has been added.")
 
                     # update cache dicts
                     _update = False
@@ -840,18 +840,18 @@ class DatabaseAddOn(SmartPlugin):
                         if _func == 'min' and value < _cached_value:
                             _update = True
                             if self.on_change_debug:
-                                self.logger.debug(f"_fill_cache_dicts: new value={value} lower then current min_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
+                                self.logger.debug(f"_handle_onchange: new value={value} lower then current min_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
                         elif _func == 'max' and value > _cached_value:
                             _update = True
                             if self.on_change_debug:
-                                self.logger.debug(f"_fill_cache_dicts: new value={value} higher then current max_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
+                                self.logger.debug(f"_handle_onchange: new value={value} higher then current max_value={_cache_dict[_database_item][_func]}. _cache_dict will be updated")
                         if _update:
                             _cache_dict[_database_item][_func] = value
 
                         # set item value and put data into webif update dict
                         value = _cached_value
                         if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: 'on-change' item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
+                            self.logger.debug(f"_handle_onchange: 'on-change' item={item.id()} with func={_func} will be set to {value}; current item value={item()}.")
                         self._webdata[item.id()].update({'value': value})
                         item(value, self.get_shortname())
 
@@ -861,14 +861,14 @@ class DatabaseAddOn(SmartPlugin):
                     _cache_dict = map_dict1[_timeframe]
 
                     if self.on_change_debug:
-                        self.logger.debug(f"_fill_cache_dicts: 'verbrauch' item {updated_item.id()} with {_timeframe=} detected. Check for update of _cache_dicts and item value.")
+                        self.logger.debug(f"_handle_onchange: 'verbrauch' item {updated_item.id()} with {_timeframe=} detected. Check for update of _cache_dicts and item value.")
 
                     # check if database item is in cache dict; if not add it
                     if _database_item not in _cache_dict:
                         value = self._query_item(func='max', item=_database_item, timeframe=_timeframe, start=1, end=1, ignore_value=_ignore_value)[0][1]
                         _cache_dict[_database_item] = value
                         if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: Item={updated_item.id()} with {_timeframe=} not in cache dict. Value {value} has been added.")
+                            self.logger.debug(f"_handle_onchange: Item={updated_item.id()} with {_timeframe=} not in cache dict. Value {value} has been added.")
 
                     # calculate value
                     _cached_value = _cache_dict[_database_item]
@@ -877,7 +877,7 @@ class DatabaseAddOn(SmartPlugin):
 
                         # set item value
                         if self.on_change_debug:
-                            self.logger.debug(f"_fill_cache_dicts: 'on-change' item={item.id()} will be set to value={delta_value}; current item value={item()}.")
+                            self.logger.debug(f"_handle_onchange: 'on-change' item={item.id()} will be set to value={delta_value}; current item value={item()}.")
                         item(delta_value, self.get_shortname())
 
     def _get_itemid(self, item) -> int:
