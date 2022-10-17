@@ -176,10 +176,10 @@ item_attributes:
             - 'serie_kaeltesumme_monat_24m'                 #list   monthly     monatliche Kältesumme der letzten 24 Monate
             - 'serie_tagesmittelwert_stunde_0d'             #list   daily       Stundenmittelwert für den aktuellen Tag
             - 'serie_tagesmittelwert_tag_stunde_30d'        #list   daily       Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde
-
             # general
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
+            - 'general_suspend'                             #bool   ------      Unterbricht die Aktivitäten des Plugin
             # complex
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
@@ -204,6 +204,15 @@ item_attributes:
         description:
             de: 'Wert der bei Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert werden soll'
             en: 'Value which will be ignored at database query'
+
+    database_addon_admin:
+        type: str
+        description:
+            de: 'Funktion des DB-Addon Plugins'
+            en: 'Function of DB-Addon Plugins'
+        valid_list:
+            - 'suspend'                                     #bool   ------      Unterbricht die Aktivitäten des Plugin
+            - 'db_version'
 
 item_structs:
     verbrauch_1:

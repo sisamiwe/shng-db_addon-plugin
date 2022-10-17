@@ -266,6 +266,11 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
                 <td class="py-1">{{ p._item_dict }}</td>
             </tr>
             <tr>
+                <td class="py-1">{{ _('_admin_item_dict') }}</td>
+                <td class="py-1">{{ len(p._admin_item_dict)}}</td>
+                <td class="py-1">{{ p._admin_item_dict }}</td>
+            </tr>
+            <tr>
                 <td class="py-1">{{ _('_daily_items') }}</td>
                 <td class="py-1">{{ len(p._daily_items) }}</td>
                 <td class="py-1">{{ p._daily_items }}</td>

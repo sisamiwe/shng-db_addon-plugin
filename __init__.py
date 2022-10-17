@@ -91,6 +91,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # define properties
         self._item_dict = {}                        # dict to hold all items {item1: ('_database_addon_fct', '_database_item'), item2: ('_database_addon_fct', '_database_item', _database_addon_params)...}
+        self._admin_item_dict = {}                  # dict to hold all admin items
         self._daily_items = set()                   # set of items, for which the _database_addon_fct shall be executed daily
         self._weekly_items = set()                  # set of items, for which the _database_addon_fct shall be executed weekly
         self._monthly_items = set()                 # set of items, for which the _database_addon_fct shall be executed monthly
@@ -162,7 +163,7 @@ class DatabaseAddOn(SmartPlugin):
             self._check_db_connection_setting()
 
         # activate debug logger
-        if self.get_log_level <= 20:
+        if self.log_level <= 20:
             self.parse_debug = False
             self.execute_debug = False
             self.sql_debug = False
@@ -192,6 +193,9 @@ class DatabaseAddOn(SmartPlugin):
 
         # start the queue consumer thread
         self._work_queue_thread_startup()
+
+        # check for admin items to be set
+        self._check_admin_items()
 
     def stop(self):
         """
@@ -379,8 +383,14 @@ class DatabaseAddOn(SmartPlugin):
                 self._webdata[item.id()].update({'cycle': _update_cycle})
             else:
                 self.logger.warning(f"No database item found for {item.id()}: Item ignored.")
-        # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen
-        if self.has_iattr(item.conf, 'database'):
+
+        elif self.has_iattr(item.conf, 'database_addon_admin'):
+            if self.parse_debug:
+                self.logger.debug(f"parse item: {item.id()} due to 'database_addon_admin'")
+            self._admin_item_dict[item] = self.get_iattr_value(item.conf, 'database_addon_admin').lower()
+
+        # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen als auch die Admin-Items
+        if self.has_iattr(item.conf, 'database') or self.has_iattr(item.conf, 'database_addon_admin'):
             return self.update_item
 
     def update_item(self, item, caller=None, source=None, dest=None):
@@ -395,14 +405,19 @@ class DatabaseAddOn(SmartPlugin):
         :param dest: if given it represents the dest
         """
 
-        if self.alive and caller != self.get_shortname() and item in self._database_items:
-            self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
-            if not self.activate_update:
-                self.logger.info(f"Update method is paused for startup or cyclic run.")
-            elif self.suspended:
-                self.logger.info(f"Plugin is suspended. No items will be calculated.")
-            else:
-                self._fill_cache_dicts(item, item())
+        if self.alive and caller != self.get_shortname():
+            if item in self._database_items:
+                self.logger.debug(f"update_item was called with item {item.property.path} with value {item()} from caller {caller}, source {source} and dest {dest}")
+                if not self.activate_update:
+                    self.logger.info(f"Update method is paused for startup or cyclic run.")
+                elif self.suspended:
+                    self.logger.info(f"Plugin is suspended. No items will be calculated.")
+                else:
+                    self._fill_cache_dicts(item, item())
+            elif self.has_iattr(item.conf, 'database_addon_admin'):
+                self.logger.debug(f"update_item was called with item {item.property.path} from caller {caller}, source {source} and dest {dest}")
+                if self.get_iattr_value(item.conf, 'database_addon_admin') == 'suspend':
+                    self.suspend(item())
 
     def execute_due_items(self) -> None:
         """
@@ -599,7 +614,7 @@ class DatabaseAddOn(SmartPlugin):
                     item(_result, self.get_shortname())
 
     @property
-    def get_log_level(self):
+    def log_level(self):
         return self.logger.getEffectiveLevel()
 
     @property
@@ -711,14 +726,18 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if state:
-            self.logger.info("Plugins suspended. Queries to database will not be made.")
+            self.logger.warning("Plugin is set to 'suspended'. Queries to database will not be made until suspension is cancelled.")
             self.suspended = True
             self._clear_queue()
-            return True
         else:
-            self.logger.info("Plugin suspension cancelled. Queries to database will be resumed.")
+            self.logger.warning("Plugin suspension cancelled. Queries to database will be resumed.")
             self.suspended = False
-            return False
+
+        for item, key in self._admin_item_dict.items():
+            if key == 'suspend':
+                item(self.suspended, self.get_shortname())
+
+        return self.suspended
 
     ##############################
     #        Support stuff
@@ -1611,6 +1630,15 @@ class DatabaseAddOn(SmartPlugin):
 
         self.logger.info(f"Working queue will be cleared. Calculation run will end.")
         self._item_queue.queue.clear()
+
+    def _check_admin_items(self) -> None:
+        """
+        Checks admin items and sets value
+        """
+
+        for item, key in self._admin_item_dict.items():
+            if key == 'db_version':
+                item(self.db_version, self.get_shortname())
 
     ##############################
     #     DB Query Preparation
