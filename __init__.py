@@ -706,14 +706,16 @@ class DatabaseAddOn(SmartPlugin):
         return self._fetchall(query, params)
 
     def suspend(self, state: bool = False):
+        """
+        Will pause value evaluation of plugin
+        """
+
         if state:
-            if self.execute_debug:
-                self.logger.debug("Suspend method called, queries to database will not be made.")
+            self.logger.info("Plugins suspended. Queries to database will not be made.")
             self.suspended = True
             self._clear_queue()
         else:
-            if self.execute_debug:
-                self.logger.debug("Activate method called, queries to database will be resumed")
+            self.logger.info("Plugin suspension cancelled. Queries to database will be resumed.")
             self.suspended = False
 
     ##############################
@@ -1606,7 +1608,6 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         self.logger.info(f"Working queue will be cleared. Calculation run will end.")
-
         self._item_queue.queue.clear()
 
     ##############################

@@ -1,6 +1,6 @@
 {% extends "base_plugin.html" %}
 {% set logo_frame = false %}
-{% set update_interval = 5000 %}
+{% set update_interval = 20000 %}
 
 {% block pluginstyles %}
 <style>
@@ -90,12 +90,13 @@
             myProto = document.getElementById(dataSet);
 
             for (item in objResponse['items']) {
+                console.log('Item to be updated: '+item+' with value '+objResponse['items'][item]['value'])
                 shngInsertText(item+'_value', objResponse['items'][item]['value'], 'maintable', 5);
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
             
-            if (objResponse['plugin_suspended'] === 'false') {
+            if (objResponse['plugin_suspended'] === false) {
 				document.getElementById('play').classList = 'btn btn-success btn-sm';
                 document.getElementById('play').disabled = true;
                 document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
@@ -221,14 +222,13 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
         </thead>
         <tbody>
             {% for item in items %}
-                {% set item_id = item.id() %}
                 <tr>
                     <td class="py-1">{{ item._path }}</td>
-                    <td class="py-1">{{ item.property.type }}</td>
-                    <td class="py-1">{{ p.get_iattr_value(item.conf, 'database_addon_fct') }}</td>
-                    <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['cycle'] }}</td>
-                    <td class="py-1" style="text-align: center">{{ p._webdata[item_id]['startup'] }}</td>
-                    <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item.property.value | float }}</td>
+                    <td class="py-1">{{ item._type }}</td>
+                    <td class="py-1">{{ p._webdata[item._path]['attribute'] }}</td>
+                    <td class="py-1" style="text-align: center">{{ p._webdata[item._path]['cycle'] }}</td>
+                    <td class="py-1" style="text-align: center">{{ p._webdata[item._path]['startup'] }}</td>
+                    <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item._value | float }}</td>
                     <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                     <td class="py-1" id="{{ item._path }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                 </tr>
