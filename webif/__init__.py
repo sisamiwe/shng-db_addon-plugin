@@ -87,7 +87,7 @@ class WebInterface(SmartPluginWebIf):
                            plugin_shortname=self.plugin.get_shortname(),
                            plugin_version=self.plugin.get_version(),
                            plugin_info=self.plugin.get_info(),
-                           maintenance=True if self.plugin.log_level <= 20 else False,
+                           maintenance=True if self.plugin.log_level == 10 else False,
                            )
 
     @cherrypy.expose
@@ -112,7 +112,7 @@ class WebInterface(SmartPluginWebIf):
                 data['items'][item.id()]['last_change'] = item.property.last_change.strftime('%d.%m.%Y %H:%M:%S')
 
             data['plugin_suspended'] = self.plugin.suspended
-            data['maintenance'] = True if self.plugin.log_level <= 20 else False
+            data['maintenance'] = True if self.plugin.log_level == 10 else False
 
             try:
                 return json.dumps(data, default=str)

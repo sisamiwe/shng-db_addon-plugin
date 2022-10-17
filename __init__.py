@@ -129,11 +129,11 @@ class DatabaseAddOn(SmartPlugin):
         self.suspended = False                      # Is plugin activity suspended
         self.execute_items_active = False           # Is there a running _execute_items method
         self.further_item_list = []                 # Buffer for item_list, used if _execute_items is still running
-        self.parse_debug = True                     # Enable / Disable debug logging for method 'parse item'
-        self.execute_debug = True                   # Enable / Disable debug logging for method 'execute items'
-        self.sql_debug = True                       # Enable / Disable debug logging for sql stuff
-        self.on_change_debug = True                 # Enable / Disable debug logging for method '_fill_cache_dicts'
-        self.prepare_debug = True                   # Enable / Disable debug logging for query preparation
+        self.parse_debug = False                     # Enable / Disable debug logging for method 'parse item'
+        self.execute_debug = False                   # Enable / Disable debug logging for method 'execute items'
+        self.sql_debug = False                       # Enable / Disable debug logging for sql stuff
+        self.on_change_debug = False                 # Enable / Disable debug logging for method '_fill_cache_dicts'
+        self.prepare_debug = False                   # Enable / Disable debug logging for query preparation
         self.default_connect_timeout = 60
         self.default_net_read_timeout = 60
 
@@ -163,12 +163,12 @@ class DatabaseAddOn(SmartPlugin):
             self._check_db_connection_setting()
 
         # activate debug logger
-        if self.log_level <= 20:
-            self.parse_debug = False
-            self.execute_debug = False
-            self.sql_debug = False
-            self.on_change_debug = False
-            self.prepare_debug = False
+        if self.log_level == 10:        # info: 20  # debug: 10
+            self.parse_debug = True
+            self.execute_debug = True
+            self.sql_debug = True
+            self.on_change_debug = True
+            self.prepare_debug = True
 
         # init webinterface
         if not self.init_webinterface(WebInterface):
