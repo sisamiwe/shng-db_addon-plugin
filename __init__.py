@@ -705,7 +705,7 @@ class DatabaseAddOn(SmartPlugin):
         # return request of database
         return self._fetchall(query, params)
 
-    def suspend(self, state: bool = False):
+    def suspend(self, state: bool = False) -> bool:
         """
         Will pause value evaluation of plugin
         """
@@ -714,9 +714,11 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.info("Plugins suspended. Queries to database will not be made.")
             self.suspended = True
             self._clear_queue()
+            return True
         else:
             self.logger.info("Plugin suspension cancelled. Queries to database will be resumed.")
             self.suspended = False
+            return False
 
     ##############################
     #        Support stuff
