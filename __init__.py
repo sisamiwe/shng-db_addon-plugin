@@ -686,8 +686,8 @@ class DatabaseAddOn(SmartPlugin):
                     else:
                         _cached_value = _cache_dict[_database_item]
 
+                    # calculate value, set item value, put data into webif-update-dict
                     if _cached_value is not None:
-                        # calculate value, set item value, put data into webif-update-dict
                         _new_value = round(value - _cached_value, 1)
                         self.logger.info(f"  Item value for '{item.id()}' will be set to {_new_value}")
                         self._webdata[item.id()].update({'value': _new_value})
