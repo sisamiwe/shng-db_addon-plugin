@@ -5,13 +5,19 @@ Was macht das Plugin?
 ---------------------
 
 Das Plugin bietet eine Funktionserweiterung zum Database Plugin und ermöglicht die einfache Auswertung von Messdaten.
-Basierend auf den Daten in der Datenbank können bspw. Auswertungen zu Verbrauch (heute, gestern, ...) oder zu Minimal- und Maximalwerten gefahren werden.
-Diese Auswertungen werden zyklisch zum Tageswechsel, Wochenwechsel, Monatswechsel oder Jahreswechsel, in Abhängigkeit der Funktion erzeugt.
+Basierend auf den Daten in der Datenbank können bspw. Auswertungen zu Verbrauch (heute, gestern, ...) oder zu Minimal-
+und Maximalwerten gefahren werden.
+Diese Auswertungen werden zyklisch zum Tageswechsel, Wochenwechsel, Monatswechsel oder Jahreswechsel, in Abhängigkeit
+der Funktion erzeugt.
 Um die Zugriffe auf die Datenbank zu minimieren, werden diverse Daten zwischengespeichert.
 
-Die Items mit einem DatabaseAddon-Attribut müssen im gleichen Pfad sein, wie das Item, für das das Database Attribut konfiguriert ist.
-Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items sein, für das das Database Attribut konfiguriert ist
+Die Items mit einem DatabaseAddon-Attribut müssen im gleichen Pfad sein, wie das Item, für das das Database Attribut
+konfiguriert ist.
+Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items
+sein, für das das Database Attribut konfiguriert ist
+
 Bsp:
+
 
 .. code-block:: yaml
 
@@ -37,6 +43,7 @@ Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfol
 
 Zudem sollten by Verwendung von mysql einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
 Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
+
 
 .. code-block:: bash
 
@@ -77,7 +84,50 @@ Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wur
 Beispiele
 ---------
 
-Hier können ausführlichere Beispiele und Anwendungsfälle beschrieben werden.
+Verbrauch
+^^^^^^^^^
+
+Soll bspw. der Verbrauch von Wasser ausgewertet werden, so ist dies wie folgt möglich:
+
+.. code-block:: yaml
+
+    wasserzaehler:
+        zaehlerstand:
+            type: num
+            knx_dpt: 12
+            knx_cache: 5/3/4
+            eval: round(value/1000, 1)
+            database: init
+            struct:
+                  - db_addon.verbrauch_1
+                  - db_addon.verbrauch_2
+                  - db_addon.zaehlerstand_1
+
+Die Werte des Wasserzählerstandes werden in die Datenbank geschrieben und darauf basierend ausgewertet. Die structs
+'db_addon.verbrauch_1' und 'db_addon.verbrauch_2' stellen entsprechende Items für die Verbrauchsauswerten zur Verfügung.
+
+minmax
+^^^^^^
+
+Soll bspw. minimalen und maximalen Temperaturen ausgewertet werden, kann dies so umgesetzt werden:
+
+.. code-block:: yaml
+
+    temperature:
+        aussen:
+            nord:
+                name: Außentemp Nordseite
+                type: num
+                visu_acl: ro
+                knx_dpt: 9
+                knx_cache: 6/5/1
+                database: init
+                struct:
+                  - db_addon.minmax_1
+                  - db_addon.minmax_2
+
+Die Temperaturwerte werden in die Datenbank geschrieben und darauf basierend ausgewertet. Die structs
+'db_addon.minmax_1' und 'db_addon.minmax_2' stellen entsprechende Items für die min/max Auswertung zur Verfügung.
 
 
 Web Interface
