@@ -157,13 +157,11 @@ class DatabaseAddOn(SmartPlugin):
         self.alive = True
 
         # add scheduler for cyclic trigger item calculation
-        self.scheduler_add('cyclic', self.execute_due_items, prio=3, cron='5 0 0 * * *', cycle=None, value=None,
-                           offset=None, next=None)
+        self.scheduler_add('cyclic', self.execute_due_items, prio=3, cron='5 0 0 * * *', cycle=None, value=None, offset=None, next=None)
 
         # add scheduler to trigger items to be calculated at startup with delay
         dt = self.shtime.now() + datetime.timedelta(seconds=(self.startup_run_delay + 3))
-        self.logger.info(
-            f"Set scheduler for calculating startup-items with delay of {self.startup_run_delay + 3}s to {dt}.")
+        self.logger.info(f"Set scheduler for calculating startup-items with delay of {self.startup_run_delay + 3}s to {dt}.")
         self.scheduler_add('startup', self.execute_startup_items, next=dt)
 
         # start the queue consumer thread

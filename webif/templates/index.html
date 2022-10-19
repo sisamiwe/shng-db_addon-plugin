@@ -174,7 +174,13 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 				{% if loop.index % 4 == 0 and not first %}
 				</tr>
 			{% endif %}
-		{% endfor %}
+        {% endfor %}
+        <tr>
+            <td class="py-1" width="150px"><strong>{{ _('aktives Item') }}</strong></td>
+            <td class="py-1">{{ '-' }}</td>
+            <td class="py-1" width="150px"><strong>{{ _('Arbeitsvorrat') }}</strong></td>
+            <td class="py-1" colspan="3">{{ p.queue_backlog }} items </td>
+        </tr>
 	</tbody>
 </table>
 {% endblock headtable %}
