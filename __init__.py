@@ -637,11 +637,14 @@ class DatabaseAddOn(SmartPlugin):
                         _cache_dict[_database_item] = {}
                     if _cache_dict[_database_item].get(_func, None) is None:
                         _cached_value = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=0, end=0, ignore_value=_ignore_value)[0][1]
+                        _cached_value = 0 if _cached_value is None else None
                         _initial_value = True
                         if self.onchange_debug:
-                            self.logger.debug(f"handle_onchange: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. Value {_cached_value} has been added.")
+                            self.logger.debug(f"handle_onchange: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. recent value={_cached_value}.")
                     else:
                         _cached_value = _cache_dict[_database_item][_func]
+
+                    # ToDo: Handle 'None'
 
                     # check value for update of cache dict
                     if _func == 'min' and value < _cached_value:
