@@ -64,44 +64,44 @@ class DatabaseAddOn(SmartPlugin):
         self.plugins = Plugins.get_instance()
 
         # define properties
-        self._item_dict = {}  # dict to hold all items {item1: ('_database_addon_fct', '_database_item'), item2: ('_database_addon_fct', '_database_item', _database_addon_params)...}
-        self._admin_item_dict = {}  # dict to hold all admin items
-        self._daily_items = set()  # set of items, for which the _database_addon_fct shall be executed daily
-        self._weekly_items = set()  # set of items, for which the _database_addon_fct shall be executed weekly
-        self._monthly_items = set()  # set of items, for which the _database_addon_fct shall be executed monthly
-        self._yearly_items = set()  # set of items, for which the _database_addon_fct shall be executed yearly
-        self._onchange_items = set()  # set of items, for which the _database_addon_fct shall be executed if the database item has changed
-        self._startup_items = set()  # set of items, for which the _database_addon_fct shall be executed on startup
-        self._database_items = set()  # set of items with database attribute, relevant for plugin
-        self._static_items = set()  # set of items, for which the _database_addon_fct shall be executed just on startup
-        self._itemid_dict = {}  # dict to hold item_id for items
-        self._oldest_log_dict = {}  # dict to hold oldest_log for items
-        self._oldest_entry_dict = {}  # dict to hold oldest_entry for items
-        self.vortagsendwert_dict = {}  # dict to hold value of end of last day for items
-        self.vorwochenendwert_dict = {}  # dict to hold value of end of last week for items
-        self.vormonatsendwert_dict = {}  # dict to hold value of end of last month for items
-        self.vorjahresendwert_dict = {}  # dict to hold value of end of last year for items
-        self.tageswert_dict = {}  # dict to hold min and max value of current day for items
-        self.wochenwert_dict = {}  # dict to hold min and max value of current week for items
-        self.monatswert_dict = {}  # dict to hold min and max value of current month for items
-        self.jahreswert_dict = {}  # dict to hold min and max value of current year for items
-        self._webdata = {}  # dict to hold information for webif update
-        self._item_queue = queue.Queue()  # Queue containing all to be executed items
-        self.work_item_queue_thread = None  # Working Thread for queue
-        self._db_plugin = None  # object if database plugin
-        self._db = None  # object of database
-        self.connection_data = None  # connection data list to database
-        self.db_driver = None  # driver for database
-        self.db_instance = None  # instance of database
-        self.last_connect_time = 0  # mechanism for limiting db connection requests
-        self.alive = None  # Is plugin alive?
-        self.startup_finished = False  # Startup of Plugin finished
-        self.suspended = False  # Is plugin activity suspended
-        self.parse_debug = False  # Enable / Disable debug logging for method 'parse item'
-        self.execute_debug = False  # Enable / Disable debug logging for method 'execute items'
-        self.sql_debug = False  # Enable / Disable debug logging for sql stuff
-        self.onchange_debug = False  # Enable / Disable debug logging for method 'handle_onchange'
-        self.prepare_debug = False  # Enable / Disable debug logging for query preparation
+        self._item_dict = {}                       # dict to hold all items {item1: ('_database_addon_fct', '_database_item'), item2: ('_database_addon_fct', '_database_item', _database_addon_params)...}
+        self._admin_item_dict = {}                 # dict to hold all admin items
+        self._daily_items = set()                  # set of items, for which the _database_addon_fct shall be executed daily
+        self._weekly_items = set()                 # set of items, for which the _database_addon_fct shall be executed weekly
+        self._monthly_items = set()                # set of items, for which the _database_addon_fct shall be executed monthly
+        self._yearly_items = set()                 # set of items, for which the _database_addon_fct shall be executed yearly
+        self._onchange_items = set()               # set of items, for which the _database_addon_fct shall be executed if the database item has changed
+        self._startup_items = set()                # set of items, for which the _database_addon_fct shall be executed on startup
+        self._database_items = set()               # set of items with database attribute, relevant for plugin
+        self._static_items = set()                 # set of items, for which the _database_addon_fct shall be executed just on startup
+        self._itemid_dict = {}                     # dict to hold item_id for items
+        self._oldest_log_dict = {}                 # dict to hold oldest_log for items
+        self._oldest_entry_dict = {}               # dict to hold oldest_entry for items
+        self.vortagsendwert_dict = {}              # dict to hold value of end of last day for items
+        self.vorwochenendwert_dict = {}            # dict to hold value of end of last week for items
+        self.vormonatsendwert_dict = {}            # dict to hold value of end of last month for items
+        self.vorjahresendwert_dict = {}            # dict to hold value of end of last year for items
+        self.tageswert_dict = {}                   # dict to hold min and max value of current day for items
+        self.wochenwert_dict = {}                  # dict to hold min and max value of current week for items
+        self.monatswert_dict = {}                  # dict to hold min and max value of current month for items
+        self.jahreswert_dict = {}                  # dict to hold min and max value of current year for items
+        self._webdata = {}                         # dict to hold information for webif update
+        self._item_queue = queue.Queue()           # Queue containing all to be executed items
+        self.work_item_queue_thread = None         # Working Thread for queue
+        self._db_plugin = None                     # object if database plugin
+        self._db = None                            # object of database
+        self.connection_data = None                # connection data list to database
+        self.db_driver = None                      # driver for database
+        self.db_instance = None                    # instance of database
+        self.last_connect_time = 0                 # mechanism for limiting db connection requests
+        self.alive = None                          # Is plugin alive?
+        self.startup_finished = False              # Startup of Plugin finished
+        self.suspended = False                     # Is plugin activity suspended
+        self.parse_debug = False                   # Enable / Disable debug logging for method 'parse item'
+        self.execute_debug = False                 # Enable / Disable debug logging for method 'execute items'
+        self.sql_debug = False                     # Enable / Disable debug logging for sql stuff
+        self.onchange_debug = False                # Enable / Disable debug logging for method 'handle_onchange'
+        self.prepare_debug = False                 # Enable / Disable debug logging for query preparation
         self.default_connect_timeout = 60
         self.default_net_read_timeout = 60
 
@@ -1297,13 +1297,11 @@ class DatabaseAddOn(SmartPlugin):
 
         connect_timeout = int(self._get_db_connect_timeout()[1])
         if connect_timeout < self.default_connect_timeout:
-            self.logger.warning(
-                f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
+            self.logger.warning(f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
         net_read_timeout = int(self._get_db_net_read_timeout()[1])
         if net_read_timeout < self.default_net_read_timeout:
-            self.logger.warning(
-                f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
+            self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
 
     def _get_oldest_log(self, item) -> int:
         """
@@ -1363,7 +1361,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return oldest_value
 
-    def _get_query_timeframe_as_timestamp(self, timeframe: str, start: int, end: int):
+    def _get_query_timeframe_as_timestamp(self, timeframe: str, start: int, end: int) -> tuple:
         """
         Converts timeframe for query into a unix-timestamp
 
@@ -1646,8 +1644,10 @@ class DatabaseAddOn(SmartPlugin):
     ##############################
     #     DB Query Preparation
     ##############################
+    # ToDo: Harmonisieren Abfrage zwischen Log und Log_simple
+    # ToDo: Bei Monat wird bei SQL das Interval Negativ und damit die Abfrage ungültig (Entweder DATE_ADD oder Interval positiv)
 
-    def _query_log(self, func: str, item, timeframe: str, start: int = None, end: int = 0, group: str = None, group2: str = None, ignore_value=None):
+    def _query_log(self, func: str, item, timeframe: str, start: int = None, end: int = 0, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
         Assemble a mysql query str and param dict based on given parameters, get query response and return it
 
@@ -1661,7 +1661,7 @@ class DatabaseAddOn(SmartPlugin):
         :param ignore_value: value of val_num, which will be ignored during query
 
         :return: query response
-        :rtype: tuples
+
         """
 
         # DO DEBUG LOG
@@ -1710,6 +1710,8 @@ class DatabaseAddOn(SmartPlugin):
             "week": "item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) BETWEEN DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :start WEEK) AND DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :end WEEK) ",
             "day": "item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(CURDATE(), INTERVAL :start DAY) AND DATE_SUB(CURDATE(), INTERVAL :end DAY) "
         }
+
+        # "month": "item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) BETWEEN EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :start MONTH)) AND EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :end MONTH))"
 
         _group_by_sql = {
             "year": "GROUP BY YEAR(FROM_UNIXTIME(time/1000)) ",
@@ -1809,7 +1811,7 @@ class DatabaseAddOn(SmartPlugin):
         # REQUEST DATABASE AND RETURN RESULT
         return self._fetchall(query, params)
 
-    def _query_log_simple(self, func: str, item, timeframe: str, timedelta: int, group: str = None, ignore_value=None):
+    def _query_log_simple(self, func: str, item, timeframe: str, timedelta: int, group: str = None, ignore_value=None) -> Union[list, None]:
         """
         Assemble a mysql query str and param dict for 1 increment (year, month, week, day) based on given parameters, get query response and return it
 
@@ -1821,7 +1823,6 @@ class DatabaseAddOn(SmartPlugin):
         :param ignore_value: value of val_num, which will be ignored during query
 
         :return: query response
-        :rtype: tuples
 
         """
 
@@ -1843,12 +1844,11 @@ class DatabaseAddOn(SmartPlugin):
             SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :increment MONTH))
             SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL :increment WEEK))
             SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL :increment DAY)
-
         """
 
         _where_sql = {
             "year": f"item_id = :item AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL {timedelta} YEAR)) ",
-            "month": f"item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL {timedelta - 1} MONTH)) ",
+            "month": f"item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL {timedelta + 1} MONTH)) ",
             "week": f"item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL {timedelta} WEEK)) ",
             "day": f"item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL {timedelta} DAY) "
         }
@@ -1869,7 +1869,6 @@ class DatabaseAddOn(SmartPlugin):
             SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-1 months'))
             SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-7 days'))   weeks unbekannt, daher weeks * 7
             SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND date((time/1000),'unixepoch') = date('now', '-1 days')
-
         """
 
         _where_sqlite = {
@@ -1934,8 +1933,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # SET WHERE AND HANDLE IGNORE VALUES
         _where = _where[timeframe]
-        if func in ['min', 'max',
-                    'max1']:  # extend _where statement for excluding boolean values = 0 for defined functions
+        if func in ['min', 'max', 'max1']:  # extend _where statement for excluding boolean values = 0 for defined functions
             _where = f'{_where}AND val_bool = 1 '
         if ignore_value:  # if value to be ignored are defined, extend _where statement
             _where = f'{_where}AND val_num != {ignore_value} '
@@ -1953,7 +1951,7 @@ class DatabaseAddOn(SmartPlugin):
         # REQUEST DATABASE AND RETURN RESULT
         return self._fetchall(query, params)
 
-    def _query_log_next(self, item, timeframe, timedelta):
+    def _query_log_next(self, item, timeframe, timedelta) -> Union[list, None]:
         """
         Assemble a mysql query str and param dict to return the value of the next entry
 
@@ -1962,7 +1960,6 @@ class DatabaseAddOn(SmartPlugin):
         :param timedelta: timeframe (oldest) for query given in x time increments (default = None, meaning complete database)
 
         :return: query response
-        :rtype: tuples
 
         SQL QUERY
         SELECT time as time1, val_num as value FROM log WHERE item_id = 368 AND DATE(FROM_UNIXTIME(time/1000)) < DATE_SUB(CURDATE(), INTERVAL 410 DAY) ORDER BY time DESC LIMIT 1
@@ -2049,7 +2046,7 @@ class DatabaseAddOn(SmartPlugin):
             result = self._fetchall(query, params)
             return result
 
-    def _read_log_oldest(self, item_id: int, cur=None):
+    def _read_log_oldest(self, item_id: int, cur=None) -> int:
         """
         Read the oldest log record for given database ID
 
@@ -2064,7 +2061,7 @@ class DatabaseAddOn(SmartPlugin):
         query = "SELECT min(time) FROM log WHERE item_id = :item_id;"
         return self._fetchall(query, params, cur=cur)[0][0]
 
-    def _read_log_timestamp(self, item_id: int, timestamp: int, cur=None):
+    def _read_log_timestamp(self, item_id: int, timestamp: int, cur=None) -> Union[list, None]:
         """
         Read database log record for given database ID
 
@@ -2081,9 +2078,9 @@ class DatabaseAddOn(SmartPlugin):
         query = "SELECT * FROM log WHERE item_id = :item_id AND time = :timestamp;"
         return self._fetchall(query, params, cur=cur)
 
-    def _read_item_table(self, item) -> tuple:
+    def _read_item_table(self, item):
         """
-        Read item table if smarthome database
+        Read item table
 
         :param item: name or Item_id of the item within the database
         :type item: item
