@@ -12,7 +12,7 @@ plugin:
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
 #    support: https://knx-user-forum.de/forum/supportforen/smarthome-py
 
-    version: 1.0.I                  # Plugin version (must match the version specified in __init__.py)
+    version: 1.0.K                  # Plugin version (must match the version specified in __init__.py)
     sh_minversion: 1.8              # minimum shNG version to use this plugin
 #    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
 #    py_minversion: 3.6             # minimum Python version to use for this plugin
@@ -211,7 +211,9 @@ item_attributes:
             de: 'Funktion des DB-Addon Plugins'
             en: 'Function of DB-Addon Plugins'
         valid_list:
-            - 'suspend'                                     #bool   ------      Unterbricht die Aktivitäten des Plugin
+            - 'suspend'                                     #bool   ------      unterbricht die Aktivitäten des Plugin
+            - 'recalc_all'                                  #bool   ------      Startet einen Neuberechnungslauf aller on-demand items
+            - 'clean_cache_values'                          #bool   ------      Löscht Plugin-Cache und damit alle im Plugin zwischengespeicherten Werte
             - 'db_version'
 
 item_structs:
@@ -447,13 +449,6 @@ item_structs:
             type: num
             # cache: yes
 
-#        heute_avg:
-#            name: Durchschnittlicher Wert seit Tagesbeginn
-#            database_addon_fct: minmax_heute_avg
-#            database_addon_startup: yes
-#            type: num
-#            # cache: yes
-
         last24h_min:
             name: Minimaler Wert in den letzten 24h (gleitend)
             database_addon_fct: minmax_last_24h_min
@@ -482,13 +477,6 @@ item_structs:
             type: num
             # cache: yes
 
-#        woche_avg:
-#            name: Durchschnittlicher Wert seit Wochenbeginn
-#            database_addon_fct: minmax_woche_avg
-#            database_addon_startup: yes
-#            type: num
-#            # cache: yes
-
         monat_min:
             name: Minimaler Wert seit Monatsbeginn
             database_addon_fct: minmax_monat_min
@@ -503,13 +491,6 @@ item_structs:
             type: num
             # cache: yes
 
-#        monat_avg:
-#            name: Durchschnittlicher Wert seit Monatsbeginn
-#            database_addon_fct: minmax_monat_avg
-#            database_addon_startup: yes
-#            type: num
-#            # cache: yes
-
         jahr_min:
             name: Minimaler Wert seit Jahresbeginn
             database_addon_fct: minmax_jahr_min
@@ -523,13 +504,6 @@ item_structs:
             database_addon_startup: yes
             type: num
             # cache: yes
-
-#        jahr_avg:
-#            name: Durchschnittlicher Wert seit Jahresbeginn
-#            database_addon_fct: minmax_jahr_avg
-#            database_addon_startup: yes
-#            type: num
-#            # cache: yes
 
         gestern_min:
             name: Minimaler Wert gestern
