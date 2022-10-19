@@ -637,27 +637,27 @@ class DatabaseAddOn(SmartPlugin):
                         _cache_dict[_database_item] = {}
                     if _cache_dict[_database_item].get(_func, None) is None:
                         _cached_value = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=0, end=0, ignore_value=_ignore_value)[0][1]
-                        _cached_value = 0 if _cached_value is None else None
                         _initial_value = True
                         if self.onchange_debug:
                             self.logger.debug(f"handle_onchange: Item={updated_item.id()} with _func={_func} and _timeframe={_timeframe} not in cache dict. recent value={_cached_value}.")
                     else:
                         _cached_value = _cache_dict[_database_item][_func]
 
-                    # ToDo: Handle 'None'
-
-                    # check value for update of cache dict
-                    if _func == 'min' and value < _cached_value:
-                        _new_value = value
-                        if self.onchange_debug:
-                            self.logger.debug(f"handle_onchange: new value={_new_value} lower then current min_value={_cached_value}. _cache_dict will be updated")
-                    elif _func == 'max' and value > _cached_value:
-                        _new_value = value
-                        if self.onchange_debug:
-                            self.logger.debug(f"handle_onchange: new value={_new_value} higher then current max_value={_cached_value}. _cache_dict will be updated")
+                    if _cached_value:
+                        # check value for update of cache dict
+                        if _func == 'min' and value < _cached_value:
+                            _new_value = value
+                            if self.onchange_debug:
+                                self.logger.debug(f"handle_onchange: new value={_new_value} lower then current min_value={_cached_value}. _cache_dict will be updated")
+                        elif _func == 'max' and value > _cached_value:
+                            _new_value = value
+                            if self.onchange_debug:
+                                self.logger.debug(f"handle_onchange: new value={_new_value} higher then current max_value={_cached_value}. _cache_dict will be updated")
+                        else:
+                            if self.onchange_debug:
+                                self.logger.debug(f"handle_onchange: new value={_new_value} will not change max/min for period.")
                     else:
-                        if self.onchange_debug:
-                            self.logger.debug(f"handle_onchange: new value={_new_value} will not change max/min for period.")
+                        _cached_value = value
 
                     if _initial_value and not _new_value:
                         _new_value = _cached_value
