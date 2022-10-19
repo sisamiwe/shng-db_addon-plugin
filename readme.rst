@@ -4,13 +4,13 @@ DatabaseAddon
 Was macht das Plugin?
 ---------------------
 
-Das Plugin bietet eine Funktionserweiterung zum Database Plugin und ermöglicht somit die einfache Auswertung von Messdaten.
-Basierend auf den Daten in der Datenbank können bspw. Auswertungen zu Verbrauch (heute, gestern, ...) oder Auswertungen zu Minimal- und Maximalwerten gefahren werden.
-Diese Auswertungen werden zyklisch zum Tageswechsel, Wochenwechsel, Monatswechsel oder Jahreswechsel erzeugt.
+Das Plugin bietet eine Funktionserweiterung zum Database Plugin und ermöglicht die einfache Auswertung von Messdaten.
+Basierend auf den Daten in der Datenbank können bspw. Auswertungen zu Verbrauch (heute, gestern, ...) oder zu Minimal- und Maximalwerten gefahren werden.
+Diese Auswertungen werden zyklisch zum Tageswechsel, Wochenwechsel, Monatswechsel oder Jahreswechsel, in Abhängigkeit der Funktion erzeugt.
 Um die Zugriffe auf die Datenbank zu minimieren, werden diverse Daten zwischengespeichert.
 
 Die Items mit einem DatabaseAddon-Attribut müssen im gleichen Pfad sein, wie das Item, für das das Database Attribut konfiguriert ist.
-Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen im Kinder oder Kindeskinder oder Kindeskinderkinder des Items sein, für das das Database Attribut konfiguriert ist
+Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items sein, für das das Database Attribut konfiguriert ist
 Bsp:
 
 .. code-block:: yaml
@@ -35,7 +35,7 @@ Anforderungen
 -------------
 Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
 
-Zudem sollten einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
+Zudem sollten by Verwendung von mysql einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
 Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
 
 .. code-block:: bash
@@ -83,8 +83,21 @@ Hier können ausführlichere Beispiele und Anwendungsfälle beschrieben werden.
 Web Interface
 -------------
 
-Ein KLick auf den Button "Recalc all" stößt die Berechnung aller Items, für die ein Attribut gesetzt ist, an.
-Achtung: Das kann zu einer starken Belastung der Datenbank aufgrund vieler Leseanfragen führen.
+Das WebIF stellt neben der Ansicht verbundener Items und deren Parameter und Werte auch Funktionen für die
+Administration des Plugins bereit.
+
+Es stehen Button für:
+
+- Neuberechnung aller Items
+- Abbruch eines aktiven Berechnungslaufes
+- Pausieren des Plugins
+- Wiederaufnahme des Plugins
+
+bereit.
+
+Achtung: Das Auslösen einer kompletten Neuberechnung aller Items kann zu einer starken Belastung der Datenbank
+aufgrund vieler Leseanfragen führen.
+
 
 DatabaseAddOn Items
 ^^^^^^^^^^^^^^^^^^^
@@ -98,7 +111,7 @@ DatabaseAddOn Maintenance
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Das Webinterface zeigt detaillierte Informationen über die im Plugin verfügbaren Daten an.
-Dies dient der Maintenance bzw. Fehlersuche.
+Dies dient der Maintenance bzw. Fehlersuche. Dieser Tab ist nur bei Log-Level "Debug" verfügbar.
 
 .. image:: user_doc/assets/webif_tab2.jpg
    :class: screenshot

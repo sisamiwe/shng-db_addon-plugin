@@ -83,16 +83,20 @@ Hier können ausführlichere Beispiele und Anwendungsfälle beschrieben werden.
 Web Interface
 -------------
 
-Der Button "Neuberechnung" stößt die Berechnung aller Items, für die ein Attribut gesetzt ist, an.
-Achtung: Das kann zu einer starken Belastung der Datenbank aufgrund vieler Leseanfragen führen.
+Das WebIF stellt neben der Ansicht verbundener Items und deren Parameter und Werte auch Funktionen für die
+Administration des Plugins bereit.
 
-Der Button "" beendet einen aktiven Berechnungslauf.
+Es stehen Button für:
 
-Der Button "" lösche alle zwischengespeicherten Werte.
+- Neuberechnung aller Items
+- Abbruch eines aktiven Berechnungslaufes
+- Pausieren des Plugins
+- Wiederaufnahme des Plugins
 
-Der Button "" deaktiviert alle Funktionen des Plugins.
+bereit.
 
-Der Button "" aktiviert alle Funktionen des Plugins.
+Achtung: Das Auslösen einer kompletten Neuberechnung aller Items kann zu einer starken Belastung der Datenbank
+aufgrund vieler Leseanfragen führen.
 
 
 DatabaseAddOn Items
@@ -107,7 +111,7 @@ DatabaseAddOn Maintenance
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Das Webinterface zeigt detaillierte Informationen über die im Plugin verfügbaren Daten an.
-Dies dient der Maintenance bzw. Fehlersuche.
+Dies dient der Maintenance bzw. Fehlersuche. Dieser Tab ist nur bei Log-Level "Debug" verfügbar.
 
 .. image:: user_doc/assets/webif_tab2.jpg
    :class: screenshot
