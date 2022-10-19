@@ -397,7 +397,7 @@ class DatabaseAddOn(SmartPlugin):
                     self.logger.info(f"Plugin is suspended. No updated will be processed.")
                 else:
                     self.logger.info(
-                        f"Updated item '{item.id()}' with value {item()} will be put to queue for processing. {self._item_queue.qsize() + 1} items to do.")
+                        f"+ Updated item '{item.id()}' with value {item()} will be put to queue for processing. {self._item_queue.qsize() + 1} items to do.")
                     self._item_queue.put((item, item()))
 
             # write value back to item
@@ -670,7 +670,7 @@ class DatabaseAddOn(SmartPlugin):
                         self._webdata[item.id()].update({'value': _new_value})
                         item(_new_value, self.get_shortname())
                     else:
-                        self.logger.info(f"  No value changed, therefore item value will not be set.")
+                        self.logger.info(f"  No value changed, therefore item {item.id()} will not be changed.")
 
                 # handle verbrauch on-change items ending with heute, woche, monat, jahr
                 elif _database_addon_fct.startswith('verbrauch') and len(_var) == 2 and _var[1] in ['heute', 'woche', 'monat', 'jahr']:
@@ -679,18 +679,19 @@ class DatabaseAddOn(SmartPlugin):
 
                     # make sure, that database item is in cache dict
                     if _database_item not in _cache_dict:
-                        recent_value = self._query_item(func='max', item=_database_item, timeframe=_timeframe, start=1, end=1, ignore_value=_ignore_value)[0][1]
-                        _cache_dict[_database_item] = recent_value
+                        _cached_value = self._query_item(func='max', item=_database_item, timeframe=_timeframe, start=1, end=1, ignore_value=_ignore_value)[0][1]
+                        _cache_dict[_database_item] = _cached_value
                         if self.onchange_debug:
-                            self.logger.debug(f"handle_onchange: Item={updated_item.id()} with {_timeframe=} not in cache dict. Value {recent_value} has been added.")
+                            self.logger.debug(f"handle_onchange: Item={updated_item.id()} with {_timeframe=} not in cache dict. Value {_cached_value} has been added.")
+                    else:
+                        _cached_value = _cache_dict[_database_item]
 
-                    _cached_value = _cache_dict[_database_item]
                     if _cached_value is not None:
-                        # calculate value,  set item value,  put data into webif-update-dict
-                        value = round(value - _cache_dict[_database_item], 1)
-                        self.logger.info(f"  Item value for '{item.id()}' will be set to {value}")
-                        self._webdata[item.id()].update({'value': value})
-                        item(value, self.get_shortname())
+                        # calculate value, set item value, put data into webif-update-dict
+                        _new_value = round(value - _cached_value, 1)
+                        self.logger.info(f"  Item value for '{item.id()}' will be set to {_new_value}")
+                        self._webdata[item.id()].update({'value': _new_value})
+                        item(_new_value, self.get_shortname())
                     else:
                         self.logger.info(f"  Value for end of last period not available. No item value will be set.")
 
