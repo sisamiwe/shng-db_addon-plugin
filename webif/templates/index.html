@@ -22,6 +22,10 @@
   .value {
     max-width: 150px;
   }
+  #maintable {
+    display: none;
+    table-layout: fixed;
+  }
   .shng_effect_highlight {
     background-color: #FFFFE0;
   }
@@ -89,7 +93,7 @@
             myProto = document.getElementById(dataSet);
 
             for (item in objResponse['items']) {
-                shngInsertText(item+'_value', objResponse['items'][item]['value']), 'maintable', 5);
+                shngInsertText(item+'_value', objResponse['items'][item]['value'], 'maintable', 5);
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
