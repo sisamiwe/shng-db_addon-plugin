@@ -543,8 +543,8 @@ class DatabaseAddOn(SmartPlugin):
 
             _result = self._handle_waermesumme(**_database_addon_params)
 
-        # handle gruendlandtempsumme
-        elif 'gruendlandtempsumme' in _database_addon_fct:
+        # handle gruenlandtempsumme
+        elif 'gruenlandtempsumme' in _database_addon_fct:
             _database_addon_params = self._item_dict[item][3]
 
             if self.execute_debug:
