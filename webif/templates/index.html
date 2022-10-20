@@ -1,6 +1,6 @@
 {% extends "base_plugin.html" %}
 {% set logo_frame = false %}
-{% set update_interval = 30000 %}
+{% set update_interval = 10000 %}
 
 {% block pluginstyles %}
 <style>
@@ -58,11 +58,11 @@
       }
     
     try {
-      table1 = $('#maintable').DataTable( {
+      table = $('#maintable').DataTable( {
         pageLength: webif_pagelength,
         columnDefs: [{ "targets": [5], "className": "truncate value"}].concat($.fn.dataTable.defaults.columnDefs),
         pageResize: resize});
-      table2 = $('#mtable2').DataTable( {
+      table = $('#mtable2').DataTable( {
         pageLength: webif_pagelength,
         pageResize: resize});
     }
@@ -97,6 +97,9 @@
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
+
+            shngInsertText('queue_length', objResponse['queue_length'], null, 2);
+            shngInsertText('active_queue_item', objResponse['active_queue_item'], null, 2);
             
             if (objResponse['plugin_suspended'] === false) {
 				document.getElementById('play').classList = 'btn btn-success btn-sm';
@@ -177,9 +180,9 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
         {% endfor %}
         <tr>
             <td class="py-1" width="150px"><strong>{{ _('aktives Item') }}</strong></td>
-            <td class="py-1">{{ '-' }}</td>
+            <td class="py-1" id="active_queue_item">{{ p.active_queue_item }}</td>
             <td class="py-1" width="150px"><strong>{{ _('Arbeitsvorrat') }}</strong></td>
-            <td class="py-1" colspan="3">{{ p.queue_backlog }} items </td>
+            <td class="py-1" id="queue_length" colspan="3">{{ p.queue_backlog }} items </td>
         </tr>
 	</tbody>
 </table>
@@ -214,7 +217,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 
 
 {% block bodytab1 %}
-<div class="container-fluid m-2" id="resize_wrapper">
+<div class="container-fluid m-2 table-resize">
     <table id="maintable" class="table table-striped table-hover pluginList display">
         <thead>
             <tr>
@@ -248,7 +251,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 
 
 {% block bodytab2 %}
-<div class="container-fluid m-2" id="resize_wrapper">
+<div class="container-fluid m-2 table-resize">
     <table id="mtable2" class="table table-striped table-hover pluginList display">
         <thead>
             <tr>

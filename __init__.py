@@ -101,6 +101,7 @@ class DatabaseAddOn(SmartPlugin):
         self.alive = None                          # Is plugin alive?
         self.startup_finished = False              # Startup of Plugin finished
         self.suspended = False                     # Is plugin activity suspended
+        self._active_queue_item = '-'
         # define properties // Debugs
         self.parse_debug = False                   # Enable / Disable debug logging for method 'parse item'
         self.execute_debug = False                 # Enable / Disable debug logging for method 'execute items'
@@ -456,14 +457,17 @@ class DatabaseAddOn(SmartPlugin):
             try:
                 queue_entry = self._item_queue.get(True, 10)
             except queue.Empty:
+                self._active_queue_item = '-'
                 pass
             else:
                 if isinstance(queue_entry, tuple):
                     item, value = queue_entry
                     self.logger.info(f"# {self._item_queue.qsize() + 1} item(s) to do. || 'on-change' item {item.id()} with {value=} will be processed.")
+                    self._active_queue_item = str(item.id())
                     self.handle_onchange(item, value)
                 else:
                     self.logger.info(f"# {self._item_queue.qsize() + 1} item(s) to do. || 'on-demand' item {queue_entry.id()} will be processed.")
+                    self._active_queue_item = str(queue_entry.id())
                     self.handle_ondemand(queue_entry)
 
     def handle_ondemand(self, item) -> None:
@@ -704,6 +708,10 @@ class DatabaseAddOn(SmartPlugin):
     @property
     def queue_backlog(self):
         return self._item_queue.qsize()
+
+    @property
+    def active_queue_item(self):
+        return self._active_queue_item
 
     ##############################
     #       Public functions
