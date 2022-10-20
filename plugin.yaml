@@ -122,8 +122,7 @@ item_attributes:
             - 'minmax_last_7d_avg'                          #num    daily       durchschnittlicher Wert der letzten 7 Tage
             - 'minmax_heute_min'                            #num    onchange    Minimalwert seit Tagesbeginn
             - 'minmax_heute_max'                            #num    onchange    Maximalwert seit Tagesbeginn
-            # - 'minmax_heute_avg'                             #num    onchange    Durchschnittswert seit Tagesbeginn
-            - 'minmax_heute_minus1_min'                     #num    daily       Minimalwert gestern (heute -1 Tag) 
+            - 'minmax_heute_minus1_min'                     #num    daily       Minimalwert gestern (heute -1 Tag)
             - 'minmax_heute_minus1_max'                     #num    daily       Maximalwert gestern (heute -1 Tag) 
             - 'minmax_heute_minus1_avg'                     #num    daily       Durchschnittswert gestern (heute -1 Tag) 
             - 'minmax_heute_minus2_min'                     #num    daily       Minimalwert vorgestern (heute -2 Tage)
@@ -134,7 +133,6 @@ item_attributes:
             - 'minmax_heute_minus3_avg'                     #num    daily       Durchschnittswert heute vor 3 Tagen
             - 'minmax_woche_min'                            #num    onchange    Minimalwert seit Wochenbeginn    
             - 'minmax_woche_max'                            #num    onchange    Maximalwert seit Wochenbeginn
-            # - 'minmax_woche_avg'                            #num    onchange    Durchschnittswert seit Wochenbeginn
             - 'minmax_woche_minus1_min'                     #num    weekly      Minimalwert Vorwoche (aktuelle Woche -1)
             - 'minmax_woche_minus1_max'                     #num    weekly      Maximalwert Vorwoche (aktuelle Woche -1)
             - 'minmax_woche_minus1_avg'                     #num    weekly      Durchschnittswert Vorwoche (aktuelle Woche -1)
@@ -143,7 +141,6 @@ item_attributes:
             - 'minmax_woche_minus2_avg'                     #num    weekly      Durchschnittswert aktuelle Woche -2 Wochen
             - 'minmax_monat_min'                            #num    onchange    Minimalwert seit Monatsbeginn 
             - 'minmax_monat_max'                            #num    onchange    Maximalwert seit Monatsbeginn
-            # - 'minmax_monat_avg'                            #num    onchange    Durchschnittswert seit Monatsbeginn
             - 'minmax_monat_minus1_min'                     #num    monthly     Minimalwert Vormonat (aktueller Monat -1)
             - 'minmax_monat_minus1_max'                     #num    monthly     Maximalwert Vormonat (aktueller Monat -1)
             - 'minmax_monat_minus1_avg'                     #num    monthly     Durchschnittswert Vormonat (aktueller Monat -1)
@@ -152,8 +149,7 @@ item_attributes:
             - 'minmax_monat_minus2_avg'                     #num    monthly     Durchschnittswert aktueller Monat -2 Monate
             - 'minmax_jahr_min'                             #num    onchange    Minimalwert seit Jahresbeginn 
             - 'minmax_jahr_max'                             #num    onchange    Maximalwert seit Jahresbeginn    
-            # - 'minmax_jahr_avg'                             #num    onchange    Durchschnittswert seit Jahresbeginn
-            - 'minmax_jahr_minus1_min'                      #num    yearly      Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)           
+            - 'minmax_jahr_minus1_min'                      #num    yearly      Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)
             - 'minmax_jahr_minus1_max'                      #num    yearly      Maximalwert Vorjahr (aktuelles Jahr -1 Jahr)
             - 'minmax_jahr_minus1_avg'                      #num    yearly      Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr)
             # series

@@ -224,32 +224,31 @@ class DatabaseAddOn(SmartPlugin):
             if _database_item is not None:
                 # add item to item dict
                 if self.parse_debug:
-                    self.logger.debug(
-                        f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item.id()}")
+                    self.logger.debug(f"Item '{item.id()}' added with database_addon_fct={_database_addon_fct} and database_item={_database_item.id()}")
                 self._item_dict[item] = (_database_addon_fct, _database_item, _database_addon_ignore_value)
                 self._webdata.update({item.id(): {}})
                 self._webdata[item.id()].update({'attribute': _database_addon_fct})
 
                 # handle items with for daily run
-                if ('heute_minus' or 'last_' or 'vorjahreszeitraum' or ('serie' and 'tag') or ('serie' and 'stunde')) in _database_addon_fct:
+                if 'heute_minus' or 'last_' or 'vorjahreszeitraum' or ('serie' and 'tag') or ('serie' and 'stunde') in _database_addon_fct:
                     self._daily_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run daily.")
 
                 # handle items for weekly
-                elif ('woche_minus' or ('serie' and 'woche')) in _database_addon_fct:
+                elif 'woche_minus' or ('serie' and 'woche') in _database_addon_fct:
                     self._weekly_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run weekly.")
 
                 # handle items for monthly run
-                elif ('monat_minus' or ('serie' and 'monat')) in _database_addon_fct:
+                elif 'monat_minus' or ('serie' and 'monat') in _database_addon_fct:
                     self._monthly_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run monthly.")
 
                 # handle items for yearly
-                elif ('jahr_minus' or ('serie' and 'jahr')) in _database_addon_fct:
+                elif 'jahr_minus' or ('serie' and 'jahr') in _database_addon_fct:
                     self._yearly_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
@@ -300,7 +299,7 @@ class DatabaseAddOn(SmartPlugin):
                         else:
                             if self.parse_debug:
                                 self.logger.debug(
-                                    f"parse_item: _database_addon_fct={_database_addon_fct} for item={item.id()}, _database_addon_params={_database_addon_params}")
+                                    f"parse_item: {_database_addon_fct=} for item={item.id()}, {_database_addon_params=}")
                             if any(k in _database_addon_params for k in ('func', 'timeframe')):
                                 _database_addon_params['item'] = _database_item
                                 self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
@@ -324,9 +323,9 @@ class DatabaseAddOn(SmartPlugin):
                                     if self.parse_debug:
                                         self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
                                 else:
-                                    self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored. Not able to detect update cycle.")
+                                    self.logger.warning(f"Item '{item.id()}' with {_database_addon_fct=} ignored. Not able to detect update cycle.")
                             else:
-                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, not all mandatory parameters in database_addon_params={_database_addon_params} given. Item will be ignored.")
+                                self.logger.warning(f"Item '{item.id()}' with {_database_addon_fct=} ignored, not all mandatory parameters in {_database_addon_params=} given. Item will be ignored.")
                     else:
                         self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored")
 
@@ -965,8 +964,7 @@ class DatabaseAddOn(SmartPlugin):
             _timedelta = _var[2][-1]
 
             if self.execute_debug:
-                self.logger.debug(
-                    f"_handle_verbrauch: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
+                self.logger.debug(f"_handle_verbrauch: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
 
             if isinstance(_timedelta, str) and _timedelta.isdigit():
                 _timedelta = int(_timedelta)
