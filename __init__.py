@@ -230,25 +230,25 @@ class DatabaseAddOn(SmartPlugin):
                 self._webdata[item.id()].update({'attribute': _database_addon_fct})
 
                 # handle items with for daily run
-                if 'heute_minus' or 'last_' or 'vorjahreszeitraum' or ('serie' and 'tag') or ('serie' and 'stunde') in _database_addon_fct:
+                if check_substring_in_str(['heute_minus', 'last_', 'vorjahreszeitraum', ['serie', 'tag'], ['serie', 'stunde']], _database_addon_fct):
                     self._daily_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run daily.")
 
                 # handle items for weekly
-                elif 'woche_minus' or ('serie' and 'woche') in _database_addon_fct:
+                elif check_substring_in_str(['woche_minus', ['serie', 'woche']], _database_addon_fct):
                     self._weekly_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run weekly.")
 
                 # handle items for monthly run
-                elif 'monat_minus' or ('serie' and 'monat') in _database_addon_fct:
+                elif check_substring_in_str(['monat_minus', ['serie', 'monat']], _database_addon_fct):
                     self._monthly_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run monthly.")
 
                 # handle items for yearly
-                elif 'jahr_minus' or ('serie' and 'jahr') in _database_addon_fct:
+                elif check_substring_in_str(['jahr_minus', ['serie', 'jahr']], _database_addon_fct):
                     self._yearly_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run yearly.")
@@ -712,6 +712,10 @@ class DatabaseAddOn(SmartPlugin):
     def active_queue_item(self):
         return self._active_queue_item
 
+    @property
+    def db_version(self):
+        return self._get_db_version()
+
     ##############################
     #       Public functions
     ##############################
@@ -787,7 +791,7 @@ class DatabaseAddOn(SmartPlugin):
         if isinstance(item, str):
             item = self.items.return_item(item)
         if count:
-            start, end = self._count_to_start(count)
+            start, end = count_to_start(count)
         return self._query_item(func=func, item=item, timeframe=timeframe, start=start, end=end, group=group, group2=group2, ignore_value=ignore_value)
 
     def fetch_raw(self, query: str, params: dict = None) -> Union[list, None]:
@@ -872,15 +876,13 @@ class DatabaseAddOn(SmartPlugin):
             _func = _var[3]  # min, max, avg
 
             if self.execute_debug:
-                self.logger.debug(
-                    f"_handle_min_max: _database_addon_fct={_func} detected; {_timeframe=}, {_timedelta=}")
+                self.logger.debug(f"_handle_min_max: _database_addon_fct={_func} detected; {_timeframe=}, {_timedelta=}")
 
             if isinstance(_timedelta, str) and _timedelta.isdigit():
                 _timedelta = int(_timedelta)
 
             if isinstance(_timedelta, int):
-                _result = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=_timedelta,
-                                           end=_timedelta, ignore_value=_ignore_value)[0][1]
+                _result = self._query_item(func=_func, item=_database_item, timeframe=_timeframe, start=_timedelta, end=_timedelta, ignore_value=_ignore_value)[0][1]
 
         return _result
 
@@ -928,8 +930,7 @@ class DatabaseAddOn(SmartPlugin):
             _timedelta = _var[2][-1]
 
             if self.execute_debug:
-                self.logger.debug(
-                    f"_handle_verbrauch: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
+                self.logger.debug(f"_handle_verbrauch: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
 
             if isinstance(_timedelta, str) and _timedelta.isdigit():
                 _timedelta = int(_timedelta)
@@ -947,8 +948,7 @@ class DatabaseAddOn(SmartPlugin):
             _timedelta = _var[4][-1]  # 1
 
             if self.execute_debug:
-                self.logger.debug(
-                    f"_handle_verbrauch: '{_func}' function detected. {_window=}, {_timeframe=}, {_timedelta=}")
+                self.logger.debug(f"_handle_verbrauch: '{_func}' function detected. {_window=}, {_timeframe=}, {_timedelta=}")
 
             if isinstance(_timedelta, str) and _timedelta.isdigit():
                 _timedelta = int(_timedelta)
@@ -1004,8 +1004,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # check validity of given year
         if not valid_year(year):
-            self.logger.error(
-                f"kaeltesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
+            self.logger.error(f"kaeltesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
 
         if year == 'current':
@@ -1023,8 +1022,7 @@ class DatabaseAddOn(SmartPlugin):
             end_date = start_date + relativedelta(months=+1) - datetime.timedelta(days=1)
             group2 = 'month'
         else:
-            self.logger.error(
-                f"kaeltesumme: Month for item={item.id()} was {month}. This is not a valid month. Query cancelled.")
+            self.logger.error(f"kaeltesumme: Month for item={item.id()} was {month}. This is not a valid month. Query cancelled.")
             return
 
         today = datetime.date.today()
@@ -1062,8 +1060,7 @@ class DatabaseAddOn(SmartPlugin):
 
     def _handle_waermesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
         if not valid_year(year):
-            self.logger.error(
-                f"waermesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
+            self.logger.error(f"waermesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
 
         if year == 'current':
@@ -1078,8 +1075,7 @@ class DatabaseAddOn(SmartPlugin):
             end_date = start_date + relativedelta(months=+1) - datetime.timedelta(days=1)
             group2 = 'month'
         else:
-            self.logger.error(
-                f"waermesumme: Month for item={item.id()} was {month}. This is not a valid month. Query cancelled.")
+            self.logger.error(f"waermesumme: Month for item={item.id()} was {month}. This is not a valid month. Query cancelled.")
             return
 
         today = datetime.date.today()
@@ -1120,8 +1116,7 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if not valid_year(year):
-            self.logger.error(
-                f"gruenlandtemperatursumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
+            self.logger.error(f"gruenlandtemperatursumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
 
         current_year = datetime.date.today().year
@@ -1172,7 +1167,7 @@ class DatabaseAddOn(SmartPlugin):
         _database_addon_params = std_request_dict.get('tagesmittelwert_hour_days', None)
         _database_addon_params['item'] = item
 
-        start, end = self._count_to_start(count)
+        start, end = count_to_start(count)
         _database_addon_params['start'] = start
         _database_addon_params['end'] = end
 
@@ -1225,12 +1220,10 @@ class DatabaseAddOn(SmartPlugin):
             return False
         else:
             if not _db_plugin:
-                self.logger.error(
-                    f"Database plugin not loaded or given ConfigName {self.db_configname} not correct. No need for DatabaseAddOn Plugin.")
+                self.logger.error(f"Database plugin not loaded or given ConfigName {self.db_configname} not correct. No need for DatabaseAddOn Plugin.")
                 return False
             else:
-                self.logger.debug(
-                    f"Corresponding plugin 'database' with given config name '{self.db_configname}' found.")
+                self.logger.debug(f"Corresponding plugin 'database' with given config name '{self.db_configname}' found.")
                 self._db_plugin = _db_plugin
                 return self._get_db_parameter()
 
@@ -1244,26 +1237,22 @@ class DatabaseAddOn(SmartPlugin):
         try:
             self.db_driver = self._db_plugin.get_parameter_value('driver')
         except Exception as e:
-            self.logger.error(
-                f"Error {e} occurred during getting database plugin parameter 'driver'. DatabaseAddOn Plugin not loaded.")
+            self.logger.error(f"Error {e} occurred during getting database plugin parameter 'driver'. DatabaseAddOn Plugin not loaded.")
             return False
         else:
             if self.db_driver.lower() == 'pymysql':
                 self.logger.debug(f"Database is of type 'mysql' found.")
             if self.db_driver.lower() == 'sqlite3':
-                self.logger.debug(
-                    f"Database is of type 'sqlite' found. Functionality of that plugin not yet fully implemented.")
+                self.logger.debug(f"Database is of type 'sqlite' found. Functionality of that plugin not yet fully implemented.")
 
         # get database plugin parameters
         try:
             self.db_instance = self._db_plugin.get_parameter_value('instance')
             self.connection_data = self._db_plugin.get_parameter_value(
                 'connect')  # pymsql ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
-            self.logger.debug(
-                f"Database Plugin available with instance={self.db_instance} and connection={self.connection_data}")
+            self.logger.debug(f"Database Plugin available with instance={self.db_instance} and connection={self.connection_data}")
         except Exception as e:
-            self.logger.error(
-                f"Error {e} occurred during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
+            self.logger.error(f"Error {e} occurred during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
             return False
         else:
             return True
@@ -1285,8 +1274,7 @@ class DatabaseAddOn(SmartPlugin):
                     self.last_connect_time = time.time()
                     self._db.connect()
                 else:
-                    self.logger.error(
-                        f"_initialize_db: Database reconnect suppressed: Delta time: {time_delta_last_connect}")
+                    self.logger.error(f"_initialize_db: Database reconnect suppressed: Delta time: {time_delta_last_connect}")
                     return False
         except Exception as e:
             self.logger.critical(f"_initialize_db: Database: Initialization failed: {e}")
@@ -1364,39 +1352,6 @@ class DatabaseAddOn(SmartPlugin):
 
         return oldest_value
 
-    def _get_query_timeframe_as_timestamp(self, timeframe: str, start: int, end: int) -> tuple:
-        """
-        Converts timeframe for query into a unix-timestamp
-
-        :param timeframe: timeframe as week, month, year
-        :param start: beginning of timeframe
-        :param start: end of timeframe
-
-        """
-
-        # if self.prepare_debug:
-        #     self.logger.debug(f"_get_query_timeframe_as_timestamp called with timeframe={timeframe}, start={start}, end={end}")
-
-        _dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
-
-        if timeframe == 'week':
-            _dt_start = _dt - relativedelta(weeks=start)
-            _dt_end = _dt - relativedelta(weeks=end)
-        elif timeframe == 'month':
-            _dt_start = _dt - relativedelta(months=start)
-            _dt_end = _dt - relativedelta(months=end)
-        elif timeframe == 'year':
-            _dt_start = _dt - relativedelta(years=start)
-            _dt_end = _dt - relativedelta(years=end)
-        else:
-            _dt_start = _dt - relativedelta(days=start)
-            _dt_end = _dt - relativedelta(days=end)
-
-        _ts_start = int(datetime.datetime.timestamp(_dt_start))
-        _ts_end = int(datetime.datetime.timestamp(_dt_end))
-
-        return _ts_start, _ts_end
-
     def _get_itemid(self, item) -> int:
         """
         Returns the ID of the given item from cache dict or request it from database
@@ -1435,6 +1390,12 @@ class DatabaseAddOn(SmartPlugin):
         return item_id
 
     def _get_database_item(self, lookup_item):
+        """
+        Returns item from shNG config which is item with database attribut valid for current db_addon item
+
+        :param lookup_item: item, the corresponding database item should be looked for
+
+        """
 
         _database_item = None
 
@@ -1554,7 +1515,7 @@ class DatabaseAddOn(SmartPlugin):
             return _result
 
         # Check if end timestamp is in database (Abfrage abbrechen, wenn Endzeitpunkt in UNIX-timestamp der Abfrage kleiner (und damit jünger) ist, als der UNIX-timestamp des ältesten Eintrages)
-        _ts_start, _ts_end = self._get_query_timeframe_as_timestamp(timeframe, start, end)
+        _ts_start, _ts_end = timeframe_to_timestamp(timeframe, start, end)
         _oldest_log = int(self._get_oldest_log(item) / 1000)
         if _ts_end < _oldest_log:
             self.logger.warning(f"_query_item: Requested end time='{_ts_end}' of query for Item='{item.id()}' is prior to oldest entry with time='{_oldest_log}'. Query cancelled.")
@@ -1576,10 +1537,6 @@ class DatabaseAddOn(SmartPlugin):
 
         return _result
 
-    @staticmethod
-    def _count_to_start(count: int = 0, end: int = 0):
-        return end + count, end
-
     def _clean_cache_dicts(self) -> None:
         """
         Clean all cache dicts
@@ -1587,9 +1544,9 @@ class DatabaseAddOn(SmartPlugin):
 
         self.logger.info(f"All cache_dicts will be cleaned.")
 
-        # self._itemid_dict = {}
-        # self._oldest_log_dict = {}
-        # self._oldest_entry_dict = {}
+        self._itemid_dict = {}
+        self._oldest_log_dict = {}
+        self._oldest_entry_dict = {}
         self.vortagsendwert_dict = {}
         self.vorwochenendwert_dict = {}
         self.vormonatsendwert_dict = {}
@@ -1648,7 +1605,6 @@ class DatabaseAddOn(SmartPlugin):
     #     DB Query Preparation
     ##############################
     # ToDo: Harmonisieren Abfrage zwischen Log und Log_simple
-    # ToDo: Bei Monat wird bei SQL das Interval Negativ und damit die Abfrage ungültig (Entweder DATE_ADD oder Interval positiv)
 
     def _query_log(self, func: str, item, timeframe: str, start: int = None, end: int = 0, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
@@ -2131,10 +2087,6 @@ class DatabaseAddOn(SmartPlugin):
         query = "SHOW GLOBAL VARIABLES LIKE 'net_read_timeout'"
         return self._fetchone(query)
 
-    @property
-    def db_version(self):
-        return self._get_db_version()
-
     ##############################
     #   Database specific stuff
     ##############################
@@ -2330,6 +2282,59 @@ def convert_duration(timeframe: str, window_dur: str) -> int:
     }
 
     return round(int(conversion[timeframe][window_dur]), 0)
+
+
+def count_to_start(count: int = 0, end: int = 0):
+    """
+    Converts given count and end ot start and end
+    """
+
+    return end + count, end
+
+
+def timeframe_to_timestamp(timeframe: str, start: int, end: int) -> tuple:
+    """
+    Converts timeframe for query into a unix-timestamp
+
+    :param timeframe: timeframe as week, month, year
+    :param start: beginning of timeframe
+    :param end: end of timeframe
+
+    """
+
+    _dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+
+    if timeframe == 'week':
+        _dt_start = _dt - relativedelta(weeks=start)
+        _dt_end = _dt - relativedelta(weeks=end)
+    elif timeframe == 'month':
+        _dt_start = _dt - relativedelta(months=start)
+        _dt_end = _dt - relativedelta(months=end)
+    elif timeframe == 'year':
+        _dt_start = _dt - relativedelta(years=start)
+        _dt_end = _dt - relativedelta(years=end)
+    else:
+        _dt_start = _dt - relativedelta(days=start)
+        _dt_end = _dt - relativedelta(days=end)
+
+    _ts_start = int(datetime.datetime.timestamp(_dt_start))
+    _ts_end = int(datetime.datetime.timestamp(_dt_end))
+
+    return _ts_start, _ts_end
+
+
+def check_substring_in_str(lookfor: Union[str, list], target: str) -> bool:
+    for entry in lookfor:
+        if isinstance(entry, str):
+            if entry in target:
+                return True
+        elif isinstance(entry, list):
+            result = True
+            for element in entry:
+                result = result and element in target  # einmal False setzt alles auf False
+            if result:
+                return True
+    return False
 
 
 std_request_dict = {
