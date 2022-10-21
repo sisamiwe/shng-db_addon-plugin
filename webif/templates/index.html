@@ -238,7 +238,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
                     <td class="py-1">{{ item._type }}</td>
                     <td class="py-1">{{ p._webdata[item._path]['attribute'] }}</td>
                     <td class="py-1" style="text-align: center">{{ p._webdata[item._path]['cycle'] }}</td>
-                    <td class="py-1" style="text-align: center">{{ p._webdata[item._path]['startup'] }}</td>
+                    <td class="py-1" style="text-align: center">{% if p._webdata[item._path]['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
                     <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item._value | float }}</td>
                     <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                     <td class="py-1" id="{{ item._path }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
