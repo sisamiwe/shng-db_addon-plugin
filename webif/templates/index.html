@@ -1,6 +1,6 @@
 {% extends "base_plugin.html" %}
 {% set logo_frame = false %}
-{% set update_interval = 10000 %}
+{% set update_interval = ((50 * item_count) | round | int) %}
 
 {% block pluginstyles %}
 <style>

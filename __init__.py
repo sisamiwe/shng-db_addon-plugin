@@ -114,6 +114,7 @@ class DatabaseAddOn(SmartPlugin):
         # define properties // plugin parameters
         self.db_configname = self.get_parameter_value('database_plugin_config')
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
+        self.ignore_0 = self.get_parameter_value('ignore_0')
         self.ignore_0_at_temp_items = self.get_parameter_value('ignore_0_at_temp_items')
         self.webif_pagelength = self.get_parameter_value('webif_pagelength')
 
@@ -214,8 +215,12 @@ class DatabaseAddOn(SmartPlugin):
             else:
                 if self.ignore_0_at_temp_items and 'temp' in str(item.id()):
                     _database_addon_ignore_value = 0
+                elif any(x in str(item.id()) for x in self.ignore_0):
+                    _database_addon_ignore_value = 0
                 else:
                     _database_addon_ignore_value = None
+
+            self.logger.debug(f"{_database_addon_ignore_value=}")
 
             # get database item
             _database_item = self._get_database_item(item)

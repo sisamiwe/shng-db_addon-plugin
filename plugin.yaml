@@ -42,6 +42,13 @@ parameters:
         description:
             de: "Bei Items mit 'temp' im Pfad werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
             en: "At items having 'temp' in path, val_num=0 will be ignored for database queries"
+
+    ignore_0:
+        type: list
+        default: []
+        description:
+            de: "Bei Items, bei denen der String aus der Liste im Pfad vorkommt, werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
+            en: "At items having a entry of that list in path, val_num=0 will be ignored for database queries"
             
     webif_pagelength:
         type: int
