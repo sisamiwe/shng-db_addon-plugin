@@ -220,8 +220,6 @@ class DatabaseAddOn(SmartPlugin):
                 else:
                     _database_addon_ignore_value = None
 
-            self.logger.debug(f"{_database_addon_ignore_value=}")
-
             # get database item
             _database_item = self._get_database_item(item)
 
