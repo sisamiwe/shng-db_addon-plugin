@@ -115,7 +115,7 @@ class DatabaseAddOn(SmartPlugin):
         self.db_configname = self.get_parameter_value('database_plugin_config')
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.ignore_0 = self.get_parameter_value('ignore_0')
-        self.ignore_0_at_temp_items = self.get_parameter_value('ignore_0_at_temp_items')
+        # self.ignore_0_at_temp_items = self.get_parameter_value('ignore_0_at_temp_items')
         self.webif_pagelength = self.get_parameter_value('webif_pagelength')
 
         # check existence of db-plugin, get parameters, and init connection to db
@@ -212,13 +212,12 @@ class DatabaseAddOn(SmartPlugin):
             # get attribute if certain value should be ignored at db query
             if self.has_iattr(item.conf, 'database_ignore_value'):
                 _database_addon_ignore_value = self.get_iattr_value(item.conf, 'database_ignore_value')
+            # elif self.ignore_0_at_temp_items and 'temp' in str(item.id()):
+            #     _database_addon_ignore_value = 0
+            elif any(x in str(item.id()) for x in self.ignore_0):
+                _database_addon_ignore_value = 0
             else:
-                if self.ignore_0_at_temp_items and 'temp' in str(item.id()):
-                    _database_addon_ignore_value = 0
-                elif any(x in str(item.id()) for x in self.ignore_0):
-                    _database_addon_ignore_value = 0
-                else:
-                    _database_addon_ignore_value = None
+                _database_addon_ignore_value = None
 
             # get database item
             _database_item = self._get_database_item(item)
@@ -265,19 +264,19 @@ class DatabaseAddOn(SmartPlugin):
                 # handle all functions with 'summe' like waermesumme, kaeltesumme, gruenlandtemperatursumme
                 elif 'summe' in _database_addon_fct:
                     if self.has_iattr(item.conf, 'database_addon_params'):
-                        _database_addon_params = params_to_dict(
-                            self.get_iattr_value(item.conf, 'database_addon_params'))
+                        _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
                         if _database_addon_params is None:
-                            self.logger.warning(f"Error occurred during parsing of item attribute 'database_addon_params' of item {item.id()}. Item will be ignored.")
+                            self.logger.info(f"No 'year' for evaluation via 'database_addon_params' of item {item.id()} for function {_database_addon_fct} given. Default with 'current year' will be used.")
+                            _database_addon_params['year'] = 'current'
+
+                        if 'year' in _database_addon_params:
+                            _database_addon_params['item'] = _database_item
+                            self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
+                            self._daily_items.add(item)
+                            if self.parse_debug:
+                                self.logger.debug(f"Item '{item.id()}' added to be run daily.")
                         else:
-                            if 'year' in _database_addon_params:
-                                _database_addon_params['item'] = _database_item
-                                self._item_dict[item] = self._item_dict[item] + (_database_addon_params,)
-                                self._daily_items.add(item)
-                                if self.parse_debug:
-                                    self.logger.debug(f"Item '{item.id()}' added to be run daily.")
-                            else:
-                                self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
+                            self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter 'year' not given in database_addon_params={_database_addon_params}. Item will  be ignored")
                     else:
                         self.logger.warning(f"Item '{item.id()}' with database_addon_fct={_database_addon_fct} ignored, since parameter using 'database_addon_params' not given. Item will be ignored.")
 
@@ -2356,21 +2355,15 @@ std_request_dict = {
     'serie_zaehlerstand_tag_30d': {'func': 'max', 'timeframe': 'day', 'start': 30, 'end': 0, 'group': 'day'},
     'serie_zaehlerstand_woche_30w': {'func': 'max', 'timeframe': 'week', 'start': 30, 'end': 0, 'group': 'week'},
     'serie_zaehlerstand_monat_18m': {'func': 'max', 'timeframe': 'month', 'start': 18, 'end': 0, 'group': 'month'},
-    'serie_waermesumme_monat_24m': {'func': 'sum_max', 'timeframe': 'month', 'start': 24, 'end': 0, 'group': 'day',
-                                    'group2': 'month'},
-    'serie_kaeltesumme_monat_24m': {'func': 'sum_max', 'timeframe': 'month', 'start': 24, 'end': 0, 'group': 'day',
-                                    'group2': 'month'},
+    'serie_waermesumme_monat_24m': {'func': 'sum_max', 'timeframe': 'month', 'start': 24, 'end': 0, 'group': 'day', 'group2': 'month'},
+    'serie_kaeltesumme_monat_24m': {'func': 'sum_max', 'timeframe': 'month', 'start': 24, 'end': 0, 'group': 'day', 'group2': 'month'},
     'serie_tagesmittelwert': {'func': 'max', 'timeframe': 'year', 'start': 0, 'end': 0, 'group': 'day'},
-    'serie_tagesmittelwert_stunde_0d': {'func': 'avg1', 'timeframe': 'day', 'start': 0, 'end': 0, 'group': 'hour',
-                                        'group2': 'day'},
-    'serie_tagesmittelwert_tag_stunde_30d': {'func': 'avg1', 'timeframe': 'day', 'start': 30, 'end': 0, 'group': 'hour',
-                                             'group2': 'day'},
-    'waermesumme_year_month': {'func': 'sum_max', 'timeframe': 'day', 'start': None, 'end': None, 'group': 'day',
-                               'group2': None},
-    'kaltesumme_year_month': {'func': 'sum_min_neg', 'timeframe': 'day', 'start': None, 'end': None, 'group': 'day',
-                              'group2': None},
+    'serie_tagesmittelwert_stunde_0d': {'func': 'avg1', 'timeframe': 'day', 'start': 0, 'end': 0, 'group': 'hour', 'group2': 'day'},
+    'serie_tagesmittelwert_tag_stunde_30d': {'func': 'avg1', 'timeframe': 'day', 'start': 30, 'end': 0, 'group': 'hour', 'group2': 'day'},
+    'waermesumme_year_month': {'func': 'sum_max', 'timeframe': 'day', 'start': None, 'end': None, 'group': 'day', 'group2': None},
+    'kaltesumme_year_month': {'func': 'sum_min_neg', 'timeframe': 'day', 'start': None, 'end': None, 'group': 'day', 'group2': None},
     'gts': {'func': 'max', 'timeframe': 'year', 'start': None, 'end': None, 'group': 'day'},
-}
+    }
 
 ##############################
 #           Backup

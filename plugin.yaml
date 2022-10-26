@@ -36,20 +36,22 @@ parameters:
             de: 'Zeitlicher Abstand in Sekunden, mit der die Berechnungen bei Startup ausgeführt werden sollen'
             en: 'Delay in seconds, after which the startup calculations will be run'
 
-    ignore_0_at_temp_items:
-        type: bool
-        default: false
-        description:
-            de: "Bei Items mit 'temp' im Pfad werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
-            en: "At items having 'temp' in path, val_num=0 will be ignored for database queries"
+#    ignore_0_at_temp_items:
+#        type: bool
+#        default: false
+#        description:
+#            de: "Bei Items mit 'temp' im Pfad werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
+#            en: "At items having 'temp' in path, val_num=0 will be ignored for database queries"
 
     ignore_0:
         type: list
         default: []
         description:
-            de: "Bei Items, bei denen der String aus der Liste im Pfad vorkommt, werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert"
-            en: "At items having a entry of that list in path, val_num=0 will be ignored for database queries"
-            
+            de: "Bei Items, bei denen ein String aus der Liste im Pfadnamen vorkommt, werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert. 
+                Beispieleintrag: temp | hum"
+            en: "At items having a entry of that list in path, val_num=0 will be ignored for database queries. 
+                Example: temp | hum"
+
     webif_pagelength:
         type: int
         default: 0
@@ -183,12 +185,232 @@ item_attributes:
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
             - 'general_suspend'                             #bool   ------      Unterbricht die Aktivitäten des Plugin
-            # complex
+            # complex                       Hinweis: database_addon_params needed
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'gruenlandtempsumme'                          #num    daily       Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params: (year=mandatory)
             - 'tagesmitteltemperatur'                       #list   daily       Berechnet die Tagesmitteltemperatur auf basis der stündlichen Durchschnittswerte eines Tages für die angegebene Anzahl von Tagen (days=optional)
             - 'db_request'                                  #list  'group'      Abfrage der DB: database_addon_params: (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional):
+        valid_list_type:
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            #
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            # 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            - num 
+            #
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            - list
+            # 
+            - num 
+            - list
+            - bool
+            #
+            - num 
+            - num 
+            - num 
+            - list
+            - list
+        valid_list_description:
+            - 'Verbrauch am heutigen Tag (Differenz zwischen aktuellem Wert und den Wert am Ende des vorherigen Tages)'
+            - 'Verbrauch in der aktuellen Woche'
+            - 'Verbrauch im aktuellen Monat'
+            - 'Verbrauch im aktuellen Jahr'
+            - 'Verbrauch gestern (heute -1 Tag) (Differenz zwischen Wert am Ende des gestrigen Tages und dem Wert am Ende des Tages danach)'
+            - 'Verbrauch vorgestern (heute -2 Tage)'
+            - 'Verbrauch heute -3 Tage'
+            - 'Verbrauch heute -4 Tage'
+            - 'Verbrauch heute -5 Tage'
+            - 'Verbrauch heute -6 Tage'
+            - 'Verbrauch heute -7 Tage'
+            - 'Verbrauch Vorwoche (aktuelle Woche -1)'
+            - 'Verbrauch aktuelle Woche -2 Wochen'
+            - 'Verbrauch aktuelle Woche -3 Wochen'
+            - 'Verbrauch aktuelle Woche -4 Wochen'
+            - 'Verbrauch Vormonat (aktueller Monat -1)'
+            - 'Verbrauch aktueller Monat -2 Monate'
+            - 'Verbrauch aktueller Monat -3 Monate'
+            - 'Verbrauch aktueller Monat -4 Monate'
+            - 'Verbrauch aktueller Monat -12 Monate'
+            - 'Verbrauch Vorjahr (aktuelles Jahr -1 Jahr)'
+            - 'Verbrauch aktuelles Jahr -2 Jahre'
+            - 'Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Tages'
+            - 'Verbrauch der letzten 12 Monate ausgehend im Ende der letzten Woche'
+            - 'Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats'
+            - 'Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Jahres'
+            - 'Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres'
+            - 'Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren'
+            - 'Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren'
+            # 
+            - 'Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)'
+            - 'Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)'
+            - 'Zählerstand / Wert am Ende der vorletzten Woche (aktuelle Woche -2 Woche)'
+            - 'Zählerstand / Wert am Ende der aktuellen Woche -3 Woche'
+            - 'Zählerstand / Wert am Ende des letzten Monates (aktueller Monat -1 Monat)'
+            - 'Zählerstand / Wert am Ende des vorletzten Monates (aktueller Monat -2 Monate)'
+            - 'Zählerstand / Wert am Ende des aktuellen Monats -3 Monate'
+            - 'Zählerstand / Wert am Ende des letzten Jahres (aktuelles Jahr -1 Jahr)'
+            - 'Zählerstand / Wert am Ende des vorletzten Jahres (aktuelles Jahr -2 Jahre)'
+            - 'Zählerstand / Wert am Ende des aktuellen Jahres -3 Jahre'
+            # 
+            - 'minimaler Wert der letzten 24h'
+            - 'maximaler Wert der letzten 24h'
+            - 'durchschnittlicher Wert der letzten 24h'
+            - 'minimaler Wert der letzten 7 Tage'
+            - 'maximaler Wert der letzten 7 Tage'
+            - 'durchschnittlicher Wert der letzten 7 Tage'
+            - 'Minimalwert seit Tagesbeginn'
+            - 'Maximalwert seit Tagesbeginn'
+            - 'Minimalwert gestern (heute -1 Tag)'
+            - 'Maximalwert gestern (heute -1 Tag) '
+            - 'Durchschnittswert gestern (heute -1 Tag)'
+            - 'Minimalwert vorgestern (heute -2 Tage)'
+            - 'Maximalwert vorgestern (heute -2 Tage)'
+            - 'Durchschnittswert vorgestern (heute -2 Tage)'
+            - 'Minimalwert heute vor 3 Tagen'
+            - 'Maximalwert heute vor 3 Tagen'
+            - 'Durchschnittswert heute vor 3 Tagen'
+            - 'Minimalwert seit Wochenbeginn    '
+            - 'Maximalwert seit Wochenbeginn'
+            - 'Minimalwert Vorwoche (aktuelle Woche -1)'
+            - 'Maximalwert Vorwoche (aktuelle Woche -1)'
+            - 'Durchschnittswert Vorwoche (aktuelle Woche -1)'
+            - 'Minimalwert aktuelle Woche -2 Wochen'
+            - 'Maximalwert aktuelle Woche -2 Wochen'
+            - 'Durchschnittswert aktuelle Woche -2 Wochen'
+            - 'Minimalwert seit Monatsbeginn '
+            - 'Maximalwert seit Monatsbeginn'
+            - 'Minimalwert Vormonat (aktueller Monat -1)'
+            - 'Maximalwert Vormonat (aktueller Monat -1)'
+            - 'Durchschnittswert Vormonat (aktueller Monat -1)'
+            - 'Minimalwert aktueller Monat -2 Monate'
+            - 'Maximalwert aktueller Monat -2 Monate'
+            - 'Durchschnittswert aktueller Monat -2 Monate'
+            - 'Minimalwert seit Jahresbeginn'
+            - 'Maximalwert seit Jahresbeginn'
+            - 'Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)'
+            - 'Maximalwert Vorjahr (aktuelles Jahr -1 Jahr)'
+            - 'Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr)'
+            # 
+            - 'monatlicher Minimalwert der letzten 15 Monate (gleitend)'
+            - 'monatlicher Maximalwert der letzten 15 Monate (gleitend)'
+            - 'monatlicher Mittelwert der letzten 15 Monate (gleitend)'
+            - 'wöchentlicher Minimalwert der letzten 30 Wochen (gleitend)'
+            - 'wöchentlicher Maximalwert der letzten 30 Wochen (gleitend)'
+            - 'wöchentlicher Mittelwert der letzten 30 Wochen (gleitend)'
+            - 'täglicher Minimalwert der letzten 30 Tage (gleitend)'
+            - 'täglicher Maximalwert der letzten 30 Tage (gleitend)'
+            - 'täglicher Mittelwert der letzten 30 Tage (gleitend)'
+            - 'Verbrauch pro Tag der letzten 30 Tage'
+            - 'Verbrauch pro Woche der letzten 30 Wochen'
+            - 'Verbrauch pro Monat der letzten 18 Monate'
+            - 'Zählerstand am Tagesende der letzten 30 Tage'
+            - 'Zählerstand am Wochenende der letzten 30 Wochen'
+            - 'Zählerstand am Monatsende der letzten 18 Monate'
+            - 'monatliche Wärmesumme der letzten 24 Monate'
+            - 'monatliche Kältesumme der letzten 24 Monate'
+            - 'Stundenmittelwert für den aktuellen Tag'
+            - 'Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde'
+            # 
+            - 'Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut'
+            - 'Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut'
+            - 'Unterbricht die Aktivitäten des Plugin'
+            # 
+            - 'Berechnet die Kältesumme für einen Zeitraum, database_addon_params to be used to set year, month for evaluation (year=optional, month=optional)'
+            - 'Berechnet die Wärmesumme für einen Zeitraum, database_addon_params to be used to set year, month for evaluation (year=optional, month=optional)'
+            - 'Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_paramsto be used to set year for evaluation (year=optional)'
+            - 'Berechnet die Tagesmitteltemperatur auf basis der stündlichen Durchschnittswerte eines Tages für die angegebene Anzahl von Tagen (days=optional)'
+            - 'Abfrage der DB mit database_addon_params (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional)'
 
     database_addon_params:
         type: str
@@ -217,7 +439,17 @@ item_attributes:
             - 'suspend'                                     #bool   ------      unterbricht die Aktivitäten des Plugin
             - 'recalc_all'                                  #bool   ------      Startet einen Neuberechnungslauf aller on-demand items
             - 'clean_cache_values'                          #bool   ------      Löscht Plugin-Cache und damit alle im Plugin zwischengespeicherten Werte
-            - 'db_version'
+            - 'db_version'                                  #str
+        valid_list_type:
+            - bool
+            - bool
+            - bool
+            - str
+        valid_list_description:
+            - 'unterbricht die Aktivitäten des Plugin'
+            - 'Startet einen Neuberechnungslauf aller on-demand items'
+            - 'Löscht Plugin-Cache und damit alle im Plugin zwischengespeicherten Werte'
+            - 'Version der verbundenen DB'
 
 item_structs:
     verbrauch_1:
@@ -738,11 +970,13 @@ plugin_functions:
                   - week
                   - month
                   - year
+
     db_version:
         type: str
         description:
             de: 'Liefer die verwendete Version der Datenbank'
             en: 'Return the database version'
+
     suspend:
         type: bool
         description:
