@@ -385,7 +385,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 
 {% block bodytab3 %}
 <div class="container-fluid m-2 table-resize">
-    <h3><strong>{{_('Item Attribute')}}</strong></h3>
+    <h3 style="color:#A9A9A9;"><strong>{{_('Item Attribute')}}</strong></h3>
     {%  for function, itemdefinitions_dict in p.metadata.itemdefinitions.items() %}
         <div class="card mb-2">
             <div class="card-header p-2">
@@ -417,7 +417,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
     {% endfor %}
     
     <br>
-    <h3><strong>{{_('Plugin Funktionen')}}</strong></h3>
+    <h3 style="color:#A9A9A9;"><strong>{{_('Plugin Funktionen')}}</strong></h3>
     {%  for function, plugin_functions_dict in p.metadata.plugin_functions.items() %}
         <div class="card mb-2">
           <div class="card-header p-2">
