@@ -2,6 +2,12 @@
 {% set logo_frame = false %}
 {% set update_interval = ((50 * item_count / 1000) | round | int) * 1000 %}
 
+<!-- Define language -->
+{% set language = p.get_sh().get_defaultlanguage() %}
+{% if language not in ['en','de'] %}
+    {% set language = 'de' %}
+{% endif %}
+
 {% block pluginstyles %}
 <style>
   table th.item {
@@ -201,7 +207,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 	</div>
 {% endblock %}
 
-{% set tabcount = 2 %}
+{% set tabcount = 3 %}
 
 {% if item_count > 0 %}
 	{% set start_tab = 1 %}
@@ -214,6 +220,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 {% else %}
     {% set tab2title = "hidden" %}
 {% endif %}
+{% set tab3title = "<strong>" ~ plugin_shortname ~ " API/Doku</strong>" %}
 
 
 {% block bodytab1 %}
@@ -375,3 +382,74 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
     </table>
 </div>
 {% endblock bodytab2 %}
+
+{% block bodytab3 %}
+<div class="container-fluid m-2 table-resize">
+    <h3><strong>{{_('Item Attribute')}}</strong></h3>
+    {%  for function, itemdefinitions_dict in p.metadata.itemdefinitions.items() %}
+        <div class="card mb-2">
+            <div class="card-header p-2">
+                <strong>{{ function }}</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{('Beschreibung:')}} {{ itemdefinitions_dict['description'][language] }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{ ('Ergebnisdatentyp:')}} {{ itemdefinitions_dict['type'] }}
+            </div>
+            {% if 'valid_list' in itemdefinitions_dict %}
+            <div class="card-body p-2">
+                  <table id="huhu" class="table table-striped table-hover pluginList display">
+                    <thead>
+                        <tr>
+                            <th>{{_('Item Attributwert')}}</th>
+                            <th>{{_('Item_Type')}}</th>
+                            <th>{{_('Beschreibung')}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in itemdefinitions_dict['valid_list'] %}
+                            <tr>
+                                <td class="py-1">{{ entry }}</td>
+                                <td class="py-1">{% if 'valid_list_item_type' in itemdefinitions_dict %} {{ itemdefinitions_dict.valid_list_item_type[loop.index0] }} {% else %} {{_('-')}} {% endif %}</td>
+                                <td class="py-1">{% if 'valid_list_description' in itemdefinitions_dict %} {{ itemdefinitions_dict.valid_list_description[loop.index0] |string }} {% else %} {{_('-')}} {% endif %}</td>
+                            </tr>
+                         {% endfor %}
+                    </tbody>
+                </table>
+          </div>
+          {% endif %}
+        </div>
+    {% endfor %}
+    
+    <br>
+    <h3><strong>{{_('Plugin Funktionen')}}</strong></h3>
+    {%  for function, plugin_functions_dict in p.metadata.plugin_functions.items() %}
+        <div class="card mb-2">
+          <div class="card-header p-2">
+              <strong>{{ function }}</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{('Beschreibung:')}} {{ plugin_functions_dict['description'][language] }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{ ('Ergebnisdatentyp:')}} {{ plugin_functions_dict['type'] }}
+          </div>
+          
+          {% if 'parameters' in plugin_functions_dict %}
+          <div class="card-body p-2">
+            <div class="card-body p-2">
+                <table id="haha" class="table table-striped table-hover pluginList display">
+                    <thead>
+                        <tr>
+                            <th>{{_('Parameter')}}</th>
+                            <th>{{_('Beschreibung')}}</th>
+                            <th>{{_('Type')}}</th>
+                            <th>{{_('zulässige Werte')}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in plugin_functions_dict['parameters'] %}
+                            <tr>
+                                <td class="py-1">{{ entry }}</td>
+                                <td class="py-1">{{ plugin_functions_dict['parameters'][entry]['description'][language] }}</td>
+                                <td class="py-1">{{ plugin_functions_dict['parameters'][entry]['type'] }}</td>
+                                <td class="py-1">{{ plugin_functions_dict['parameters'][entry]['valid_list'] }}</td>
+                            </tr>
+                         {% endfor %}
+                    </tbody>
+                </table>
+              </div>
+          {% endif %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock bodytab3 %}
