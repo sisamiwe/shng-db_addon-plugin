@@ -12,7 +12,7 @@ plugin:
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
 #    support: https://knx-user-forum.de/forum/supportforen/smarthome-py
 
-    version: 1.0.K                  # Plugin version (must match the version specified in __init__.py)
+    version: 1.0.L                  # Plugin version (must match the version specified in __init__.py)
     sh_minversion: 1.9              # minimum shNG version to use this plugin
 #    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
     py_minversion: 3.8              # minimum Python version to use for this plugin
@@ -44,6 +44,15 @@ parameters:
                 Beispieleintrag: temp | hum"
             en: "At items having a entry of that list in path, val_num=0 will be ignored for database queries. 
                 Example: temp | hum"
+
+    use_oldest_entry:
+        type: bool
+        default: False
+        description:
+            de: "True: Verwendung des ältesten Eintrags des Items in der Datenbank, falls der Start des Abfragezeitraums zeitlich vor diesem Eintrag liegt
+                 False: Abbruch der Datenbankabfrage"
+            en: "True: Use of oldest entry of item in database, if start of query is prior to oldest entry
+                 False: Cancel query"
 
     webif_pagelength:
         type: int
@@ -101,9 +110,9 @@ item_attributes:
             - 'verbrauch_rolling_12m_woche_minus1'          #num    weekly      Verbrauch der letzten 12 Monate ausgehend im Ende der letzten Woche
             - 'verbrauch_rolling_12m_monat_minus1'          #num    monthly     Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Monats
             - 'verbrauch_rolling_12m_jahr_minus1'           #num    yearly      Verbrauch der letzten 12 Monate ausgehend im Ende des letzten Jahres
-            - 'verbrauch_vorjahreszeitraum_minus0'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres
-            - 'verbrauch_vorjahreszeitraum_minus1'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
-            - 'verbrauch_vorjahreszeitraum_minus2'          #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren
+            - 'verbrauch_jahreszeitraum_minus1'             #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag des Vorjahres
+            - 'verbrauch_jahreszeitraum_minus2'             #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 2 Jahren
+            - 'verbrauch_jahreszeitraum_minus3'             #num    daily       Verbrauch seit dem 1.1. bis zum heutigen Tag vor 3 Jahren
             # Zaehlerstand
             - 'zaehlerstand_heute_minus1'                   #num    daily       Zählerstand / Wert am Ende des letzten Tages (heute -1 Tag)
             - 'zaehlerstand_woche_minus1'                   #num    weekly      Zählerstand / Wert am Ende der letzten Woche (aktuelle Woche -1 Woche)    
@@ -637,8 +646,8 @@ item_structs:
             # cache: yes
 
         verbrauch_vorjahreszeitraum:
-            name: Verbrauch im Vorjahreszeitraum 1.1. bis jetzt vor einem Jahr
-            database_addon_fct: verbrauch_vorjahreszeitraum_minus0
+            name: Verbrauch im Jahreszeitraum 1.1. bis jetzt vor einem Jahr
+            database_addon_fct: verbrauch_jahreszeitraum_minus1
             database_addon_startup: yes
             type: num
             visu_acl: ro

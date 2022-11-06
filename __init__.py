@@ -38,9 +38,25 @@ import datetime
 import time
 import re
 import queue
-from dateutil.relativedelta import *
+from dateutil.relativedelta import relativedelta
 from typing import Union
 import threading
+
+# Plugin
+# ToDo: Das Plugin könnte vielleicht einen Abgleich machen beim Start, ob die IP des SHNG Rechners identisch ist mit der im plugin.yaml angegeben IP..?
+        # Abfrage ist direkt in der DB. Somit hier kein Einfluss
+# ToDo: Beim Jahreszeitraum wird ja der Jahresverbrauch vom ältesten Logeintrag genommen, auch wenn nicht das ganze Jahr Daten vorliegen, oder? Das könnte doch beim Vorjahr gleich gelöst werden oder nicht?
+        # Kann nun über Plugin Parameter eingestellt werden
+# ToDo: Provide wertehistorie_item in Log if query is cancelled
+        # Kompliziert, da in der Methode, in der die Prüfung stattfindet, nur noch das DB-Item bekannt ist
+
+# WebIF
+# ToDo: fürs web interface würde ich noch den Spalten Klassen verpassen und die Breite im Style definieren. Gerade der Wert könnte imho recht schmal sein.
+        # Eingebaut, Spaltenbreite noch definieren
+# ToDo: Außerdem könntest du ähnlich wie beim aktuellsten develop Stand des database Plugins definieren, welche Spalten zuletzt durch das responsive Design eingeklappt werden sollen. Denke, Spalte 1 und -1 (rechts = Wert) wären da die wichtigsten.
+
+# ToDo: Außerdem würd ich da die Werte gleich eintragen und nicht erst durch das erste Update ersetzen lassen, nicht? Sonst wartet man teils doch recht lang
+        # Es werden alle Werte direkt eingetragen nicht erst beim ersten Update. Warum das so lange dauert, konnte ich noch nicht herausfinden.
 
 
 class DatabaseAddOn(SmartPlugin):
@@ -48,7 +64,7 @@ class DatabaseAddOn(SmartPlugin):
     Main class of the Plugin. Does all plugin specific stuff and provides the update functions for the items
     """
 
-    PLUGIN_VERSION = '1.0.K'
+    PLUGIN_VERSION = '1.0.L'
 
     def __init__(self, sh):
         """
@@ -115,6 +131,7 @@ class DatabaseAddOn(SmartPlugin):
         self.db_configname = self.get_parameter_value('database_plugin_config')
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.ignore_0 = self.get_parameter_value('ignore_0')
+        self.use_oldest_entry = self.get_parameter_value('use_oldest_entry')
         # self.ignore_0_at_temp_items = self.get_parameter_value('ignore_0_at_temp_items')
         self.webif_pagelength = self.get_parameter_value('webif_pagelength')
 
@@ -232,7 +249,7 @@ class DatabaseAddOn(SmartPlugin):
                 self._webdata[item.id()].update({'attribute': _database_addon_fct})
 
                 # handle items with for daily run
-                if check_substring_in_str(['heute_minus', 'last_', 'vorjahreszeitraum', ['serie', 'tag'], ['serie', 'stunde']], _database_addon_fct):
+                if check_substring_in_str(['heute_minus', 'last_', 'jahreszeitraum', ['serie', 'tag'], ['serie', 'stunde']], _database_addon_fct):
                     self._daily_items.add(item)
                     if self.parse_debug:
                         self.logger.debug(f"Item '{item.id()}' added to be run daily.")
@@ -267,6 +284,7 @@ class DatabaseAddOn(SmartPlugin):
                         _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
                         if _database_addon_params is None:
                             self.logger.info(f"No 'year' for evaluation via 'database_addon_params' of item {item.id()} for function {_database_addon_fct} given. Default with 'current year' will be used.")
+                            _database_addon_params = dict()
                             _database_addon_params['year'] = 'current'
 
                         if 'year' in _database_addon_params:
@@ -365,7 +383,7 @@ class DatabaseAddOn(SmartPlugin):
 
         elif self.has_iattr(item.conf, 'database_addon_admin'):
             if self.parse_debug:
-                self.logger.debug(f"parse item: {item.id()} due to 'database_addon_admin'")
+                self.logger.debug(f"parse item: {item.id()} due to used item attribute 'database_addon_admin'")
             self._admin_item_dict[item] = self.get_iattr_value(item.conf, 'database_addon_admin').lower()
 
         # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen als auch die Admin-Items
@@ -499,7 +517,7 @@ class DatabaseAddOn(SmartPlugin):
             _result = self._handle_verbrauch(_database_item, _database_addon_fct)
 
             if _result and _result < 0:
-                self.logger.warning(f"Result of item {item.id()} with {_database_addon_fct=} was negativ. Something seems to be wrong.")
+                self.logger.warning(f"Result of item {item.id()} with {_database_addon_fct=} was negative. Something seems to be wrong.")
 
         # handle item starting with 'zaehlerstand_' of format 'zaehlerstand_timeframe_timedelta' like 'zaehlerstand_woche_minus1'
         elif _database_addon_fct.startswith('zaehlerstand_') and len(_var) == 3 and _var[2].startswith('minus'):
@@ -825,8 +843,7 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         if state:
-            self.logger.warning(
-                "Plugin is set to 'suspended'. Queries to database will not be made until suspension is cancelled.")
+            self.logger.warning("Plugin is set to 'suspended'. Queries to database will not be made until suspension is cancelled.")
             self.suspended = True
             self._clear_queue()
         else:
@@ -923,8 +940,7 @@ class DatabaseAddOn(SmartPlugin):
         # handle all on_change functions of format 'verbrauch_timeframe' like 'verbrauch_heute'
         if len(_var) == 2 and _var[1] in ['heute', 'woche', 'monat', 'jahr']:
             if self.execute_debug:
-                self.logger.debug(
-                    f"on_change function={_var[1]} detected; will be calculated by next change of database item")
+                self.logger.debug(f"on_change function={_var[1]} detected; will be calculated by next change of database item")
 
         # handle all functions 'verbrauch' in format 'verbrauch_timeframe_timedelta' like 'verbrauch_heute_minus2'
         elif len(_var) == 3 and _var[1] in ['heute', 'woche', 'monat', 'jahr'] and _var[2].startswith('minus'):
@@ -960,10 +976,10 @@ class DatabaseAddOn(SmartPlugin):
                     _starttime = convert_duration(_timeframe, _window_dur) * _window_inc
                     _result = self._consumption_calc(_database_item, _timeframe, _starttime, _endtime)
 
-        # handle all functions of format 'verbrauch_timeframe_timedelta' like 'verbrauch_vorjahreszeitraum_minus0'
-        elif len(_var) == 3 and _var[1] == 'vorjahreszeitraum' and _var[2].startswith('minus'):
-            _timeframe = convert_timeframe(_var[1])
-            _timedelta = _var[2][-1]
+        # handle all functions of format 'verbrauch_timeframe_timedelta' like 'verbrauch_jahreszeitraum_minus1'
+        elif len(_var) == 3 and _var[1] == 'jahreszeitraum' and _var[2].startswith('minus'):
+            _timeframe = convert_timeframe(_var[1])  # day, week, month, year
+            _timedelta = _var[2][-1]  # 1 oder 2 oder 3
 
             if self.execute_debug:
                 self.logger.debug(f"_handle_verbrauch: '{_database_addon_fct}' function detected. {_timeframe=}, {_timedelta=}")
@@ -973,11 +989,9 @@ class DatabaseAddOn(SmartPlugin):
 
             if isinstance(_timedelta, int):
                 _today = datetime.date.today()
-                _year = _today.year - 1 - _timedelta
-                # start ist 1.1. des Vorjahrs minus _timedelta
-                _start_date = datetime.date(int(_year), 1, 1)
-                # ende ist heute des Vorjahres minus _timedelta
-                _end_date = _today + relativedelta(years=- 1 - _timedelta)
+                _year = _today.year - _timedelta
+                _start_date = datetime.date(_year, 1, 1) - relativedelta(days=1)  # Start ist Tag vor dem 1.1., damit Abfrage den Maximalwert von 31.12. 00:00:00 bis 1.1. 00:00:00 ergibt
+                _end_date = _today - relativedelta(years=_timedelta)
                 _start = (_today - _start_date).days
                 _end = (_today - _end_date).days
 
@@ -1029,13 +1043,13 @@ class DatabaseAddOn(SmartPlugin):
 
         today = datetime.date.today()
         if start_date > today:
-            self.logger.error(f"kaeltesumme: Start time for query is in future. Query cancelled.")
+            self.logger.error(f"kaeltesumme: Start time for query of item={item.id()} is in future. Query cancelled.")
             return
 
         start = (today - start_date).days
         end = (today - end_date).days if end_date < today else 0
         if start < end:
-            self.logger.error(f"kaeltesumme: End time for query is before start time. Query cancelled.")
+            self.logger.error(f"kaeltesumme: End time for query of item={item.id()} is before start time. Query cancelled.")
             return
 
         _database_addon_params = std_request_dict.get('kaltesumme_year_month', None)
@@ -1082,13 +1096,13 @@ class DatabaseAddOn(SmartPlugin):
 
         today = datetime.date.today()
         if start_date > today:
-            self.logger.info(f"waermesumme: Start time for query is in future. Query cancelled.")
+            self.logger.info(f"waermesumme: Start time for query of item={item.id()} is in future. Query cancelled.")
             return
 
         start = (today - start_date).days
         end = (today - end_date).days if end_date < today else 0
         if start < end:
-            self.logger.error(f"waermesumme: End time for query is before start time. Query cancelled.")
+            self.logger.error(f"waermesumme: End time for query of item={item.id()} is before start time. Query cancelled.")
             return
 
         _database_addon_params = std_request_dict.get('waermesumme_year_month', None)
@@ -1129,7 +1143,7 @@ class DatabaseAddOn(SmartPlugin):
         year = int(year)
         year_delta = current_year - year
         if year_delta < 0:
-            self.logger.error(f"gruenlandtemperatursumme: Start time for query is in future. Query cancelled.")
+            self.logger.error(f"gruenlandtemperatursumme: Start time for query of item={item.id()} is in future. Query cancelled.")
             return
 
         _database_addon_params = std_request_dict.get('gts', None)
@@ -1446,10 +1460,10 @@ class DatabaseAddOn(SmartPlugin):
         """
         Handle query for Verbrauch
 
-        :param item: item, the query should be done for
-        :param timeframe: timeframe as week, month, year
-        :param start: beginning of timeframe
-        :param start: end of timeframe
+        :param item:        item, the query should be done for
+        :param timeframe:   timeframe as week, month, year
+        :param start:       beginning of timeframe
+        :param start:       end of timeframe
 
         """
 
@@ -1478,7 +1492,9 @@ class DatabaseAddOn(SmartPlugin):
 
             if value_start == 0:  # wenn der Wert zum Startzeitpunkt 0 ist, gab es dort keinen Eintrag (also keinen Verbrauch), dann frage den nächsten Eintrag in der DB ab.
                 self.logger.info(f"No DB Entry found for requested start date. Looking for next DB entry.")
-                value_start = self._handle_query_result(self._query_log_next(item=item, timeframe=timeframe, timedelta=start))[0][1]
+                # ToDo: Check Correctness of self._query_item(func='next'
+                # value_start = self._handle_query_result(self._query_log_next(item=item, timeframe=timeframe, timedelta=start))[0][1]
+                value_start = self._handle_query_result(self._query_item(func='next', item=item, timeframe=timeframe, start=start))[0][1]
                 if self.prepare_debug:
                     self.logger.debug(f"_consumption_calc: next available value is {value_start=}")
 
@@ -1490,9 +1506,9 @@ class DatabaseAddOn(SmartPlugin):
 
         return _result
 
-    def _query_item(self, func: str, item, timeframe: str, start: int = 0, end: int = 0, group: str = None, group2: str = None, ignore_value=None) -> list:
+    def _query_item(self, func: str, item, timeframe: str, start: int = None, end: int = 0, group: str = None, group2: str = None, ignore_value=None) -> list:
         """
-        Create a checks start and end if in database, select and execute query function, get query response, get value and return it
+        Do diverse checks of input, and prepare query of log by getting item_id, start / end in timestamp etc.
 
         :param func: function to be used at query
         :param item: item object or item_id for which the query should be done
@@ -1509,35 +1525,55 @@ class DatabaseAddOn(SmartPlugin):
         if self.prepare_debug:
             self.logger.debug(f"_query_item called with {func=}, item={item.id()}, {timeframe=}, {start=}, {end=}, {group=}, {group2=}, {ignore_value=}")
 
-        _result = [[None, None]]
+        # SET DEFAULT RESULT
+        result = [[None, None]]
 
-        # if start is given and start is <= end, abort
+        # CHECK CORRECTNESS OF TIMEFRAME
+        if timeframe not in ["year", "month", "week", "day"]:
+            self.logger.error(f"_query_item: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
+            return result
+
+        # CHECK CORRECTNESS OF START / END
         if start < end:
-            self.logger.warning(f"_query_log: Requested {start=} for item={item.id()} is not valid. Query cancelled.")
-            return _result
+            self.logger.warning(f"_query_item: Requested {start=} for item={item.id()} is not valid since {start=} < {end=}. Query cancelled.")
+            return result
 
-        # Check if end timestamp is in database (Abfrage abbrechen, wenn Endzeitpunkt in UNIX-timestamp der Abfrage kleiner (und damit jünger) ist, als der UNIX-timestamp des ältesten Eintrages)
-        _ts_start, _ts_end = timeframe_to_timestamp(timeframe, start, end)
-        _oldest_log = int(self._get_oldest_log(item) / 1000)
-        if _ts_end < _oldest_log:
-            self.logger.warning(f"_query_item: Requested end time='{_ts_end}' of query for Item='{item.id()}' is prior to oldest entry with time='{_oldest_log}'. Query cancelled.")
-            return _result
+        # DEFINE ITEM_ID
+        item_id = self._get_itemid_for_query(item)
+        if not item_id:
+            self.logger.error(f"_query_item: ItemId for item={item.id()} not found. Query cancelled.")
+            return result
 
-        # decide which query to be used (simple or standard) to get best/quickest result
-        if start == end:
-            log = self._query_log_simple(func=func, item=item, timeframe=timeframe, timedelta=end, group=group, ignore_value=ignore_value)
-        else:
-            log = self._query_log(func=func, item=item, timeframe=timeframe, start=start, end=end, group=group, group2=group2, ignore_value=ignore_value)
+        # DEFINE START AND END OF QUERY AS TIMESTAMP IN MICROSECONDS
+        ts_start, ts_end = get_start_end_as_timestamp(timeframe, start, end)
+        oldest_log = int(self._get_oldest_log(item))
 
-        # if self.prepare_debug:
-        #     self.logger.debug(f"_query_item: log={log}")
-
-        _result = self._handle_query_result(log)
+        if start is None:
+            ts_start = oldest_log
 
         if self.prepare_debug:
-            self.logger.debug(f"_query_item: value for item={item.id()} with {timeframe=}, {func=}: {_result}")
+            self.logger.debug(f"_query_item: Requested {timeframe=} with {start=} and {end=} resulted in start being timestamp={ts_start} / {timestamp_to_timestring(ts_start)} and end being timestamp={ts_end} / {timestamp_to_timestring(ts_end)}")
 
-        return _result
+        # CHECK IF VALUES FOR END TIME AND START TIME ARE IN DATABASE
+        if ts_end < oldest_log:  # (Abfrage abbrechen, wenn Endzeitpunkt in UNIX-timestamp der Abfrage kleiner (und damit jünger) ist, als der UNIX-timestamp des ältesten Eintrages)
+            self.logger.warning(f"_query_item: Requested end time timestamp={ts_end} / {timestamp_to_timestring(ts_end)} of query for Item='{item.id()}' is prior to oldest entry with timestamp={oldest_log} / {timestamp_to_timestring(oldest_log)}. Query cancelled.")
+            return result
+
+        if ts_start < oldest_log:
+            if not self.use_oldest_entry:
+                self.logger.warning(f"_query_item: Requested start time timestamp={ts_start} / {timestamp_to_timestring(ts_start)} of query for Item='{item.id()}' is prior to oldest entry with timestamp={oldest_log} / {timestamp_to_timestring(oldest_log)}. Query cancelled.")
+                return result
+            else:
+                self.logger.warning(f"_query_item: Requested start time timestamp={ts_start} / {timestamp_to_timestring(ts_start)} of query for Item='{item.id()}' is prior to oldest entry with timestamp={oldest_log} / {timestamp_to_timestring(oldest_log)}. Oldest available entry will be used.")
+                ts_start = oldest_log
+
+        log = self._query_log_timestamp(func=func, item_id=item_id, ts_start=ts_start, ts_end=ts_end, group=group, group2=group2, ignore_value=ignore_value)
+        result = self._handle_query_result(log)
+
+        if self.prepare_debug:
+            self.logger.debug(f"_query_item: value for item={item.id()} with {timeframe=}, {func=}: {result}")
+
+        return result
 
     def _clean_cache_dicts(self) -> None:
         """
@@ -1606,17 +1642,15 @@ class DatabaseAddOn(SmartPlugin):
     ##############################
     #     DB Query Preparation
     ##############################
-    # ToDo: Harmonisieren Abfrage zwischen Log und Log_simple
 
-    def _query_log(self, func: str, item, timeframe: str, start: int = None, end: int = 0, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
+    def _query_log_timestamp(self, func: str, item_id, ts_start: int, ts_end: int, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
         Assemble a mysql query str and param dict based on given parameters, get query response and return it
 
         :param func: function to be used at query
-        :param item: item object or item_id for which the query should be done
-        :param timeframe: time increment for query (start, end, count) (day, week, month, year)
-        :param start: start of timeframe (oldest) for query given in x time increments (default = None, meaning complete database)
-        :param end: end of timeframe (newest) for query given in x time increments (default = 0, meaning today for day, end of last week for week, end of last month for month, end of last year for year)
+        :param item_id: database item_id for which the query should be done
+        :param ts_start: start for query given in timestamp in microseconds
+        :param ts_end: end for query given in timestamp in microseconds
         :param group: first grouping parameter (default = None, possible values: day, week, month, year)
         :param group2: second grouping parameter (default = None, possible values: day, week, month, year)
         :param ignore_value: value of val_num, which will be ignored during query
@@ -1627,23 +1661,23 @@ class DatabaseAddOn(SmartPlugin):
 
         # DO DEBUG LOG
         if self.prepare_debug:
-            self.logger.debug(
-                f"_query_log: Called with {func=}, item={item.id()}, {timeframe=}, {start=}, {end=}, {group=}, {group2=}, {ignore_value=}")
+            self.logger.debug(f"_query_log_timestamp: Called with {func=}, {item_id=}, {ts_start=}, {ts_end=}, {group=}, {group2=}, {ignore_value=}")
 
         # DEFINE GENERIC QUERY PARTS
         _select = {
-            'avg': 'time as time1, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
-            'avg1': 'time as time1, ROUND(AVG(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num), 1) as value ',
-            'min': 'time as time1, ROUND(MIN(val_num), 1) as value ',
-            'max': 'time as time1, ROUND(MAX(val_num), 1) as value ',
-            'max1': 'time as time1, ROUND(MAX(value), 1) as value FROM (SELECT time, ROUND(MAX(val_num), 1) as value ',
-            'sum': 'time as time1, ROUND(SUM(val_num), 1) as value ',
-            'on': 'time as time1, ROUND(SUM(val_bool * duration) / SUM(duration), 1) as value ',
-            'integrate': 'time as time1, ROUND(SUM(val_num * duration),1) as value ',
-            'sum_max': 'time as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, ROUND(MAX(val_num), 1) as value ',
-            'sum_avg': 'time as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
-            'sum_min_neg': 'time as time1, ROUND(SUM(value), 1) as value FROM (SELECT time, IF(min(val_num) < 0, ROUND(MIN(val_num), 1), 0) as value ',
-            'diff_max': 'time as time1, value1 - LAG(value1) OVER (ORDER BY time) AS value FROM (SELECT time, ROUND(MAX(val_num), 1) as value1 '
+            'avg':         'time, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
+            'avg1':        'time, ROUND(AVG(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num), 1) as value ',
+            'min':         'time, ROUND(MIN(val_num), 1) as value ',
+            'max':         'time, ROUND(MAX(val_num), 1) as value ',
+            'max1':        'time, ROUND(MAX(value), 1) as value FROM (SELECT time, ROUND(MAX(val_num), 1) as value ',
+            'sum':         'time, ROUND(SUM(val_num), 1) as value ',
+            'on':          'time, ROUND(SUM(val_bool * duration) / SUM(duration), 1) as value ',
+            'integrate':   'time, ROUND(SUM(val_num * duration),1) as value ',
+            'sum_max':     'time, ROUND(SUM(value), 1) as value FROM (SELECT time, ROUND(MAX(val_num), 1) as value ',
+            'sum_avg':     'time, ROUND(SUM(value), 1) as value FROM (SELECT time, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
+            'sum_min_neg': 'time, ROUND(SUM(value), 1) as value FROM (SELECT time, IF(min(val_num) < 0, ROUND(MIN(val_num), 1), 0) as value ',
+            'diff_max':    'time, value1 - LAG(value1) OVER (ORDER BY time) AS value FROM (SELECT time, ROUND(MAX(val_num), 1) as value1 ',
+            'next':        'time, val_num as value '
         }
 
         _table_alias = {
@@ -1658,22 +1692,17 @@ class DatabaseAddOn(SmartPlugin):
             'sum_max': ') AS table1 ',
             'sum_avg': ') AS table1 ',
             'sum_min_neg': ') AS table1 ',
-            'diff_max': ') AS table1 '
+            'diff_max': ') AS table1 ',
+            'next': '',
         }
 
-        _order = 'time ASC '
+        _order = "time DESC LIMIT 1 " if func == "next" else "time ASC "
+
+        _where = "item_id = :item_id AND time < :ts_start" if func == "next" else "item_id = :item_id AND time BETWEEN :ts_start AND :ts_end "
+
+        _db_table = 'log '
 
         # DEFINE mySQL QUERY PARTS
-        # statements for query certain timeframe of DB (query from today - x (count) days/weeks/month until y (count) days/weeks/month into the past) // details see end of file
-        _where_sql = {
-            "year": "item_id = :item AND YEAR(FROM_UNIXTIME(time/1000)) BETWEEN MAKEDATE(YEAR(CURDATE()-interval :start YEAR), 1) AND MAKEDATE(YEAR(CURDATE()-interval :end YEAR), 1) ",
-            "month": "item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:start -1) MONTH) AND DATE_SUB(DATEFROMPARTS(YEAR(CURDATE()), MONTH(CURDATE()), 1), INTERVAL (:end -1) MONTH) ",
-            "week": "item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) BETWEEN DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :start WEEK) AND DATE_SUB(YEARWEEK(CURDATE()), INTERVAL :end WEEK) ",
-            "day": "item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) BETWEEN DATE_SUB(CURDATE(), INTERVAL :start DAY) AND DATE_SUB(CURDATE(), INTERVAL :end DAY) "
-        }
-
-        # "month": "item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) BETWEEN EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :start MONTH)) AND EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :end MONTH))"
-
         _group_by_sql = {
             "year": "GROUP BY YEAR(FROM_UNIXTIME(time/1000)) ",
             "month": "GROUP BY YEAR(FROM_UNIXTIME(time/1000)), MONTH(FROM_UNIXTIME(time/1000)) ",
@@ -1684,13 +1713,6 @@ class DatabaseAddOn(SmartPlugin):
         }
 
         # DEFINE SQLITE QUERY PARTS
-        _where_sqlite = {
-            "year": f"item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-{start} years')) AND strftime('%Y', date('now', '-{end} years')) ",
-            "month": f"item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) BETWEEN strftime('%Y%m', date('now','-{start} months')) AND strftime('%Y%m', date('now','-{end} months')) ",
-            "week": f"item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) BETWEEN strftime('%Y%W', date('now', '-{start * 7} days')) AND strftime('%Y%W', date('now', '-{end * 7} days')) ",
-            "day": f"item_id = :item AND date((time/1000),'unixepoch') BETWEEN date('now', '-{start} days') AND date('now', '-{end} days') "
-        }
-
         _group_by_sqlite = {
             "year": "GROUP BY strftime('%Y', date((time/1000),'unixepoch')) ",
             "month": "GROUP BY strftime('%Y%m', date((time/1000),'unixepoch')) ",
@@ -1700,17 +1722,12 @@ class DatabaseAddOn(SmartPlugin):
             None: ''
         }
 
-        # DEFINE SQLITE DB TABLE
-        _db_table = 'log '
-
         ######################################
 
         # SELECT QUERY PARTS DEPENDING IN DB DRIVER
         if self.db_driver.lower() == 'pymysql':
-            _where = _where_sql
             _group_by = _group_by_sql
         elif self.db_driver.lower() == 'sqlite3':
-            _where = _where_sqlite
             _group_by = _group_by_sqlite
         else:
             self.logger.error('DB Driver unknown')
@@ -1718,48 +1735,33 @@ class DatabaseAddOn(SmartPlugin):
 
         # CHECK CORRECTNESS OF FUNC
         if func not in _select:
-            self.logger.error(f"_query_log: Requested {func=} for item={item.id()} not defined. Query cancelled.")
-            return
-
-        # CHECK CORRECTNESS OF TIMEFRAME
-        if timeframe not in _where:
-            self.logger.error(
-                f"_query_log: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
+            self.logger.error(f"_query_log_timestamp: Requested {func=} for {item_id=} not defined. Query cancelled.")
             return
 
         # CHECK CORRECTNESS OF GROUP AND GROUP2
         if group not in _group_by:
-            self.logger.error(f"_query_log: Requested {group=} for item={item.id()} not defined. Query cancelled.")
+            self.logger.error(f"_query_log_timestamp: Requested {group=} for item={item_id=} not defined. Query cancelled.")
             return
         if group2 not in _group_by:
-            self.logger.error(f"_query_log: Requested {group=} for item={item.id()} not defined. Query cancelled.")
+            self.logger.error(f"_query_log_timestamp: Requested {group=} for item={item_id=} not defined. Query cancelled.")
             return
-
-        # DEFINE ITEM_ID
-        item_id = self._get_itemid_for_query(item)
-        if not item_id:
-            self.logger.error(f"_query_log_simple: ItemId for item={item.id()} not found. Query cancelled.")
-            return
-
-        # ADAPT _WHERE DEPENDING ON START, END AND TIMEFRAME
-        if not (start is None and end == 0):
-            _where = f"{_where[timeframe]}"
 
         # HANDLE IGNORE VALUES
-        if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg',
-                    'diff_max']:  # extend _where statement for excluding boolean values = 0 for defined functions
+        if func in ['min', 'max', 'max1', 'sum_max', 'sum_avg', 'sum_min_neg', 'diff_max']:  # extend _where statement for excluding boolean values == 0 for defined functions
             _where = f'{_where}AND val_bool = 1 '
         if ignore_value:  # if value to be ignored are defined, extend _where statement
             _where = f'{_where}AND val_num != {ignore_value} '
 
         # SET PARAMS
         params = {
-            'item': item_id,
-            'end': int(end),
-            'start': int(start)
-        }
+            'item_id': item_id,
+            'ts_start': ts_start
+            }
 
-        # CREATE QUERY
+        if func != "next":
+            params['ts_end'] = ts_end
+
+        # ASSEMBLE QUERY
         query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}{_group_by[group]}ORDER BY {_order}{_table_alias[func]}{_group_by[group2]}".strip()
 
         if self.db_driver.lower() == 'sqlite3':
@@ -1767,217 +1769,7 @@ class DatabaseAddOn(SmartPlugin):
 
         # DO DEBUG LOG
         if self.prepare_debug:
-            self.logger.debug(f"_query_log: {query=}, {params=}")
-
-        # REQUEST DATABASE AND RETURN RESULT
-        return self._fetchall(query, params)
-
-    def _query_log_simple(self, func: str, item, timeframe: str, timedelta: int, group: str = None, ignore_value=None) -> Union[list, None]:
-        """
-        Assemble a mysql query str and param dict for 1 increment (year, month, week, day) based on given parameters, get query response and return it
-
-        :param func: function to be used at query
-        :param item: item object or item_id for which the query should be done
-        :param timeframe: time increment for query (start, end, count) (day, week, month, year)
-        :param timedelta: number of timeframe increments from today into the past (0 day -> today, 1 day -> yesterday, ...)
-        :param group: first grouping parameter (default = None, possible values: day, week, month, year)
-        :param ignore_value: value of val_num, which will be ignored during query
-
-        :return: query response
-
-        """
-
-        # DEFINE GENERIC QUERY PARTS
-
-        _select = {
-            'avg': 'time as time1, ROUND(AVG(val_num * duration) / AVG(duration), 1) as value ',
-            'min': 'time as time1, ROUND(MIN(val_num), 1) as value ',
-            'max': 'time as time1, ROUND(MAX(val_num), 1) as value ',
-            'sum': 'time as time1, ROUND(SUM(val_num), 1) as value ',
-            'on': 'time as time1, ROUND(SUM(val_bool * duration) / SUM(duration), 1) as value ',
-            'integrate': 'time as time1, ROUND(SUM(val_num * duration),1) as value '
-        }
-
-        # DEFINE mySQL QUERY PARTS
-        """
-        SQL Queries
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL :increment YEAR))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL :increment MONTH))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL :increment WEEK))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL :increment DAY)
-        """
-
-        _where_sql = {
-            "year": f"item_id = :item AND YEAR(DATE(FROM_UNIXTIME(time/1000))) = YEAR(DATE_SUB(CURDATE(), INTERVAL {timedelta} YEAR)) ",
-            "month": f"item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) = EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL {timedelta + 1} MONTH)) ",
-            "week": f"item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) = YEARWEEK(DATE_SUB(CURDATE(), INTERVAL {timedelta} WEEK)) ",
-            "day": f"item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) = DATE_SUB(CURDATE(), INTERVAL {timedelta} DAY) "
-        }
-
-        _group_by_sql = {
-            'year': 'GROUP BY YEAR(FROM_UNIXTIME(time/1000)) ',
-            'month': 'GROUP BY YEAR(FROM_UNIXTIME(time/1000)), MONTH(FROM_UNIXTIME(time/1000)) ',
-            'week': 'GROUP BY YEARWEEK(FROM_UNIXTIME(time/1000), 5) ',
-            'day': 'GROUP BY DATE(FROM_UNIXTIME(time/1000)) ',
-            'hour': 'GROUP BY DATE(FROM_UNIXTIME(time/1000)), HOUR(FROM_UNIXTIME(time/1000)) ',
-            None: ''
-        }
-
-        # DEFINE SQLITE QUERY PARTS
-        """
-        SQLITE Queries
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-1 years'))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-1 months'))
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-7 days'))   weeks unbekannt, daher weeks * 7
-            SELECT ROUND(MAX(val_num), 1) as value FROM log WHERE item_id = 368 AND date((time/1000),'unixepoch') = date('now', '-1 days')
-        """
-
-        _where_sqlite = {
-            "year": f"item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) = strftime('%Y', date('now', '-{timedelta} years')) ",
-            "month": f"item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) = strftime('%Y%m', date('now','-{timedelta} months')) ",
-            "week": f"item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) = strftime('%Y%W', date('now', '-{timedelta * 7} days')) ",
-            "day": f"item_id = :item AND date((time/1000),'unixepoch') = date('now', '-{timedelta} day') "
-        }
-
-        _group_by_sqlite = {
-            'year': "GROUP BY strftime('%Y', date((time/1000),'unixepoch')) ",
-            'month': "GROUP BY strftime('%Y%m', date((time/1000),'unixepoch')) ",
-            'week': "GROUP BY strftime('%Y%W', date((time/1000),'unixepoch')) ",
-            'day': "GROUP BY date((time/1000),'unixepoch') ",
-            None: ''
-        }
-
-        # DEFINE SQLITE DB TABLE
-        _db_table = 'log '
-
-        ######################################
-
-        # DO DEBUG LOG
-        if self.prepare_debug:
-            self.logger.debug(
-                f"_query_log_simple: Called with {func=}, item={item.id()}, {timeframe=}, {timedelta=}, {group=}, {ignore_value=}")
-
-        # SELECT QUERY PARTS DEPENDING IN DB DRIVER
-        if self.db_driver.lower() == 'pymysql':
-            _where = _where_sql
-            _group_by = _group_by_sql
-        elif self.db_driver.lower() == 'sqlite3':
-            _where = _where_sqlite
-            _group_by = _group_by_sqlite
-        else:
-            self.logger.error('DB Driver unknown')
-            return
-
-        # CHECK CORRECTNESS OF FUNC
-        if func not in _select:
-            self.logger.error(
-                f"_query_log_simple: Requested {func=} for item={item.id()} not defined. Query cancelled.")
-            return
-
-        # CHECK CORRECTNESS OF timeframe
-        if timeframe not in _where:
-            self.logger.error(
-                f"_query_log_simple: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
-            return
-
-        # CHECK CORRECTNESS OF GROUP
-        if group not in _group_by:
-            self.logger.error(
-                f"_query_log_simple: Requested {group=} for item={item.id()} not defined. Query cancelled.")
-            return
-
-        # DEFINE ITEM_ID  - create item_id from item or string input of item_id and break, if not given
-        item_id = self._get_itemid_for_query(item)
-        if not item_id:
-            self.logger.error(f"_query_log_simple: ItemId for item={item.id()} not found. Query cancelled.")
-            return
-
-        # SET WHERE AND HANDLE IGNORE VALUES
-        _where = _where[timeframe]
-        if func in ['min', 'max', 'max1']:  # extend _where statement for excluding boolean values = 0 for defined functions
-            _where = f'{_where}AND val_bool = 1 '
-        if ignore_value:  # if value to be ignored are defined, extend _where statement
-            _where = f'{_where}AND val_num != {ignore_value} '
-
-        # ASSEMBLE QUERY
-        query = f"SELECT {_select[func]}FROM {_db_table}WHERE {_where}{_group_by[group]}".strip()
-
-        # SET PARAMS
-        params = {'item': item_id}
-
-        # DO DEBUG LOG
-        if self.prepare_debug:
-            self.logger.debug(f"_query_log_simple: {query=}, {params=}")
-
-        # REQUEST DATABASE AND RETURN RESULT
-        return self._fetchall(query, params)
-
-    def _query_log_next(self, item, timeframe, timedelta) -> Union[list, None]:
-        """
-        Assemble a mysql query str and param dict to return the value of the next entry
-
-        :param item: item object or item_id for which the query should be done
-        :param timeframe: time increment for query (start, end, count) (day, week, month, year)
-        :param timedelta: timeframe (oldest) for query given in x time increments (default = None, meaning complete database)
-
-        :return: query response
-
-        SQL QUERY
-        SELECT time as time1, val_num as value FROM log WHERE item_id = 368 AND DATE(FROM_UNIXTIME(time/1000)) < DATE_SUB(CURDATE(), INTERVAL 410 DAY) ORDER BY time DESC LIMIT 1
-        """
-
-        _select = 'time as time1, val_num as value'
-
-        _where_sql = {
-            "year": f"item_id = :item AND YEAR(FROM_UNIXTIME(time/1000)) < YEAR(DATE_SUB(CURDATE(), INTERVAL {timedelta} YEAR))",
-            "month": f"item_id = :item AND EXTRACT(YEAR_MONTH FROM DATE(FROM_UNIXTIME(time/1000))) < EXTRACT(YEAR_MONTH FROM DATE_SUB(CURDATE(), INTERVAL {timedelta - 1} MONTH))",
-            "week": f"item_id = :item AND YEARWEEK(DATE(FROM_UNIXTIME(time/1000))) < YEARWEEK(DATE_SUB(CURDATE(), INTERVAL {timedelta} WEEK))",
-            "day": f"item_id = :item AND DATE(FROM_UNIXTIME(time/1000)) < DATE_SUB(CURDATE(), INTERVAL {timedelta} DAY)"
-        }
-
-        _where_sqlite = {
-            "year": f"item_id = :item AND strftime('%Y', date((time/1000),'unixepoch')) < strftime('%Y', date('now', '-{timedelta} years'))",
-            "month": f"item_id = :item AND strftime('%Y%m', date((time/1000),'unixepoch')) < strftime('%Y%m', date('now','-{timedelta} months'))",
-            "week": f"item_id = :item AND strftime('%Y%W', date((time/1000),'unixepoch')) < strftime('%Y%W', date('now', '-{timedelta * 7} days'))",
-            "day": f"item_id = :item AND date((time/1000),'unixepoch') < date('now', '-{timedelta} day')"
-        }
-
-        # DEFINE SQLITE DB TABLE
-        _db_table = 'log '
-
-        if self.prepare_debug:
-            self.logger.debug(f"_query_log_next: Called with {item=}, {timeframe=}, {timedelta=}")
-
-        # SELECT QUERY PARTS DEPENDING IN DB DRIVER
-        if self.db_driver.lower() == 'pymysql':
-            _where = _where_sql
-        elif self.db_driver.lower() == 'sqlite3':
-            _where = _where_sqlite
-        else:
-            self.logger.error('DB Driver unkown')
-            return
-
-        # DEFINE ITEM_ID  - create item_id from item or string input of item_id and break, if not given
-        item_id = self._get_itemid_for_query(item)
-        if not item_id:
-            self.logger.error(f"_query_log_next: ItemId for item={item.id()} not found. Query cancelled.")
-            return
-
-        # CHECK CORRECTNESS OF TIMEFRAME
-        if timeframe not in _where:
-            self.logger.error(
-                f"_query_log_next: Requested {timeframe=} for item={item.id()} not defined; Need to be year, month, week, day'. Query cancelled.")
-            return
-
-        # ASSEMBLE QUERY
-        query = f"SELECT {_select} FROM {_db_table} WHERE {_where[timeframe]} ORDER BY time DESC LIMIT 1".strip()
-
-        # SET PARAMS
-        params = {'item': item_id}
-
-        # DO DEBUG LOG
-        if self.prepare_debug:
-            self.logger.debug(f"_query_log_next: {query=}, {params=}")
+            self.logger.debug(f"_query_log_timestamp: {query=}, {params=}")
 
         # REQUEST DATABASE AND RETURN RESULT
         return self._fetchall(query, params)
@@ -2097,26 +1889,17 @@ class DatabaseAddOn(SmartPlugin):
         if params is None:
             params = {}
 
-        if self.sql_debug:
-            self.logger.debug(f"_execute: Called with query={query}, params={params}")
-
         return self._query(self._db.execute, query, params, cur)
 
     def _fetchone(self, query: str, params: dict = None, cur=None):
         if params is None:
             params = {}
 
-        if self.sql_debug:
-            self.logger.debug(f"_fetchone: Called with query={query}, params={params}")
-
         return self._query(self._db.fetchone, query, params, cur)
 
     def _fetchall(self, query: str, params: dict = None, cur=None):
         if params is None:
             params = {}
-
-        if self.sql_debug:
-            self.logger.debug(f"_fetchall: Called with query={query}, params={params}")
 
         tuples = self._query(self._db.fetchall, query, params, cur)
         return None if tuples is None else list(tuples)
@@ -2125,8 +1908,8 @@ class DatabaseAddOn(SmartPlugin):
         if params is None:
             params = {}
 
-        # if self.sql_debug:
-        #     self.logger.debug(f"_query: Called with query={query}, params={params}")
+        if self.sql_debug:
+            self.logger.debug(f"_query: Called with {query=}, {params=}, {cur=}")
 
         if not self._initialize_db():
             return None
@@ -2144,12 +1927,10 @@ class DatabaseAddOn(SmartPlugin):
         try:
             tuples = fetch(query, params, cur=cur)
         except Exception as e:
-            self.logger.error(f"_query: Error for query {query_readable}: {e}")
-            # self.logger.error(f"_query: Error for query {query} with params {params}: {e}")
+            self.logger.error(f"_query: Error for query '{query_readable}': {e}")
         else:
             if self.sql_debug:
-                self.logger.debug(f"_query: Result of {query_readable}: {tuples}")
-                # self.logger.debug(f"_query: Result of {query} with params {params}: {tuples}")
+                self.logger.debug(f"_query: Result of '{query_readable}': {tuples}")
             return tuples
         finally:
             if cur is None:
@@ -2221,8 +2002,7 @@ def timestamp_to_timestring(timestamp: int) -> str:
     Parse timestamp from db query to string representing date and time
     """
 
-    return datetime.datetime.fromtimestamp(int(timestamp) / 1000, datetime.timezone.utc).astimezone().strftime(
-        '%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
 
 
 def convert_timeframe(timeframe: str) -> str:
@@ -2238,6 +2018,7 @@ def convert_timeframe(timeframe: str) -> str:
         'monat': 'month',
         'jahr': 'year',
         'vorjahreszeitraum': 'day',
+        'jahreszeitraum': 'day',
         'd': 'day',
         'w': 'week',
         'm': 'month',
@@ -2294,35 +2075,139 @@ def count_to_start(count: int = 0, end: int = 0):
     return end + count, end
 
 
-def timeframe_to_timestamp(timeframe: str, start: int, end: int) -> tuple:
+def get_start_end_as_timestamp(timeframe: str, start: int, end: int) -> tuple:
     """
-    Converts timeframe for query into a unix-timestamp
+    Provides start and end as timestamp in microseconds from timeframe with start and end
 
     :param timeframe: timeframe as week, month, year
-    :param start: beginning of timeframe
-    :param end: end of timeframe
+    :param start: beginning timeframe in x timeframes from now
+    :param end: end of timeframe in x timeframes from now
 
+    :return: start time in timestamp in microseconds, end time in timestamp in microseconds
+
+    """
+
+    return datetime_to_timestamp(get_start(timeframe, start)) * 1000, datetime_to_timestamp(get_end(timeframe, end)) * 1000
+
+
+def get_start(timeframe: str, start: int) -> datetime:
+    """
+    Provides start as datetime
+
+    :param timeframe: timeframe as week, month, year
+    :param start: beginning timeframe in x timeframes from now
+
+    """
+
+    if start is None:
+        start = 0
+
+    if timeframe == 'week':
+        _dt_start = week_beginning(start)
+    elif timeframe == 'month':
+        _dt_start = month_beginning(start)
+    elif timeframe == 'year':
+        _dt_start = year_beginning(start)
+    else:
+        _dt_start = day_beginning(start)
+
+    return _dt_start
+
+
+def get_end(timeframe: str, end: int) -> datetime:
+    """
+    Provides end as datetime
+
+    :param timeframe: timeframe as week, month, year
+    :param end: end of timeframe in x timeframes from now
+
+    """
+
+    if timeframe == 'week':
+        _dt_end = week_end(end)
+    elif timeframe == 'month':
+        _dt_end = month_end(end)
+    elif timeframe == 'year':
+        _dt_end = year_end(end)
+    else:
+        _dt_end = day_end(end)
+
+    return _dt_end
+
+
+def year_beginning(delta: int = 0) -> datetime:
+    """
+    provides datetime of beginning of year of today minus x years
     """
 
     _dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+    return _dt.replace(month=1, day=1) - relativedelta(years=delta)
 
-    if timeframe == 'week':
-        _dt_start = _dt - relativedelta(weeks=start)
-        _dt_end = _dt - relativedelta(weeks=end)
-    elif timeframe == 'month':
-        _dt_start = _dt - relativedelta(months=start)
-        _dt_end = _dt - relativedelta(months=end)
-    elif timeframe == 'year':
-        _dt_start = _dt - relativedelta(years=start)
-        _dt_end = _dt - relativedelta(years=end)
-    else:
-        _dt_start = _dt - relativedelta(days=start)
-        _dt_end = _dt - relativedelta(days=end)
 
-    _ts_start = int(datetime.datetime.timestamp(_dt_start))
-    _ts_end = int(datetime.datetime.timestamp(_dt_end))
+def year_end(delta: int = 0) -> datetime:
+    """
+    provides datetime of end of year of today minus x years
+    """
 
-    return _ts_start, _ts_end
+    return year_beginning(delta) + relativedelta(years=1)
+
+
+def month_beginning(delta: int = 0) -> datetime:
+    """
+    provides datetime of beginning of month minus x month
+    """
+
+    _dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+    return _dt.replace(day=1) - relativedelta(months=delta)
+
+
+def month_end(delta: int = 0) -> datetime:
+    """
+    provides datetime of end of month minus x month
+    """
+
+    return month_beginning(delta) + relativedelta(months=1)
+
+
+def week_beginning(delta: int = 0) -> datetime:
+    """
+    provides datetime of beginning of week minus x weeks
+    """
+
+    _dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+    return _dt - relativedelta(days=(datetime.date.today().weekday() + (delta * 7)))
+
+
+def week_end(delta: int = 0) -> datetime:
+    """
+    provides datetime of end of week minus x weeks
+    """
+
+    return week_beginning(delta) + relativedelta(days=6)
+
+
+def day_beginning(delta: int = 0) -> datetime:
+    """
+    provides datetime of beginning of today minus x days
+    """
+
+    return datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time()) - relativedelta(days=delta)
+
+
+def day_end(delta: int = 0) -> datetime:
+    """
+    provides datetime of end of today minus x days
+    """
+
+    return day_beginning(delta) + relativedelta(days=1)
+
+
+def datetime_to_timestamp(dt: datetime) -> int:
+    """
+    Provides timestamp from given datetime
+    """
+
+    return int(dt.replace(tzinfo=datetime.timezone.utc).timestamp())
 
 
 def check_substring_in_str(lookfor: Union[str, list], target: str) -> bool:
