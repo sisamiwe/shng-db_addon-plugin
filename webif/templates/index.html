@@ -240,7 +240,6 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 {% endif %}
 
 <!-- Content block for the first tab of the Webinterface -->
-{% set tab1title = "<strong>" ~ p.get_shortname() ~ " Items</strong> (" ~ item_count ~ ")" %}
 {% block bodytab1 %}
 <div class="container-fluid m-2 table-resize">
 	<table id="maintable">
@@ -261,9 +260,9 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
                 <tr>
                     <td class="py-1">{{ item._path }}</td>
                     <td class="py-1">{{ item._type }}</td>
-                    <td class="py-1">{{ p._webdata[item._path]['attribute'] }}</td>
-                    <td class="py-1" style="text-align: center">{{ p._webdata[item._path]['cycle'] }}</td>
-                    <td class="py-1" style="text-align: center">{% if p._webdata[item._path]['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
+                    <td class="py-1">{{ p.webdata[item._path]['attribute'] }}</td>
+                    <td class="py-1" style="text-align: center">{{ p.webdata[item._path]['cycle'] }}</td>
+                    <td class="py-1" style="text-align: center">{% if p.webdata[item._path]['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
                     <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item._value | float }}</td>
                     <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                     <td class="py-1" id="{{ item._path }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
@@ -290,18 +289,18 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
         <tbody>
             <tr>
                 <td class="py-1">{{ _('00_webdata') }}</td>
-                <td class="py-1">{{ len(p._webdata) }}</td>
-                <td class="py-1">{{ p._webdata }}</td>
+                <td class="py-1">{{ len(p.webdata) }}</td>
+                <td class="py-1">{{ p.webdata }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('01_item_dict') }}</td>
-                <td class="py-1">{{ len(p._item_dict)}}</td>
-                <td class="py-1">{{ p._item_dict }}</td>
+                <td class="py-1">{{ len(p.item_dict)}}</td>
+                <td class="py-1">{{ p.item_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('02_admin_item_dict') }}</td>
-                <td class="py-1">{{ len(p._admin_item_dict)}}</td>
-                <td class="py-1">{{ p._admin_item_dict }}</td>
+                <td class="py-1">{{ len(p.admin_item_dict)}}</td>
+                <td class="py-1">{{ p.admin_item_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('10_daily_items') }}</td>
@@ -345,8 +344,8 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
             </tr>
             <tr>
                 <td class="py-1">{{ _('32_itemid_dict') }}</td>
-                <td class="py-1">{{ len(p._itemid_dict) }}</td>
-                <td class="py-1">{{ p._itemid_dict }}</td>
+                <td class="py-1">{{ len(p.itemid_dict) }}</td>
+                <td class="py-1">{{ p.itemid_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('20_tageswert_dict') }}</td>
@@ -390,13 +389,13 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
             </tr>
             <tr>
                 <td class="py-1">{{ _('30_oldest_log_dict') }}</td>
-                <td class="py-1">{{ len(p._oldest_log_dict) }}</td>
-                <td class="py-1">{{ p._oldest_log_dict }}</td>
+                <td class="py-1">{{ len(p.oldest_log_dict) }}</td>
+                <td class="py-1">{{ p.oldest_log_dict }}</td>
             </tr>
             <tr>
                 <td class="py-1">{{ _('31_oldest_entry_dict') }}</td>
-                <td class="py-1">{{ len(p._oldest_entry_dict) }}</td>
-                <td class="py-1">{{ p._oldest_entry_dict }}</td>
+                <td class="py-1">{{ len(p.oldest_entry_dict) }}</td>
+                <td class="py-1">{{ p.oldest_entry_dict }}</td>
             </tr>
         </tbody>
     </table>
