@@ -1048,7 +1048,7 @@ class DatabaseAddOn(SmartPlugin):
         _database_addon_params['item'] = item
 
         # query db and generate values
-        result = self._query_item(**_database_addon_params)[0][1]
+        result = self._query_item(**_database_addon_params)
         self.logger.debug(f"kaeltesumme: {result=} for {item.id()=} with {year=} and {month=}")
 
         # calculate value
@@ -1290,14 +1290,19 @@ class DatabaseAddOn(SmartPlugin):
         """
         Check Setting of DB connection for stable use.
         """
+        try:
+            connect_timeout = int(self._get_db_connect_timeout()[1])
+            if connect_timeout < self.default_connect_timeout:
+                self.logger.warning(f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
+        except Exception:
+            pass
 
-        connect_timeout = int(self._get_db_connect_timeout()[1])
-        if connect_timeout < self.default_connect_timeout:
-            self.logger.warning(f"DB variable 'connect_timeout' should be adjusted for proper working to {self.default_connect_timeout}. Current setting is {connect_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
-
-        net_read_timeout = int(self._get_db_net_read_timeout()[1])
-        if net_read_timeout < self.default_net_read_timeout:
-            self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
+        try:
+            net_read_timeout = int(self._get_db_net_read_timeout()[1])
+            if net_read_timeout < self.default_net_read_timeout:
+                self.logger.warning(f"DB variable 'net_read_timeout' should be adjusted for proper working to {self.default_net_read_timeout}. Current setting is {net_read_timeout}. You need to insert adequate entries into /etc/mysql/my.cnf within section [mysqld].")
+        except Exception:
+            pass
 
     def _get_oldest_log(self, item) -> int:
         """
@@ -1472,16 +1477,18 @@ class DatabaseAddOn(SmartPlugin):
             _result = 0
         else:
             # get value for start and check it;
-            value_start = self._query_item(func='max', item=item, timeframe=timeframe, start=start, end=start)[0][1]
+            # value_start = self._query_item(func='max', item=item, timeframe=timeframe, start=start, end=start)[0][1]
+            value_start = self._query_item(func='min', item=item, timeframe=timeframe, start=end, end=end)[0][1]
             if self.prepare_debug:
                 self.logger.debug(f"_consumption_calc {value_start=}")
 
             if value_start is None:  # if None (Error) return
                 return
 
+            # ToDo: Prüfen, unter welchen Bedingungen value_start == 0 bzw. wie man den nächsten Eintrag nutzt.
             if value_start == 0:  # wenn der Wert zum Startzeitpunkt 0 ist, gab es dort keinen Eintrag (also keinen Verbrauch), dann frage den nächsten Eintrag in der DB ab.
                 self.logger.info(f"No DB Entry found for requested start date. Looking for next DB entry.")
-                # ToDo: Check Correctness of self._query_item(func='next'
+                # ToDo: Prüfen der Richtigkeit von self._query_item(func='next'
                 # value_start = self._handle_query_result(self._query_log_next(item=item, timeframe=timeframe, timedelta=start))[0][1]
                 value_start = self._handle_query_result(self._query_item(func='next', item=item, timeframe=timeframe, start=start))[0][1]
                 if self.prepare_debug:
