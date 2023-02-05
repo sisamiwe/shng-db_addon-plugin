@@ -82,9 +82,9 @@ class DatabaseAddOn(SmartPlugin):
         self._database_items = set()               # set of items with database attribute, relevant for this plugin
         self._static_items = set()                 # set of items, for which the _database_addon_fct shall be executed just on startup
         # define properties // cache dicts
-        self.itemid_dict = {}                     # dict to hold item_id for items
-        self.oldest_log_dict = {}                 # dict to hold oldest_log for items
-        self.oldest_entry_dict = {}               # dict to hold oldest_entry for items
+        self.itemid_dict = {}                      # dict to hold item_id for items
+        self.oldest_log_dict = {}                  # dict to hold oldest_log for items
+        self.oldest_entry_dict = {}                # dict to hold oldest_entry for items
         self.vortagsendwert_dict = {}              # dict to hold value of end of last day for items
         self.vorwochenendwert_dict = {}            # dict to hold value of end of last week for items
         self.vormonatsendwert_dict = {}            # dict to hold value of end of last month for items
