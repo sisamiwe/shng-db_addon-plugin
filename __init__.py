@@ -54,7 +54,7 @@ class DatabaseAddOn(SmartPlugin):
     Main class of the Plugin. Does all plugin specific stuff and provides the update functions for the items
     """
 
-    PLUGIN_VERSION = '1.0.L'
+    PLUGIN_VERSION = '1.0.M'
 
     def __init__(self, sh):
         """
@@ -1048,20 +1048,24 @@ class DatabaseAddOn(SmartPlugin):
         _database_addon_params['item'] = item
 
         # query db and generate values
-        result = self._query_item(**_database_addon_params)
-        self.logger.debug(f"kaeltesumme: {result=} for {item.id()=} with {year=} and {month=}")
+        _result = self._query_item(**_database_addon_params)
+        self.logger.debug(f"kaeltesumme: {_result=} for {item.id()=} with {year=} and {month=}")
 
         # calculate value
         value = 0
-        if result:
-            if month:
-                value = result[0][1]
-            else:
-                for entry in result:
-                    value += entry[1]
-            return int(value)
-        else:
+        if _result == [[None, None]]:
             return
+        try:
+            if month:
+                value = _result[0][1]
+            else:
+                for entry in _result:
+                    entry_value = entry[1]
+                    if entry_value:
+                        value += entry_value
+            return int(value)
+        except Exception as e:
+            self.logger.error(f"Error {e} occurred during calculation of kaeltesumme with {_result=} for {item.id()=} with {year=} and {month=}")
 
     def _handle_waermesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
         if not valid_year(year):
@@ -1101,11 +1105,15 @@ class DatabaseAddOn(SmartPlugin):
         _database_addon_params['item'] = item
 
         # query db and generate values
-        result = self._query_item(**_database_addon_params)[0][1]
-        self.logger.debug(f"waermesumme_year_month: {result=} for {item.id()=} with {year=} and {month=}")
+        _result = self._query_item(**_database_addon_params)[0][1]
+        self.logger.debug(f"waermesumme_year_month: {_result=} for {item.id()=} with {year=} and {month=}")
 
-        if result:
-            return int(result)
+        # calculate value
+        if _result == [[None, None]]:
+            return
+
+        if _result is not None:
+            return int(_result)
         else:
             return
 
@@ -1144,7 +1152,10 @@ class DatabaseAddOn(SmartPlugin):
         _result = self._query_item(**_database_addon_params)
 
         # calculate value and return it
-        if _result:
+        if _result == [[None, None]]:
+            return
+
+        try:
             gts = 0
             for entry in _result:
                 dt = datetime.datetime.fromtimestamp(int(entry[0]) / 1000)
@@ -1155,8 +1166,8 @@ class DatabaseAddOn(SmartPlugin):
                 else:
                     gts += entry[1]
             return int(round(gts, 0))
-        else:
-            return
+        except Exception as e:
+            self.logger.error(f"Error {e} occurred during calculation of gruenlandtemperatursumme with {_result=} for {item.id()=}")
 
     def _handle_tagesmitteltemperatur(self, item, count: int = None) -> list:
         """
@@ -1914,9 +1925,9 @@ class DatabaseAddOn(SmartPlugin):
             if self._db.verify(5) == 0:
                 self.logger.error("_query: Connection to database not recovered.")
                 return None
-            if not self._db.lock(300):
-                self.logger.error("_query: Can't query due to fail to acquire lock.")
-                return None
+            # if not self._db.lock(300):
+            #    self.logger.error("_query: Can't query due to fail to acquire lock.")
+            #     return None
 
         query_readable = re.sub(r':([a-z_]+)', r'{\1}', query).format(**params)
 
@@ -1928,9 +1939,9 @@ class DatabaseAddOn(SmartPlugin):
             if self.sql_debug:
                 self.logger.debug(f"_query: Result of '{query_readable}': {tuples}")
             return tuples
-        finally:
-            if cur is None:
-                self._db.release()
+        # finally:
+        #    if cur is None:
+        #         self._db.release()
 
 
 ##############################

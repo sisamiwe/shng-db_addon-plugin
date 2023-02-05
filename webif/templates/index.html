@@ -3,7 +3,7 @@
 {% set logo_frame = false %}
 
 <!-- set update_interval to a value > 0 (in milliseconds) to enable periodic data updates -->
-{% set update_interval = ((50 * item_count / 1000) | round | int) * 1000 %}
+{% set update_interval = [(((10 * item_count) / 1000) | round | int) * 1000, 5000]|max %}
 
 <!-- Define language -->
 {% set language = p.get_sh().get_defaultlanguage() %}
@@ -245,6 +245,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 	<table id="maintable">
         <thead>
             <tr>
+                <th class="plus"></th>
                 <th class="item">{{_('Item')}}</th>
                 <th class="type">{{_('Typ')}}</th>
                 <th class="attribute">{{_('AddOn Attribute')}}</th>
@@ -258,6 +259,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
         <tbody>
             {% for item in items %}
                 <tr>
+                    <td></td>
                     <td class="py-1">{{ item._path }}</td>
                     <td class="py-1">{{ item._type }}</td>
                     <td class="py-1">{{ p.webdata[item._path]['attribute'] }}</td>
