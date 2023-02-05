@@ -676,11 +676,11 @@ class DatabaseAddOn(SmartPlugin):
 
                     if _new_value:
                         _cache_dict[_database_item][_func] = _new_value
-                        self.logger.info(f"  Item value for '{item.id()}' with func={_func} will be set to {_new_value}")
+                        self.logger.info(f"Item value for '{item.id()}' with func={_func} will be set to {_new_value}")
                         self.webdata[item.id()].update({'value': _new_value})
                         item(_new_value, self.get_shortname())
                     else:
-                        self.logger.info(f"  No value changed, therefore item {item.id()} will not be changed.")
+                        self.logger.info(f"Received value={value} is not influencing min / max value. Therefore item {item.id()} will not be changed.")
 
                 # handle verbrauch on-change items ending with heute, woche, monat, jahr
                 elif _database_addon_fct.startswith('verbrauch') and len(_var) == 2 and _var[1] in ['heute', 'woche', 'monat', 'jahr']:
@@ -699,11 +699,11 @@ class DatabaseAddOn(SmartPlugin):
                     # calculate value, set item value, put data into webif-update-dict
                     if _cached_value is not None:
                         _new_value = round(value - _cached_value, 1)
-                        self.logger.info(f"  Item value for '{item.id()}' will be set to {_new_value}")
+                        self.logger.info(f"Item value for '{item.id()}' will be set to {_new_value}")
                         self.webdata[item.id()].update({'value': _new_value})
                         item(_new_value, self.get_shortname())
                     else:
-                        self.logger.info(f"  Value for end of last {_timeframe} not available. No item value will be set.")
+                        self.logger.info(f"Value for end of last {_timeframe} not available. No item value will be set.")
 
     @property
     def log_level(self):
