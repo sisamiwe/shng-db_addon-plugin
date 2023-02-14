@@ -13,7 +13,7 @@ Um die Zugriffe auf die Datenbank zu minimieren, werden diverse Daten zwischenge
 
 Die Items mit einem DatabaseAddon-Attribut müssen im gleichen Pfad sein, wie das Item, für das das Database Attribut
 konfiguriert ist.
-Bedeutet. Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items
+Bedeutet: Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items
 sein, für das das Database Attribut konfiguriert ist
 
 Bsp:
@@ -41,7 +41,8 @@ Anforderungen
 -------------
 Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
 
-Zudem sollten by Verwendung von mysql einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen ohne Fehler bearbeitet werden.
+Zudem sollten bei Verwendung von mysql einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen
+ohne Fehler bearbeitet werden.
 Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
 
 
@@ -69,17 +70,23 @@ items.yaml
 Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
 
 
-logic.yaml
-^^^^^^^^^^
-
-Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
-
-
 Funktionen
 ^^^^^^^^^^
 
 Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
 
+
+Hinweise
+--------
+ - Das Plugin startet die Berechnungen der Werte nach einer gewissen (konfigurierbaren) Zeit (Attribut `startup_run_delay`) nach dem Start von shNG, um den Startvorgang nicht zu beeinflussen.
+ - Bei Start werden automatisch nur die Items berechnet, für das das Attribute `database_addon_startup` gesetzt wurde. Alle anderen Items werden erst zu konfigurierten Zeit berechnet. Über das WebIF kann die Berechnung aller definierten Items ausgelöst werden.
+ - Für sogenannte `on_change` Items, also Items, deren Berechnung bis zum Jetzt (bspw. verbrauch-heute) gehen, wird die Berechnung immer bei eintreffen eines neuen Wertes gestartet. Zu Reduktion der Belastung auf die Datenbank werden die Werte für das Ende der letzten Periode gecached.
+ - Berechnungen werden nur ausgeführt, wenn für den kompletten abgefragten Zeitraum Werte in der Datenbank vorliegen. Wird bspw. der Verbauch des letzten Monats abgefragt wobei erst Werte ab dem 3. des Monats in der Datenbank sind, wird die Berechnung abgebrochen.
+   Mit dem Attribut `use_oldest_entry` kann dieses Verhalten verändert werden. Ist das Attribut gesetzt, wird, wenn für den Beginn der Abfragezeitraums keinen Werte vorliegen, der älteste Eintrag der Datenbank genutzt.
+ - Für die Auswertung kann es nützlich sein, bestimmte Werte aus der Datenbank bei der Berechnung auszublenden. Hierfür stehen 2 Möglichkeiten zur Verfügung:
+    - Plugin-Attribut `ignore_0`: (list of strings) Bei Items, bei denen ein String aus der Liste im Pfadnamen vorkommt, werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert. Hat also das Attribut den Wert ['temp'] werden bei allen Items mit 'temp' im Pfadnamen die 0-Werte bei der Auswertung ignoriert.
+    - Item-Attribut `database_addon_ignore_value`: (num) Dieser Wert wird bei der Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert.
+ - Das Plugin enthält sehr ausführliche Logginginformation. Bei unerwartetem Verhalten, den LogLevel entsprechend anpassen, um mehr information zu erhalten.
 
 Beispiele
 ---------
@@ -154,8 +161,6 @@ DatabaseAddOn Items
 
 Dieser Reiter des Webinterface zeigt die Items an, für die ein DatabaseAddon Attribut konfiguriert ist.
 
-.. image:: user_doc/assets/webif_tab1.jpg
-   :class: screenshot
 
 DatabaseAddOn Maintenance
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -163,5 +168,3 @@ DatabaseAddOn Maintenance
 Das Webinterface zeigt detaillierte Informationen über die im Plugin verfügbaren Daten an.
 Dies dient der Maintenance bzw. Fehlersuche. Dieser Tab ist nur bei Log-Level "Debug" verfügbar.
 
-.. image:: user_doc/assets/webif_tab2.jpg
-   :class: screenshot

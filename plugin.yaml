@@ -12,7 +12,7 @@ plugin:
 #    documentation: https://github.com/smarthomeNG/smarthome/wiki/CLI-Plugin        # url of documentation (wiki) page
 #    support: https://knx-user-forum.de/forum/supportforen/smarthome-py
 
-    version: 1.0.M                  # Plugin version (must match the version specified in __init__.py)
+    version: 1.0.0                  # Plugin version (must match the version specified in __init__.py)
     sh_minversion: 1.9              # minimum shNG version to use this plugin
 #    sh_maxversion:                 # maximum shNG version to use this plugin (leave empty if latest)
     py_minversion: 3.8              # minimum Python version to use for this plugin
@@ -31,7 +31,7 @@ parameters:
 
     startup_run_delay:
         type: int
-        default: 0
+        default: 60
         description:
             de: 'Zeitlicher Abstand in Sekunden, mit der die Berechnungen bei Startup ausgeführt werden sollen'
             en: 'Delay in seconds, after which the startup calculations will be run'
@@ -53,28 +53,6 @@ parameters:
                  False: Abbruch der Datenbankabfrage"
             en: "True: Use of oldest entry of item in database, if start of query is prior to oldest entry
                  False: Cancel query"
-
-    webif_pagelength:
-        type: int
-        default: 0
-        valid_list:
-            - -1
-            - 0
-            - 25
-            - 50
-            - 100
-        description:
-            de: 'Anzahl an Items, die standardmäßig in einer Web Interface Tabelle pro Seite angezeigt werden.
-                 0 = automatisch, -1 = alle'
-            en: 'Amount of items being listed in a web interface table per page by default.
-                 0 = automatic, -1 = all'
-        description_long:
-            de: 'Anzahl an Items, die standardmäßig in einer Web Interface Tabelle pro Seite angezeigt werden.\n
-                 Bei 0 wird die Tabelle automatisch an die Höhe des Browserfensters angepasst.\n
-                 Bei -1 werden alle Tabelleneinträge auf einer Seite angezeigt.'
-            en: 'Amount of items being listed in a web interface table per page by default.\n
-                 0 adjusts the table height automatically based on the height of the browser windows.\n
-                 -1 shows all table entries on one page.'
 
 item_attributes:
     database_addon_fct:

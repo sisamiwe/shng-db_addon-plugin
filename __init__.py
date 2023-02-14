@@ -43,18 +43,12 @@ from typing import Union
 import threading
 
 
-# WebIF
-# ToDo: Außerdem könntest du ähnlich wie beim aktuellsten develop Stand des database Plugins definieren, welche Spalten zuletzt durch das responsive Design eingeklappt werden sollen. Denke, Spalte 1 und -1 (rechts = Wert) wären da die wichtigsten.
-# ToDo: Außerdem würd ich da die Werte gleich eintragen und nicht erst durch das erste Update ersetzen lassen, nicht? Sonst wartet man teils doch recht lang
-        # Es werden alle Werte direkt eingetragen nicht erst beim ersten Update. Warum das so lange dauert, konnte ich noch nicht herausfinden.
-
-
 class DatabaseAddOn(SmartPlugin):
     """
     Main class of the Plugin. Does all plugin specific stuff and provides the update functions for the items
     """
 
-    PLUGIN_VERSION = '1.0.M'
+    PLUGIN_VERSION = '1.0.0'
 
     def __init__(self, sh):
         """
@@ -122,7 +116,6 @@ class DatabaseAddOn(SmartPlugin):
         self.startup_run_delay = self.get_parameter_value('startup_run_delay')
         self.ignore_0 = self.get_parameter_value('ignore_0')
         self.use_oldest_entry = self.get_parameter_value('use_oldest_entry')
-        self.webif_pagelength = self.get_parameter_value('webif_pagelength')
 
         # check existence of db-plugin, get parameters, and init connection to db
         if not self._check_db_existence():
