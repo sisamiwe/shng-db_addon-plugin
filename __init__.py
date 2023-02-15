@@ -64,50 +64,51 @@ class DatabaseAddOn(SmartPlugin):
         self.plugins = Plugins.get_instance()
 
         # define properties // item dicts
-        self.item_dict = {}                        # dict to hold all items {item1: ('_database_addon_fct', '_database_item'), item2: ('_database_addon_fct', '_database_item', _database_addon_params)...}
-        self.admin_item_dict = {}                  # dict to hold all admin items
+        self.item_dict = {}                          # dict to hold all items {item1: ('_database_addon_fct', '_database_item'), item2: ('_database_addon_fct', '_database_item', _database_addon_params)...}
+        self.admin_item_dict = {}                    # dict to hold all admin items
         # define properties // item sets
-        self._daily_items = set()                  # set of items, for which the _database_addon_fct shall be executed daily
-        self._weekly_items = set()                 # set of items, for which the _database_addon_fct shall be executed weekly
-        self._monthly_items = set()                # set of items, for which the _database_addon_fct shall be executed monthly
-        self._yearly_items = set()                 # set of items, for which the _database_addon_fct shall be executed yearly
-        self._onchange_items = set()               # set of items, for which the _database_addon_fct shall be executed if the database item has changed
-        self._startup_items = set()                # set of items, for which the _database_addon_fct shall be executed on startup
-        self._database_items = set()               # set of items with database attribute, relevant for this plugin
-        self._static_items = set()                 # set of items, for which the _database_addon_fct shall be executed just on startup
+        self._daily_items = set()                    # set of items, for which the _database_addon_fct shall be executed daily
+        self._weekly_items = set()                   # set of items, for which the _database_addon_fct shall be executed weekly
+        self._monthly_items = set()                  # set of items, for which the _database_addon_fct shall be executed monthly
+        self._yearly_items = set()                   # set of items, for which the _database_addon_fct shall be executed yearly
+        self._onchange_items = set()                 # set of items, for which the _database_addon_fct shall be executed if the database item has changed
+        self._startup_items = set()                  # set of items, for which the _database_addon_fct shall be executed on startup
+        self._database_items = set()                 # set of items with database attribute, relevant for this plugin
+        self._static_items = set()                   # set of items, for which the _database_addon_fct shall be executed just on startup
         # define properties // cache dicts
-        self.itemid_dict = {}                      # dict to hold item_id for items
-        self.oldest_log_dict = {}                  # dict to hold oldest_log for items
-        self.oldest_entry_dict = {}                # dict to hold oldest_entry for items
-        self.vortagsendwert_dict = {}              # dict to hold value of end of last day for items
-        self.vorwochenendwert_dict = {}            # dict to hold value of end of last week for items
-        self.vormonatsendwert_dict = {}            # dict to hold value of end of last month for items
-        self.vorjahresendwert_dict = {}            # dict to hold value of end of last year for items
-        self.tageswert_dict = {}                   # dict to hold min and max value of current day for items
-        self.wochenwert_dict = {}                  # dict to hold min and max value of current week for items
-        self.monatswert_dict = {}                  # dict to hold min and max value of current month for items
-        self.jahreswert_dict = {}                  # dict to hold min and max value of current year for items
+        self.itemid_dict = {}                        # dict to hold item_id for items
+        self.oldest_log_dict = {}                    # dict to hold oldest_log for items
+        self.oldest_entry_dict = {}                  # dict to hold oldest_entry for items
+        self.vortagsendwert_dict = {}                # dict to hold value of end of last day for items
+        self.vorwochenendwert_dict = {}              # dict to hold value of end of last week for items
+        self.vormonatsendwert_dict = {}              # dict to hold value of end of last month for items
+        self.vorjahresendwert_dict = {}              # dict to hold value of end of last year for items
+        self.tageswert_dict = {}                     # dict to hold min and max value of current day for items
+        self.wochenwert_dict = {}                    # dict to hold min and max value of current week for items
+        self.monatswert_dict = {}                    # dict to hold min and max value of current month for items
+        self.jahreswert_dict = {}                    # dict to hold min and max value of current year for items
         # define properties // webIF data dict
-        self.webdata = {}                          # dict to hold information for webif update
+        self.webdata = {}                            # dict to hold information for webif update
         # define properties // queue and status
-        self.item_queue = queue.Queue()            # Queue containing all to be executed items
-        self.work_item_queue_thread = None         # Working Thread for queue
-        self._db_plugin = None                     # object if database plugin
-        self._db = None                            # object of database
-        self.connection_data = None                # connection data list to database
-        self.db_driver = None                      # driver for database
-        self.db_instance = None                    # instance of database
-        self.last_connect_time = 0                 # mechanism for limiting db connection requests
-        self.alive = None                          # Is plugin alive?
-        self.startup_finished = False              # Startup of Plugin finished
-        self.suspended = False                     # Is plugin activity suspended
+        self.item_queue = queue.Queue()              # Queue containing all to be executed items
+        self.work_item_queue_thread = None           # Working Thread for queue
+        self._db_plugin = None                       # object if database plugin
+        self._db = None                              # object of database
+        self.connection_data = None                  # connection data list to database
+        self.db_driver = None                        # driver of the used database
+        self.db_instance = None                      # instance of the used database
+        self.item_attribute_search_str = 'database'  # attribute, on which an item configured for database can be identified
+        self.last_connect_time = 0                   # mechanism for limiting db connection requests
+        self.alive = None                            # Is plugin alive?
+        self.startup_finished = False                # Startup of Plugin finished
+        self.suspended = False                       # Is plugin activity suspended
         self._active_queue_item = '-'
         # define properties // Debugs
-        self.parse_debug = False                   # Enable / Disable debug logging for method 'parse item'
-        self.execute_debug = False                 # Enable / Disable debug logging for method 'execute items'
-        self.sql_debug = False                     # Enable / Disable debug logging for sql stuff
-        self.onchange_debug = False                # Enable / Disable debug logging for method 'handle_onchange'
-        self.prepare_debug = False                 # Enable / Disable debug logging for query preparation
+        self.parse_debug = False                     # Enable / Disable debug logging for method 'parse item'
+        self.execute_debug = False                   # Enable / Disable debug logging for method 'execute items'
+        self.sql_debug = False                       # Enable / Disable debug logging for sql stuff
+        self.onchange_debug = False                  # Enable / Disable debug logging for method 'handle_onchange'
+        self.prepare_debug = False                   # Enable / Disable debug logging for query preparation
         # define properties // default mysql settings
         self.default_connect_timeout = 60
         self.default_net_read_timeout = 60
@@ -283,8 +284,7 @@ class DatabaseAddOn(SmartPlugin):
                 # handle tagesmitteltemperatur
                 elif _database_addon_fct == 'tagesmitteltemperatur':
                     if self.has_iattr(item.conf, 'database_addon_params'):
-                        _database_addon_params = params_to_dict(
-                            self.get_iattr_value(item.conf, 'database_addon_params'))
+                        _database_addon_params = params_to_dict(self.get_iattr_value(item.conf, 'database_addon_params'))
                         _database_addon_params['item'] = _database_item
                         self.item_dict[item] = self.item_dict[item] + (_database_addon_params,)
                         self._daily_items.add(item)
@@ -361,7 +361,7 @@ class DatabaseAddOn(SmartPlugin):
                     _update_cycle = 'on-change'
                 self.webdata[item.id()].update({'cycle': _update_cycle})
             else:
-                self.logger.warning(f"No database item found for {item.id()}: Item ignored.")
+                self.logger.warning(f"No database item found for {item.id()}: Item ignored. Maybe you should check instance of database plugin.")
 
         elif self.has_iattr(item.conf, 'database_addon_admin'):
             if self.parse_debug:
@@ -369,7 +369,7 @@ class DatabaseAddOn(SmartPlugin):
             self.admin_item_dict[item] = self.get_iattr_value(item.conf, 'database_addon_admin').lower()
 
         # Callback mit 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen als auch die Admin-Items
-        if self.has_iattr(item.conf, 'database') or self.has_iattr(item.conf, 'database_addon_admin'):
+        if self.has_iattr(item.conf, self.item_attribute_search_str) or self.has_iattr(item.conf, 'database_addon_admin'):
             return self.update_item
 
     def update_item(self, item, caller=None, source=None, dest=None):
@@ -1252,13 +1252,15 @@ class DatabaseAddOn(SmartPlugin):
             if self.db_driver.lower() == 'pymysql':
                 self.logger.debug(f"Database is of type 'mysql' found.")
             if self.db_driver.lower() == 'sqlite3':
-                self.logger.debug(f"Database is of type 'sqlite' found. Functionality of that plugin not yet fully implemented.")
+                self.logger.debug(f"Database is of type 'sqlite' found.")
 
         # get database plugin parameters
         try:
-            self.db_instance = self._db_plugin.get_parameter_value('instance')
-            self.connection_data = self._db_plugin.get_parameter_value(
-                'connect')  # pymsql ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
+            db_instance = self._db_plugin.get_instance_name()
+            if db_instance != "":
+                self.db_instance = db_instance
+                self.item_attribute_search_str = f"{self.item_attribute_search_str}@{self.db_instance}"
+            self.connection_data = self._db_plugin.get_parameter_value('connect')  # pymsql ['host:localhost', 'user:smarthome', 'passwd:smarthome', 'db:smarthome', 'port:3306']
             self.logger.debug(f"Database Plugin available with instance={self.db_instance} and connection={self.connection_data}")
         except Exception as e:
             self.logger.error(f"Error {e} occurred during getting database plugin parameters. DatabaseAddOn Plugin not loaded.")
@@ -1385,7 +1387,7 @@ class DatabaseAddOn(SmartPlugin):
                     self.itemid_dict[item] = _item_id
         return _item_id
 
-    def _get_itemid_for_query(self, item):
+    def _get_itemid_for_query(self, item) -> Union[int, None]:
         """
         Get DB item id for query
 
@@ -1403,23 +1405,24 @@ class DatabaseAddOn(SmartPlugin):
             item_id = None
         return item_id
 
-    def _get_database_item(self, lookup_item):
+    def _get_database_item(self, item: Item) -> Item:
         """
         Returns item from shNG config which is item with database attribut valid for current db_addon item
 
-        :param lookup_item: item, the corresponding database item should be looked for
+        :param item: item, the corresponding database item should be looked for
 
         """
 
         _database_item = None
+        _lookup_item = item
 
         for i in range(3):
-            if self.has_iattr(lookup_item.conf, 'database'):
-                _database_item = lookup_item
+            if self.has_iattr(_lookup_item.conf, self.item_attribute_search_str):
+                _database_item = _lookup_item
                 break
             else:
-                # self.logger.debug(f"Attribut 'database' is not found for item={item} at _lookup_item={_lookup_item}")
-                lookup_item = lookup_item.return_parent()
+                self.logger.debug(f"Attribut '{self.item_attribute_search_str}' has not been found for item={item}.")
+                _lookup_item = _lookup_item.return_parent()
 
         return _database_item
 

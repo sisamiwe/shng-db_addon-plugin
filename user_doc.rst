@@ -39,9 +39,15 @@ Bsp:
 
 Anforderungen
 -------------
-Es muss das Database Plugin konfiguriert und aktiv sein. Die Konfiguration erfolgt automatisch bei Start.
+Es muss das Database Plugin konfiguriert und aktiv sein. In den Plugin Parametern ist der Name der Konfiguration des
+Database-Plugins anzugeben. Damit ist auch eine etwaig definierte Instanz des Database-Plugins definiert.
+Die Konfiguration des DatabaseAddon-Plugin erfolgt automatisch bei Start.
 
-Zudem sollten bei Verwendung von mysql einige Variablen der Datenbank angepasst werden, so dass die komplexen Anfragen
+Hinweis: Das Plugin selbst ist aktuell nicht multi-instance fähig. Das bedeutet, dass das Plugin aktuell nur eine Instanz
+des Database-Plugin abgebunden werden kann.
+
+
+Bei Verwendung von mysql sollten einige Variablen der Datenbank angepasst werden, so dass die komplexeren Anfragen
 ohne Fehler bearbeitet werden.
 Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
 
