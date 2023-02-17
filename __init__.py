@@ -123,7 +123,6 @@ class DatabaseAddOn(SmartPlugin):
             self.logger.error(f"Check of existence of database plugin incl connection check failed. Plugin not loaded")
             self._init_complete = False
         else:
-            #  init connection to db
             self._db = lib.db.Database("DatabaseAddOn", self.db_driver, self.connection_data)
             if not self._db.api_initialized:
                 self.logger.error("Initialization of database API failed")
@@ -131,9 +130,11 @@ class DatabaseAddOn(SmartPlugin):
             else:
                 self.logger.debug("Initialization of database API successful")
 
+        # init db
         if not self._initialize_db():
             self._init_complete = False
 
+        # check db connection settings
         if self.db_driver is not None and self.db_driver.lower() == 'pymysql':
             self._check_db_connection_setting()
 
