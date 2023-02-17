@@ -1646,7 +1646,7 @@ class DatabaseAddOn(SmartPlugin):
     #     DB Query Preparation
     ##############################
 
-    def _query_log_timestamp(self, func: str, item_id, ts_start: int, ts_end: int, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
+    def _query_log_timestamp(self, func: str, item_id: int, ts_start: int, ts_end: int, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
         Assemble a mysql query str and param dict based on given parameters, get query response and return it
 
