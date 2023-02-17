@@ -43,6 +43,7 @@ Es muss das Database Plugin konfiguriert und aktiv sein. In den Plugin Parameter
 Database-Plugins anzugeben. Damit ist auch eine etwaig definierte Instanz des Database-Plugins definiert.
 Die Konfiguration des DatabaseAddon-Plugin erfolgt automatisch bei Start.
 
+
 Hinweis: Das Plugin selbst ist aktuell nicht multi-instance fähig. Das bedeutet, dass das Plugin aktuell nur eine Instanz
 des Database-Plugin abgebunden werden kann.
 
@@ -93,6 +94,8 @@ Hinweise
     - Plugin-Attribut `ignore_0`: (list of strings) Bei Items, bei denen ein String aus der Liste im Pfadnamen vorkommt, werden 0-Werte (val_num = 0) bei Datenbankauswertungen ignoriert. Hat also das Attribut den Wert ['temp'] werden bei allen Items mit 'temp' im Pfadnamen die 0-Werte bei der Auswertung ignoriert.
     - Item-Attribut `database_addon_ignore_value`: (num) Dieser Wert wird bei der Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert.
  - Das Plugin enthält sehr ausführliche Logginginformation. Bei unerwartetem Verhalten, den LogLevel entsprechend anpassen, um mehr information zu erhalten.
+ - Berechnungen des Plugins können im WebIF unterbrochen werden. Auch das gesamte Plugin kann pausiert werden. Dies kann be starker Systembelastung nützlich sein.
+
 
 Beispiele
 ---------
@@ -122,7 +125,7 @@ Die Werte des Wasserzählerstandes werden in die Datenbank geschrieben und darau
 minmax
 ^^^^^^
 
-Soll bspw. minimalen und maximalen Temperaturen ausgewertet werden, kann dies so umgesetzt werden:
+Soll bspw. die minimalen und maximalen Temperaturen ausgewertet werden, kann dies so umgesetzt werden:
 
 .. code-block:: yaml
 

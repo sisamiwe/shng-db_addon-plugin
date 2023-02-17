@@ -182,7 +182,7 @@ class DatabaseAddOn(SmartPlugin):
         self.alive = False
         self._work_item_queue_thread_shutdown()
 
-    def parse_item(self, item):
+    def parse_item(self, item: Item):
         """
         Default plugin parse_item method. Is called when the plugin is initialized.
 
@@ -471,7 +471,7 @@ class DatabaseAddOn(SmartPlugin):
                     self._active_queue_item = str(queue_entry.id())
                     self.handle_ondemand(queue_entry)
 
-    def handle_ondemand(self, item) -> None:
+    def handle_ondemand(self, item: Item) -> None:
 
         # set/get parameters
         _database_addon_fct = self.item_dict[item][0]
@@ -591,7 +591,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             self.logger.info(f"  Result was NONE; No item value will be set.")
 
-    def handle_onchange(self, updated_item, value: float) -> None:
+    def handle_onchange(self, updated_item: Item, value: float) -> None:
         """
         Get item and item value for which an update has been detected, fill cache dicts and set item value.
 
@@ -722,7 +722,7 @@ class DatabaseAddOn(SmartPlugin):
     #       Public functions
     ##############################
 
-    def gruenlandtemperatursumme(self, item, year: Union[int, str]) -> Union[int, None]:
+    def gruenlandtemperatursumme(self, item: Item, year: Union[int, str]) -> Union[int, None]:
         """
         Query database for gruenlandtemperatursumme for given year or year/month
 
@@ -734,7 +734,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self._handle_gruenlandtemperatursumme(item, year)
 
-    def waermesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
+    def waermesumme(self, item: Item, year, month: Union[int, str] = None) -> Union[int, None]:
         """
         Query database for waermesumme for given year or year/month
 
@@ -747,7 +747,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self._handle_waermesumme(item, year, month)
 
-    def kaeltesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
+    def kaeltesumme(self, item: Item, year, month: Union[int, str] = None) -> Union[int, None]:
         """
         Query database for kaeltesumme for given year or year/month
 
@@ -760,7 +760,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self._handle_kaeltesumme(item, year, month)
 
-    def tagesmitteltemperatur(self, item, count: int = None) -> list:
+    def tagesmitteltemperatur(self, item: Item, count: int = None) -> list:
         """
         Query database for tagesmitteltemperatur
 
@@ -773,7 +773,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self._handle_tagesmitteltemperatur(item=item, count=count)
 
-    def fetch_log(self, func: str, item, timeframe: str, start: int = None, end: int = 0, count: int = None, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
+    def fetch_log(self, func: str, item: Item, timeframe: str, start: int = None, end: int = 0, count: int = None, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
         Query database, format response and return it
 
@@ -843,7 +843,7 @@ class DatabaseAddOn(SmartPlugin):
     #        Support stuff
     ##############################
 
-    def _handle_min_max(self, _database_item, _database_addon_fct: str, _ignore_value):
+    def _handle_min_max(self, _database_item: Item, _database_addon_fct: str, _ignore_value):
         """
         Handle execution of min/max calculation
 
@@ -887,7 +887,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return _result
 
-    def _handle_zaehlerstand(self, _database_item, _database_addon_fct: str):
+    def _handle_zaehlerstand(self, _database_item: Item, _database_addon_fct: str):
         """
         Handle execution of Zaehlerstand calculation
 
@@ -910,7 +910,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return _result
 
-    def _handle_verbrauch(self, _database_item, _database_addon_fct: str):
+    def _handle_verbrauch(self, _database_item: Item, _database_addon_fct: str):
         """
         Handle execution of verbrauch calculation
 
@@ -988,7 +988,7 @@ class DatabaseAddOn(SmartPlugin):
         """
         return self._query_item(**_database_addon_params)
 
-    def _handle_kaeltesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
+    def _handle_kaeltesumme(self, item: Item, year: Union[int, str], month: Union[int, str] = None) -> Union[int, None]:
         """
         Query database for kaeltesumme for given year or year/month
 
@@ -1060,7 +1060,7 @@ class DatabaseAddOn(SmartPlugin):
         except Exception as e:
             self.logger.error(f"Error {e} occurred during calculation of kaeltesumme with {_result=} for {item.id()=} with {year=} and {month=}")
 
-    def _handle_waermesumme(self, item, year, month: Union[int, str] = None) -> Union[int, None]:
+    def _handle_waermesumme(self, item: Item, year: Union[int, str], month: Union[int, str] = None) -> Union[int, None]:
         if not valid_year(year):
             self.logger.error(f"waermesumme: Year for item={item.id()} was {year}. This is not a valid year. Query cancelled.")
             return
@@ -1110,7 +1110,7 @@ class DatabaseAddOn(SmartPlugin):
         else:
             return
 
-    def _handle_gruenlandtemperatursumme(self, item, year: Union[int, str]) -> Union[int, None]:
+    def _handle_gruenlandtemperatursumme(self, item: Item, year: Union[int, str]) -> Union[int, None]:
         """
         Query database for gruenlandtemperatursumme for given year or year/month
 
@@ -1162,7 +1162,7 @@ class DatabaseAddOn(SmartPlugin):
         except Exception as e:
             self.logger.error(f"Error {e} occurred during calculation of gruenlandtemperatursumme with {_result=} for {item.id()=}")
 
-    def _handle_tagesmitteltemperatur(self, item, count: int = None) -> list:
+    def _handle_tagesmitteltemperatur(self, item: Item, count: int = None) -> list:
         """
         Query database for tagesmitteltemperatur
 
@@ -1310,7 +1310,7 @@ class DatabaseAddOn(SmartPlugin):
         except Exception:
             pass
 
-    def _get_oldest_log(self, item) -> int:
+    def _get_oldest_log(self, item: Item) -> int:
         """
         Get timestamp of the oldest entry of item from cache dict or get value from db and put it to cache dict
 
@@ -1334,7 +1334,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return oldest_log
 
-    def _get_oldest_value(self, item) -> Union[int, float, bool]:
+    def _get_oldest_value(self, item: Item) -> Union[int, float, bool]:
         """
         Get value of the oldest log of item from cache dict or get value from db and put it to cache dict
 
@@ -1368,7 +1368,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return oldest_value
 
-    def _get_itemid(self, item) -> int:
+    def _get_itemid(self, item: Item) -> int:
         """
         Returns the ID of the given item from cache dict or request it from database
 
@@ -1387,7 +1387,7 @@ class DatabaseAddOn(SmartPlugin):
                     self.itemid_dict[item] = _item_id
         return _item_id
 
-    def _get_itemid_for_query(self, item) -> Union[int, None]:
+    def _get_itemid_for_query(self, item: Item) -> Union[int, None]:
         """
         Get DB item id for query
 
