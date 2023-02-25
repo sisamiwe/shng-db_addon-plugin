@@ -58,7 +58,7 @@ class WebInterface(SmartPluginWebIf):
         self.webif_dir = webif_dir
         self.plugin = plugin
         self.items = Items.get_instance()
-        
+
         self.tplenv = self.init_template_environment()
 
     @cherrypy.expose
@@ -71,14 +71,14 @@ class WebInterface(SmartPluginWebIf):
         :return: contents of the template after being rendered
         """
 
-        pagelength = self.plugin.get_parameter_value('webif_pagelength')
+
         tmpl = self.tplenv.get_template('index.html')
 
         return tmpl.render(p=self.plugin,
-                           webif_pagelength=pagelength,
-                           suspended=self.plugin.suspended,
-                           items=self.plugin.item_list,
-                           item_count=len(self.plugin.item_list),
+                           webif_pagelength=self.plugin.get_parameter_value('webif_pagelength'),
+                           suspended='true' if self.plugin.suspended else 'false',
+                           items=self.plugin.get_item_list('database_addon', True),
+                           item_count=len(self.plugin.get_item_list('database_addon', True)),
                            plugin_shortname=self.plugin.get_shortname(),
                            plugin_version=self.plugin.get_version(),
                            plugin_info=self.plugin.get_info(),
@@ -100,7 +100,7 @@ class WebInterface(SmartPluginWebIf):
             data = dict()
             data['items'] = {}
 
-            for item in self.plugin.item_list:
+            for item in self.plugin.get_item_list('database_addon', True):
                 data['items'][item.id()] = {}
                 data['items'][item.id()]['value'] = item.property.value
                 data['items'][item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')

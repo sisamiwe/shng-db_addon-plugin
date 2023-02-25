@@ -1,5 +1,9 @@
-DatabaseAddon
-=============
+.. index:: Plugins; database_addon (Datenbank Unterstützung)
+.. index:: database_addon
+
+==============
+database_addon
+==============
 
 Was macht das Plugin?
 ---------------------
@@ -176,4 +180,3 @@ DatabaseAddOn Maintenance
 
 Das Webinterface zeigt detaillierte Informationen über die im Plugin verfügbaren Daten an.
 Dies dient der Maintenance bzw. Fehlersuche. Dieser Tab ist nur bei Log-Level "Debug" verfügbar.
-

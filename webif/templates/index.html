@@ -35,9 +35,14 @@
   table th.last {
     width: 150px;
   }
-  #maintable {
-    display: none;
-    table-layout: fixed;
+  table th.dict {
+    width: 150px;
+  }
+  table th.count {
+    width: 50px;
+  }
+  table th.content {
+    width: 500px;
   }
   .shng_effect_highlight {
     background-color: #FFFFE0;
@@ -60,11 +65,11 @@
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
-            
+
             shngInsertText('queue_length', objResponse['queue_length'], null, 2);
             shngInsertText('active_queue_item', objResponse['active_queue_item'], null, 2);
-            
-            if (objResponse['plugin_suspended'] === false) {
+
+      if (objResponse['plugin_suspended'] === false) {
 				document.getElementById('play').classList = 'btn btn-success btn-sm';
                 document.getElementById('play').disabled = true;
                 document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
@@ -79,54 +84,88 @@
 		}
 	}
 </script>
-<!-- 
-	This part is used to implement datatable JS for the tables. It allows resorting tables by column, etc.
-	For each table you have to implement the code part $('#<table_id>').DataTable(..); where the <table_id> matches the id of a table tag
--->
+
 <script>
     $(document).ready( function () {
-			/*
-			loading defaults from /modules/http/webif/gstatic/datatables/datatables.defaults.js
-			You can copy that file, put it in your plugin directory, rename the "bind" function and
-			trigger that function here instead of datatables_defaults if you want to change the behaviour.
-			Of course you can also overwrite defaults by putting the option declarations in {} below.
-			*/
 			$(window).trigger('datatables_defaults');
-      try {
-        /* get pagelength from plugin. Also see hidden span element in headtable block! */
-        webif_pagelength = parseInt(document.getElementById('webif_pagelength').innerHTML);
-        if (isNaN(parseFloat(webif_pagelength)) || webif_pagelength == 0) {
-          resize = true;
-          webif_pagelength = -1;
-  				console.log('Activating automatic table resize');
-        }
-        else {
-          resize = false;
-        }
+      {% if webif_pagelength is defined %}webif_pagelength = {{ webif_pagelength|int }};{% endif %}
+      if (isNaN(parseFloat(webif_pagelength)) || webif_pagelength == 0) {
+        resize = true;
+        webif_pagelength = -1;
+		  console.log('Activating automatic table resize');
       }
-      catch (e) {
-        webif_pagelength = 100;
+      else {
         resize = false;
-        console.log("Using default values for page length " + webif_pagelength + ", pageResize: " + resize);
       }
+
       try {
-        table = $('#maintable').DataTable( {
-          /* If you want to define your own columnDefs options (e.g. for hiding a column by default), use the concat function shown here.
-          columnDefs: [{ "targets": [8], "className": "none"}].concat($.fn.dataTable.defaults.columnDefs),
-          */
+        maintable = $('#maintable').DataTable( {
           pageLength: webif_pagelength,
-          columnDefs: [{ "targets": [5], "className": "truncate value"}].concat($.fn.dataTable.defaults.columnDefs),
+          columnDefs: [
+          {
+  					title: '',
+  					targets: [0], "className": ""
+  				},
+          {
+  					title: '{{ _('Item') }}',
+  					targets: [1], "className": "item"
+  				},
+          {
+  					title: '{{ _('Typ') }}',
+  					targets: [2], "className": "type"
+  				},
+          {
+  					title: '{{ _('AddOn Attribute') }}',
+  					targets: [3], "className": "attribute"
+  				},
+          {
+            title: '{{ _('Update Cycle') }}',
+            targets: [4], "className": "cycle"
+          },
+          {
+            title: '{{ _('Run on init') }}',
+            targets: [5], "className": "init"
+          },
+          {
+            title: '{{ _('Wert') }}',
+            targets: [6], "className": "truncate value"
+          },
+          {
+            title: '{{ _('Letztes Update') }}',
+            targets: [7], "className": "last"
+          },
+          {
+            title: '{{ _('Letzter Change') }}',
+            targets: [8], "className": "last"
+          }].concat($.fn.dataTable.defaults.columnDefs),
           pageResize: resize});
-        table = $('#mtable2').DataTable( {
-          pageLength: webif_pagelength,
-          pageResize: resize});
+        {% if maintenance %}
+          mtable2 = $('#mtable2').DataTable( {
+            columnDefs: [
+            {
+              title: '',
+              targets: [0], "className": ""
+            },
+            {
+              title: '{{ _('dict/list') }}',
+              targets: [1], "className": "dict"
+            },
+            {
+              title: '{{ _('count') }}',
+              targets: [2], "className": "count"
+            },
+            {
+              title: '{{ _('content') }}',
+              targets: [3], "className": "content"
+            }].concat($.fn.dataTable.defaults.columnDefs),
+            pageLength: webif_pagelength,
+            pageResize: resize});
+        {% endif %}
       }
       catch (e) {
         console.warn("Datatable JS not loaded, showing standard table without reorder option " + e);
       }
-      
-      var suspended = (document.getElementById('suspended').innerHTML.toLowerCase() === 'true')
-      if (suspended == false) {
+      if ({{ suspended }} == false) {
         document.getElementById('play').classList = 'btn btn-success btn-sm';
         document.getElementById('play').disabled = true;
         document.getElementById('pause').classList = 'btn btn-outline-danger btn-sm';
@@ -152,24 +191,10 @@
       }
   }
 </script>
-<!--
-This is an example on how to update the page refresh method. You can set the dataSet, update interval, special parameters or (de)activate the auto refresh
-In the example the update is deactivated on the 12th of December 2022 (what might make no sense at all)
-<script>
-  var today = new Date();
-  var today_date = String(today.getDate()) + String(today.getMonth() + 1) + today.getFullYear();
-  let test_date = "12122022";
-  if (today_date === test_date)
-      window.refresh.update({dataSet:'test', update_params:'specialitem', update_interval: 2000, update_active:false});
-  </script>
--->
 {% endblock pluginscripts %}
 
 
 {% block headtable %}
-<!-- This span needs to be put somewhere on the page to read the table pagelength from the plugin / users' plugin.yaml -->
-<span id='webif_pagelength' style="display:none">{{ webif_pagelength }}</span>
-<span id='suspended' style="display:none">{{ p.suspended }}</span>
 
 <table class="table table-striped table-hover">
 	<tbody>
@@ -244,30 +269,20 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 
 <!-- Content block for the first tab of the Webinterface -->
 {% block bodytab1 %}
+<script>
+    shngGetUpdatedData();
+</script>
 <div class="container-fluid m-2 table-resize">
-	<table id="maintable">
-        <thead>
-            <tr>
-                <th class="plus"></th>
-                <th class="item">{{_('Item')}}</th>
-                <th class="type">{{_('Typ')}}</th>
-                <th class="attribute">{{_('AddOn Attribute')}}</th>
-                <th class="cycle" style="text-align: center">{{_('Update Cycle')}}</th>
-                <th class="init" style="text-align: center">{{_('Run on init')}}</th>
-                <th class="value" style="text-align: right">{{_('Wert')}}</th>
-                <th class="last" style="text-align: center">{{_('Letztes Update')}}</th>
-                <th class="last" style="text-align: center">{{_('Letzter Change')}}</th>
-            </tr>
-        </thead>
+	<table id="maintable" class="dataTableAdditional">
         <tbody>
             {% for item in items %}
                 <tr>
                     <td></td>
                     <td class="py-1">{{ item._path }}</td>
                     <td class="py-1">{{ item._type }}</td>
-                    <td class="py-1">{{ p.webdata[item._path]['attribute'] }}</td>
-                    <td class="py-1" style="text-align: center">{{ p.webdata[item._path]['cycle'] }}</td>
-                    <td class="py-1" style="text-align: center">{% if p.webdata[item._path]['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
+                    <td class="py-1">{{ p.get_item_config(item._path)['attribute'] }}</td>
+                    <td class="py-1" style="text-align: center">{{ p.get_item_config(item)['cycle'] }}</td>
+                    <td class="py-1" style="text-align: center">{% if p.get_item_config(item)['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
                     <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item._value | float }}</td>
                     <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                     <td class="py-1" id="{{ item._path }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
@@ -282,128 +297,125 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
 <!-- 	Content block for the second tab of the Webinterface -->
 {% block bodytab2 %}
 <div class="container-fluid m-2 table-resize">
-    <table id="mtable2" class="table table-striped table-hover pluginList display">
-        <thead>
-            <tr>
-                <th style="width: 150px">{{ _('dict/list') }}</th>
-                <th style="width: 50px">{{ _('count') }}</th>
-                <th style="width: 500px">{{ _('content') }}</th>
-            </tr>
-        </thead>
+    <table id="mtable2" class="dataTableAdditional">
         <tbody>
-            <tr>
-                <td class="py-1">{{ _('00_webdata') }}</td>
-                <td class="py-1">{{ len(p.webdata) }}</td>
-                <td class="py-1">{{ p.webdata }}</td>
+            <tr><td></td>
+                <td class="py-1">{{ _('00_items') }}</td>
+                <td class="py-1">{{ len(p.get_item_path_list('database_addon', True)) }}</td>
+                <td class="py-1">{{ p.get_item_path_list('database_addon', True) }}</td>
             </tr>
-            <tr>
-                <td class="py-1">{{ _('01_item_dict') }}</td>
-                <td class="py-1">{{ len(p.item_dict)}}</td>
-                <td class="py-1">{{ p.item_dict }}</td>
+            <tr><td></td>
+                <td class="py-1">{{ _('02_admin_items') }}</td>
+                <td class="py-1">{{ len(p.get_item_path_list('database_addon', 'admin')) }}</td>
+                <td class="py-1">{{ p.get_item_path_list('database_addon', 'admin') }}</td>
             </tr>
-            <tr>
-                <td class="py-1">{{ _('02_admin_item_dict') }}</td>
-                <td class="py-1">{{ len(p.admin_item_dict)}}</td>
-                <td class="py-1">{{ p.admin_item_dict }}</td>
-            </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('10_daily_items') }}</td>
                 <td class="py-1">{{ len(p._daily_items) }}</td>
                 <td class="py-1">{{ p._daily_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('11_weekly_items') }}</td>
                 <td class="py-1">{{ len(p._weekly_items) }}</td>
                 <td class="py-1">{{ p._weekly_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('12_monthly_items') }}</td>
                 <td class="py-1">{{ len(p._monthly_items) }}</td>
                 <td class="py-1">{{ p._monthly_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('13_yearly_items') }}</td>
                 <td class="py-1">{{ len(p._yearly_items) }}</td>
                 <td class="py-1">{{ p._yearly_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('14_onchange_items') }}</td>
                 <td class="py-1">{{ len(p._onchange_items) }}</td>
                 <td class="py-1">{{ p._onchange_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('15_startup_items') }}</td>
                 <td class="py-1">{{ len(p._startup_items) }}</td>
                 <td class="py-1">{{ p._startup_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('17_database_items') }}</td>
                 <td class="py-1">{{ len(p._database_items) }}</td>
                 <td class="py-1">{{ p._database_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('16_static_items') }}</td>
                 <td class="py-1">{{ len(p._static_items) }}</td>
                 <td class="py-1">{{ p._static_items }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('32_itemid_dict') }}</td>
                 <td class="py-1">{{ len(p.itemid_dict) }}</td>
                 <td class="py-1">{{ p.itemid_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('20_tageswert_dict') }}</td>
                 <td class="py-1">{{ len(p.tageswert_dict) }}</td>
                 <td class="py-1">{{ p.tageswert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('21_wochenwert_dict') }}</td>
                 <td class="py-1">{{ len(p.wochenwert_dict) }}</td>
                 <td class="py-1">{{ p.wochenwert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('22_monatswert_dict') }}</td>
                 <td class="py-1">{{ len(p.monatswert_dict) }}</td>
                 <td class="py-1">{{ p.monatswert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('23_jahreswert_dict') }}</td>
                 <td class="py-1">{{ len(p.jahreswert_dict) }}</td>
                 <td class="py-1">{{ p.jahreswert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('24_vortagsendwert_dict') }}</td>
                 <td class="py-1">{{ len(p.vortagsendwert_dict) }}</td>
                 <td class="py-1">{{ p.vortagsendwert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('25_vorwochenendwert_dict') }}</td>
                 <td class="py-1">{{ len(p.vorwochenendwert_dict) }}</td>
                 <td class="py-1">{{ p.vorwochenendwert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('26_vormonatsendwert_dict') }}</td>
                 <td class="py-1">{{ len(p.vormonatsendwert_dict) }}</td>
                 <td class="py-1">{{ p.vormonatsendwert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('27_vorjahresendwert_dict') }}</td>
                 <td class="py-1">{{ len(p.vorjahresendwert_dict) }}</td>
                 <td class="py-1">{{ p.vorjahresendwert_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('30_oldest_log_dict') }}</td>
                 <td class="py-1">{{ len(p.oldest_log_dict) }}</td>
                 <td class="py-1">{{ p.oldest_log_dict }}</td>
             </tr>
-            <tr>
+            <tr><td></td>
                 <td class="py-1">{{ _('31_oldest_entry_dict') }}</td>
                 <td class="py-1">{{ len(p.oldest_entry_dict) }}</td>
                 <td class="py-1">{{ p.oldest_entry_dict }}</td>
             </tr>
+            <tr><td></td>
+                <td class="py-1">{{ _('get_item_list') }}</td>
+                <td class="py-1">{{ len(p.get_item_list('database_addon', True)) }}</td>
+                <td class="py-1">{{ p.get_item_list('database_addon', True) }}</td>
+            </tr>
+            <tr><td></td>
+                <td class="py-1">{{ _('_plg_item_dict') }}</td>
+                <td class="py-1">{{ len(p._plg_item_dict) }}</td>
+                <td class="py-1">{{ p._plg_item_dict }}</td>
+            </tr>
         </tbody>
     </table>
-</div>
 {% endblock bodytab2 %}
 
 
@@ -440,7 +452,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
           {% endif %}
         </div>
     {% endfor %}
-    
+
     <br>
     <h3 style="color:#A9A9A9;"><strong>{{_('Plugin Funktionen')}}</strong></h3>
     {%  for function, plugin_functions_dict in p.metadata.plugin_functions.items() %}
@@ -448,7 +460,7 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
           <div class="card-header p-2">
               <strong>{{ function }}</strong> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{('Beschreibung:')}} {{ plugin_functions_dict['description'][language] }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{ ('Ergebnisdatentyp:')}} {{ plugin_functions_dict['type'] }}
           </div>
-          
+
           {% if 'parameters' in plugin_functions_dict %}
           <div class="card-body p-2">
             <div class="card-body p-2">
@@ -478,5 +490,3 @@ In the example the update is deactivated on the 12th of December 2022 (what migh
     {% endfor %}
 </div>
 {% endblock bodytab3 %}
-
-

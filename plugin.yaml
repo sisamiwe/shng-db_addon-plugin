@@ -984,7 +984,7 @@ plugin_functions:
                 type: str
                 description:
                     de: "zu verwendende Abfragefunktion"
-                    en: ""
+                    en: "database function to be used"
                 mandatory: True
                 valid_list:
                   - min                 # Minimalwerte
@@ -1006,7 +1006,7 @@ plugin_functions:
                 type: str
                 description:
                     de: "Zeitinkrement für die DB-Abfrage"
-                    en: ""
+                    en: "time increment for db-request"
                 mandatory: True
                 valid_list:
                   - day
@@ -1017,22 +1017,22 @@ plugin_functions:
                 type: int
                 description:
                     de: "Zeitlicher Beginn der DB-Abfrage: x Zeitinkrementen von jetzt in die Vergangenheit"
-                    en: ""
+                    en: "start point in time for db-request; x time increments from now into the past"
             end:
                 type: int
                 description:
                     de: "Zeitliches Ende der DB-Abfrage: x Zeitinkrementen von jetzt in die Vergangenheit"
-                    en: ""
+                    en: "end point in time for db-request; x time increments from now into the past"
             count:
                 type: int
                 description:
                     de: "Anzahl der Zeitinkremente, vom Start in die Vergangenheit abzufragen sind. Alternative zu 'end'"
-                    en: ""
+                    en: "number of time increments from start point in time into the past. can be used alternativly to 'end'"
             group:
                 type: str
                 description:
                     de: "erste Gruppierung der DB-Abfrage"
-                    en: ""
+                    en: "first grouping for the db-request"
                 valid_list:
                   - day
                   - week
@@ -1042,7 +1042,7 @@ plugin_functions:
                 type: str
                 description:
                     de: "zweite Gruppierung der DB-Abfrage"
-                    en: ""
+                    en: "second grouping for the db-request"
                 valid_list:
                   - day
                   - week
