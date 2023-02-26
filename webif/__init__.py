@@ -25,9 +25,6 @@
 #
 #########################################################################
 
-import datetime
-import time
-import os
 import json
 
 from lib.item import Items
@@ -70,7 +67,6 @@ class WebInterface(SmartPluginWebIf):
 
         :return: contents of the template after being rendered
         """
-
 
         tmpl = self.tplenv.get_template('index.html')
 
