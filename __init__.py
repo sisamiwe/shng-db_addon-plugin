@@ -111,6 +111,7 @@ class DatabaseAddOn(SmartPlugin):
         self.ignore_0 = self.get_parameter_value('ignore_0')
         self.use_oldest_entry = self.get_parameter_value('use_oldest_entry')
 
+        """
         # check existence of db-plugin, get parameters, and init connection to db
         if not self._check_db_existence():
             self.logger.error(f"Check of existence of database plugin incl connection check failed. Plugin not loaded")
@@ -130,7 +131,8 @@ class DatabaseAddOn(SmartPlugin):
         # check db connection settings
         if self.db_driver is not None and self.db_driver.lower() == 'pymysql':
             self._check_db_connection_setting()
-            
+        """
+
         # init cache dicts
         self._init_cache_dicts()
 
@@ -153,7 +155,26 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         self.logger.debug("Run method called")
-        self.alive = True
+
+        # check existence of db-plugin, get parameters, and init connection to db
+        if not self._check_db_existence():
+            self.logger.error(f"Check of existence of database plugin incl connection check failed. Plugin not loaded")
+            return self.deinit(items=self.get_item_list())
+
+        self._db = lib.db.Database("DatabaseAddOn", self.db_driver, self.connection_data)
+        if not self._db.api_initialized:
+            self.logger.error("Initialization of database API failed")
+            return self.deinit(items=self.get_item_list())
+        else:
+            self.logger.debug("Initialization of database API successful")
+
+        # init db
+        if not self._initialize_db():
+            return self.deinit(items=self.get_item_list())
+
+        # check db connection settings
+        if self.db_driver is not None and self.db_driver.lower() == 'pymysql':
+            self._check_db_connection_setting()
 
         # add scheduler for cyclic trigger item calculation
         self.scheduler_add('cyclic', self.execute_due_items, prio=3, cron='5 0 0 * * *', cycle=None, value=None, offset=None, next=None)
@@ -166,6 +187,9 @@ class DatabaseAddOn(SmartPlugin):
         # start the queue consumer thread
         self._work_item_queue_thread_startup()
 
+        # set plugin to alive
+        self.alive = True
+
         # check for admin items to be set
         self._check_admin_items()
 
@@ -175,8 +199,8 @@ class DatabaseAddOn(SmartPlugin):
         """
 
         self.logger.debug("Stop method called")
-        self.scheduler_remove('cyclic')
         self.alive = False
+        self.scheduler_remove('cyclic')
         self._work_item_queue_thread_shutdown()
 
     def parse_item(self, item: Item):
@@ -1315,6 +1339,7 @@ class DatabaseAddOn(SmartPlugin):
                     return False
         except Exception as e:
             self.logger.critical(f"_initialize_db: Database: Initialization failed: {e}")
+            return False
         else:
             return True
 
