@@ -703,6 +703,38 @@ class DatabaseAddOn(SmartPlugin):
     def db_version(self):
         return self._get_db_version()
 
+    @property
+    def _startup_items(self):
+        return self.get_item_list('startup', True)
+
+    @property
+    def _onchange_items(self):
+        return self.get_items_for_mapping('on-change')
+
+    @property
+    def _daily_items(self):
+        return self.get_items_for_mapping('daily')
+
+    @property
+    def _weekly_items(self):
+        return self.get_items_for_mapping('weekly')
+
+    @property
+    def _monthly_items(self):
+        return self.get_items_for_mapping('monthly')
+
+    @property
+    def _yearly_items(self):
+        return self.get_items_for_mapping('yearly')
+
+    @property
+    def _static_items(self):
+        return self.get_items_for_mapping('static')
+
+    @property
+    def _database_items(self):
+        return self.get_items_for_mapping('database')
+
     ##############################
     #       Public functions
     ##############################
@@ -828,38 +860,6 @@ class DatabaseAddOn(SmartPlugin):
     ##############################
     #        Support stuff
     ##############################
-
-    @property
-    def _startup_items(self):
-        return self.get_item_list('startup', True)
-    
-    @property
-    def _onchange_items(self):
-        return self.get_items_for_mapping('on-change')
-    
-    @property
-    def _daily_items(self):
-        return self.get_items_for_mapping('daily')
-    
-    @property
-    def _weekly_items(self):
-        return self.get_items_for_mapping('weekly')
-    
-    @property
-    def _monthly_items(self):
-        return self.get_items_for_mapping('monthly')
-    
-    @property
-    def _yearly_items(self):
-        return self.get_items_for_mapping('yearly')
-        
-    @property
-    def _static_items(self):
-        return self.get_items_for_mapping('static')
-
-    @property
-    def _database_items(self):
-        return self.get_items_for_mapping('database')
 
     def _handle_min_max(self, _database_item: Item, _database_addon_fct: str, _ignore_value):
         """
