@@ -350,59 +350,49 @@
                 <td class="py-1">{{ p._static_items }}</td>
             </tr>
             <tr><td></td>
-                <td class="py-1">{{ _('32_itemid_dict') }}</td>
-                <td class="py-1">{{ len(p.itemid_dict) }}</td>
-                <td class="py-1">{{ p.itemid_dict }}</td>
+                <td class="py-1">{{ _('32_item_cache') }}</td>
+                <td class="py-1">{{ len(p.item_cache) }}</td>
+                <td class="py-1">{{ p.item_cache }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('20_tageswert_dict') }}</td>
-                <td class="py-1">{{ len(p.tageswert_dict) }}</td>
-                <td class="py-1">{{ p.tageswert_dict }}</td>
+                <td class="py-1">{{ len(p.current_values['day']) }}</td>
+                <td class="py-1">{{ p.current_values['day'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('21_wochenwert_dict') }}</td>
-                <td class="py-1">{{ len(p.wochenwert_dict) }}</td>
-                <td class="py-1">{{ p.wochenwert_dict }}</td>
+                <td class="py-1">{{ len(p.current_values['week']) }}</td>
+                <td class="py-1">{{ p.current_values['week'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('22_monatswert_dict') }}</td>
-                <td class="py-1">{{ len(p.monatswert_dict) }}</td>
-                <td class="py-1">{{ p.monatswert_dict }}</td>
+                <td class="py-1">{{ len(p.current_values['month']) }}</td>
+                <td class="py-1">{{ p.current_values['month'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('23_jahreswert_dict') }}</td>
-                <td class="py-1">{{ len(p.jahreswert_dict) }}</td>
-                <td class="py-1">{{ p.jahreswert_dict }}</td>
+                <td class="py-1">{{ len(p.current_values['year']) }}</td>
+                <td class="py-1">{{ p.current_values['year'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('24_vortagsendwert_dict') }}</td>
-                <td class="py-1">{{ len(p.vortagsendwert_dict) }}</td>
-                <td class="py-1">{{ p.vortagsendwert_dict }}</td>
+                <td class="py-1">{{ len(p.previous_values['day']) }}</td>
+                <td class="py-1">{{ p.previous_values['day'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('25_vorwochenendwert_dict') }}</td>
-                <td class="py-1">{{ len(p.vorwochenendwert_dict) }}</td>
-                <td class="py-1">{{ p.vorwochenendwert_dict }}</td>
+                <td class="py-1">{{ len(p.previous_values['week']) }}</td>
+                <td class="py-1">{{ p.previous_values['week'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('26_vormonatsendwert_dict') }}</td>
-                <td class="py-1">{{ len(p.vormonatsendwert_dict) }}</td>
-                <td class="py-1">{{ p.vormonatsendwert_dict }}</td>
+                <td class="py-1">{{ len(p.previous_values['month']) }}</td>
+                <td class="py-1">{{ p.previous_values['month'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('27_vorjahresendwert_dict') }}</td>
-                <td class="py-1">{{ len(p.vorjahresendwert_dict) }}</td>
-                <td class="py-1">{{ p.vorjahresendwert_dict }}</td>
-            </tr>
-            <tr><td></td>
-                <td class="py-1">{{ _('30_oldest_log_dict') }}</td>
-                <td class="py-1">{{ len(p.oldest_log_dict) }}</td>
-                <td class="py-1">{{ p.oldest_log_dict }}</td>
-            </tr>
-            <tr><td></td>
-                <td class="py-1">{{ _('31_oldest_entry_dict') }}</td>
-                <td class="py-1">{{ len(p.oldest_entry_dict) }}</td>
-                <td class="py-1">{{ p.oldest_entry_dict }}</td>
+                <td class="py-1">{{ len(p.previous_values['year']) }}</td>
+                <td class="py-1">{{ p.previous_values['year'] }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('get_item_list') }}</td>
@@ -416,6 +406,7 @@
             </tr>
         </tbody>
     </table>
+</div>
 {% endblock bodytab2 %}
 
 
