@@ -215,7 +215,7 @@ class DatabaseAddOn(SmartPlugin):
                 return 
 
             # create items configs
-            item_config_data_dict = {'database_addon': True, 'attribute': _database_addon_fct, 'database_item': _database_item, 'ignore_value': _database_addon_ignore_value}
+            item_config_data_dict = {'database_addon': 'function', 'attribute': _database_addon_fct, 'database_item': _database_item, 'ignore_value': _database_addon_ignore_value}
             _update_cycle = None
 
             if self.parse_debug:
@@ -321,11 +321,17 @@ class DatabaseAddOn(SmartPlugin):
             item_config = self.get_item_config(item)
             item_config.update({'cycle': _update_cycle})
 
+        # handle all items with database_addon_info
+        elif self.has_iattr(item.conf, 'database_addon_info'):
+            if self.parse_debug:
+                self.logger.debug(f"parse item: {item.id()} due to used item attribute 'database_addon_info'")
+            self.add_item(item, mapping='info', config_data_dict={'database_addon': 'info', 'attribute': f"info_{self.get_iattr_value(item.conf, 'database_addon_info').lower()}", 'startup': True})
+
         # handle all items with database_addon_admin
         elif self.has_iattr(item.conf, 'database_addon_admin'):
             if self.parse_debug:
                 self.logger.debug(f"parse item: {item.id()} due to used item attribute 'database_addon_admin'")
-            self.add_item(item, config_data_dict={'database_addon': 'admin', 'attribute': self.get_iattr_value(item.conf, 'database_addon_admin').lower()})
+            self.add_item(item, mapping='admin', config_data_dict={'database_addon': 'admin', 'attribute': f"admin_{self.get_iattr_value(item.conf, 'database_addon_admin').lower()}"})
             return self.update_item
 
         # Reference to 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen
@@ -399,12 +405,25 @@ class DatabaseAddOn(SmartPlugin):
         else:
             self.logger.info(f"Plugin is suspended. No items will be calculated.")
 
-    def execute_static_item(self) -> None:
+    def execute_static_items(self) -> None:
         """
-        Execute all static_items
+        Execute all static items
         """
         if self.execute_debug:
             self.logger.debug("execute_static_item called")
+
+        if not self.suspended:
+            self.logger.info(f"{len(self._static_items)} items will be calculated.")
+            [self.item_queue.put(i) for i in self._static_items]
+        else:
+            self.logger.info(f"Plugin is suspended. No items will be calculated.")
+
+    def execute_info_items(self) -> None:
+        """
+        Execute all info items
+        """
+        if self.execute_debug:
+            self.logger.debug("execute_info_items called")
 
         if not self.suspended:
             self.logger.info(f"{len(self._static_items)} items will be calculated.")
@@ -459,12 +478,18 @@ class DatabaseAddOn(SmartPlugin):
         # set/get parameters
         item_config = self.get_item_config(item)
         _database_addon_fct = item_config['attribute']
-        _database_item = item_config['database_item']
-        _ignore_value = item_config['ignore_value']
+        _database_item = item_config.get('database_item')
+        _ignore_value = item_config.get('ignore_value')
         _result = None
 
+        # handle info functions
+        if _database_addon_fct.startswith('info_'):
+            # handle info_db_version
+            if _database_addon_fct == 'info_db_version':
+                _result = self._get_db_version()
+
         # handle general functions
-        if _database_addon_fct.startswith('general_'):
+        elif _database_addon_fct.startswith('general_'):
             # handle oldest_value
             if _database_addon_fct == 'general_oldest_value':
                 _result = self._get_oldest_value(_database_item)
@@ -472,10 +497,6 @@ class DatabaseAddOn(SmartPlugin):
             # handle oldest_log
             elif _database_addon_fct == 'general_oldest_log':
                 _result = self._get_oldest_log(_database_item)
-
-            # handle db_version
-            elif _database_addon_fct == 'general_db_version':
-                _result = self.db_version
 
         # handle item starting with 'verbrauch_'
         elif _database_addon_fct.startswith('verbrauch_'):
@@ -569,20 +590,22 @@ class DatabaseAddOn(SmartPlugin):
 
         # handle everything else
         else:
-            self.logger.warning(f"handle_ondemand: Function {_database_addon_fct} for item {item.id()} not defined or found.")
+            self.logger.warning(f"handle_ondemand: Function '{_database_addon_fct}' for item {item.id()} not defined or found.")
+            return
 
         # log result
         if self.execute_debug:
-            self.logger.debug(f"handle_ondemand: result is {_result} for item '{item.id()}' with {_database_addon_fct=} _database_item={_database_item.id()}")
+            self.logger.debug(f"handle_ondemand: result is {_result} for item '{item.id()}' with '{_database_addon_fct=}'")
+
+        if _result is None:
+            self.logger.info(f"  Result was None; No item value will be set.")
+            return
 
         # set item value and put data into plugin_item_dict
-        if _result is not None:
-            self.logger.info(f"  Item value for '{item.id()}' will be set to {_result}")
-            item_config = self.get_item_config(item)
-            item_config.update({'value': _result})
-            item(_result, self.get_shortname())
-        else:
-            self.logger.info(f"  Result was NONE; No item value will be set.")
+        self.logger.info(f"  Item value for '{item.id()}' will be set to {_result}")
+        item_config = self.get_item_config(item)
+        item_config.update({'value': _result})
+        item(_result, self.get_shortname())
 
     def handle_onchange(self, updated_item: Item, value: float) -> None:
         """
@@ -728,6 +751,14 @@ class DatabaseAddOn(SmartPlugin):
         return self.get_items_for_mapping('static')
 
     @property
+    def _admin_items(self) -> list:
+        return self.get_items_for_mapping('admin')
+
+    @property
+    def _info_items(self) -> list:
+        return self.get_items_for_mapping('info')
+
+    @property
     def _database_items(self) -> list:
         return self.get_items_for_mapping('database')
 
@@ -788,7 +819,7 @@ class DatabaseAddOn(SmartPlugin):
         :rtype: list of tuples
         """
 
-        return self._handle_tagesmitteltemperatur(item=item, count=count)
+        return self._handle_tagesmitteltemperatur(_database_item=item, count=count)
 
     def fetch_log(self, func: str, item: Item, timeframe: str, start: int = None, end: int = 0, count: int = None, group: str = None, group2: str = None, ignore_value=None) -> Union[list, None]:
         """
@@ -1906,10 +1937,7 @@ class DatabaseAddOn(SmartPlugin):
         Query the database version and provide result
         """
 
-        query = 'SELECT VERSION()'
-        if self.db_driver.lower() == 'sqlite3':
-            query = 'SELECT sqlite_version()'
-
+        query = 'SELECT sqlite_version()' if self.db_driver.lower() == 'sqlite3' else 'SELECT VERSION()'
         return self._fetchone(query)[0]
 
     def _get_db_connect_timeout(self) -> str:

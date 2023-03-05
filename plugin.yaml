@@ -164,7 +164,6 @@ item_attributes:
             # general
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
-            - 'general_db_version'                          #str    ------      Version der verbundenen Datenbank
             # complex                       Hinweis: database_addon_params needed
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
@@ -369,8 +368,7 @@ item_attributes:
             # 
             - 'Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut -> num'
             - 'Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut -> list'
-            - 'Version der verbundenen Datenbank -> str'
-            # 
+            #
             - 'Berechnet die Kältesumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional, month=optional) -> num \n
                Berechnungszyklus = täglich'
             - 'Berechnet die Wärmesumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional, month=optional) -> num \n
@@ -492,6 +490,18 @@ item_attributes:
             - num 
             - list
             - list
+
+    database_addon_info:
+        type: str
+        description:
+            de: 'Info-Funktion des DB-Addon Plugins'
+            en: 'Info-Function of DB-Addon Plugins'
+        valid_list:
+            - 'db_version'                                  #str    ------      Version der verbundenen Datenbank
+        valid_list_description:
+            - 'Version der verbundenen Datenbank -> str'
+        valid_list_item_type:
+            - str
 
     database_addon_admin:
         type: str
