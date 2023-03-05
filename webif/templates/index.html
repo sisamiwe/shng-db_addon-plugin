@@ -281,7 +281,7 @@
                     <td class="py-1">{{ item._path }}</td>
                     <td class="py-1">{{ item._type }}</td>
                     <td class="py-1">{{ p.get_item_config(item._path)['attribute'] }}</td>
-                    <td class="py-1" style="text-align: center">{{ p.get_item_config(item)['cycle'] }}</td>
+                    <td class="py-1" style="text-align: center">{{ _(p.get_item_config(item)['cycle']|string) }}</td>
                     <td class="py-1" style="text-align: center">{% if p.get_item_config(item)['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
                     <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item._value | float }}</td>
                     <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
@@ -403,6 +403,11 @@
                 <td class="py-1">{{ _('_plg_item_dict') }}</td>
                 <td class="py-1">{{ len(p._plg_item_dict) }}</td>
                 <td class="py-1">{{ p._plg_item_dict }}</td>
+            </tr>
+            <tr><td></td>
+                <td class="py-1">{{ _('work_item_queue_thread') }}</td>
+                <td class="py-1">{{ len(p._plg_item_dict) }}</td>
+                <td class="py-1">{{ p.work_item_queue_thread.is_alive() }}</td>
             </tr>
         </tbody>
     </table>

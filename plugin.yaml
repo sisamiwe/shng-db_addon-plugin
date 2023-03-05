@@ -164,6 +164,7 @@ item_attributes:
             # general
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
+            - 'general_db_version'                          #str    ------      Version der verbundenen Datenbank
             # complex                       Hinweis: database_addon_params needed
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
@@ -368,6 +369,7 @@ item_attributes:
             # 
             - 'Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut -> num'
             - 'Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut -> list'
+            - 'Version der verbundenen Datenbank -> str'
             # 
             - 'Berechnet die Kältesumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional, month=optional) -> num \n
                Berechnungszyklus = täglich'
@@ -483,6 +485,7 @@ item_attributes:
 
             - num 
             - list
+            - str
 
             - num 
             - num 
@@ -499,17 +502,14 @@ item_attributes:
             - 'suspend'                                     #bool   ------      unterbricht die Aktivitäten des Plugin
             - 'recalc_all'                                  #bool   ------      Startet einen Neuberechnungslauf aller on-demand items
             - 'clean_cache_values'                          #bool   ------      Löscht Plugin-Cache und damit alle im Plugin zwischengespeicherten Werte
-            - 'db_version'                                  #str    ------      Version der verbundenen Datenbank
         valid_list_description:
             - 'unterbricht die Aktivitäten des Plugin -> bool'
             - 'Startet einen Neuberechnungslauf aller on-demand items -> bool'
             - 'Löscht Plugin-Cache und damit alle im Plugin zwischengespeicherten Werte -> bool'
-            - 'Version der verbundenen Datenbank -> str'
         valid_list_item_type:
             - bool 
             - bool 
             - bool 
-            - str 
 
     database_addon_params:
         type: str
