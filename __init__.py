@@ -117,9 +117,7 @@ class DatabaseAddOn(SmartPlugin):
             self.prepare_debug = True
 
         # init webinterface
-        if not self.init_webinterface(WebInterface):
-            self.logger.error(f"Init of WebIF failed. Plugin not loaded")
-            self._init_complete = False
+        self.init_webinterface(WebInterface)
 
     def run(self):
         """
@@ -317,7 +315,7 @@ class DatabaseAddOn(SmartPlugin):
                 item_config_data_dict.update({'startup': False})
 
             # add item to plugin item dict
-            self.add_item(item, mapping=_update_cycle, config_data_dict=item_config_data_dict)
+            self.add_item(item, config_data_dict=item_config_data_dict)
             item_config = self.get_item_config(item)
             item_config.update({'cycle': _update_cycle})
 
@@ -325,19 +323,19 @@ class DatabaseAddOn(SmartPlugin):
         elif self.has_iattr(item.conf, 'database_addon_info'):
             if self.parse_debug:
                 self.logger.debug(f"parse item: {item.id()} due to used item attribute 'database_addon_info'")
-            self.add_item(item, mapping='info', config_data_dict={'database_addon': 'info', 'attribute': f"info_{self.get_iattr_value(item.conf, 'database_addon_info').lower()}", 'startup': True})
+            self.add_item(item, config_data_dict={'database_addon': 'info', 'attribute': f"info_{self.get_iattr_value(item.conf, 'database_addon_info').lower()}", 'startup': True})
 
         # handle all items with database_addon_admin
         elif self.has_iattr(item.conf, 'database_addon_admin'):
             if self.parse_debug:
                 self.logger.debug(f"parse item: {item.id()} due to used item attribute 'database_addon_admin'")
-            self.add_item(item, mapping='admin', config_data_dict={'database_addon': 'admin', 'attribute': f"admin_{self.get_iattr_value(item.conf, 'database_addon_admin').lower()}"})
+            self.add_item(item, config_data_dict={'database_addon': 'admin', 'attribute': f"admin_{self.get_iattr_value(item.conf, 'database_addon_admin').lower()}"})
             return self.update_item
 
         # Reference to 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen
         elif self.has_iattr(item.conf, self.item_attribute_search_str) and self._get_database_addon_item(item):
             self.logger.debug(f"reference to update_item for item '{item}' will be set due to on-change")
-            self.add_item(item, mapping='database')
+            self.add_item(item, config_data_dict={'database_addon': 'database'})
             return self.update_item
 
     def update_item(self, item, caller=None, source=None, dest=None):
@@ -728,39 +726,39 @@ class DatabaseAddOn(SmartPlugin):
 
     @property
     def _onchange_items(self) -> list:
-        return self.get_items_for_mapping('on-change')
+        return self.get_item_list('cycle', 'on-change')
 
     @property
     def _daily_items(self) -> list:
-        return self.get_items_for_mapping('daily')
+        return self.get_item_list('cycle', 'daily')
 
     @property
     def _weekly_items(self) -> list:
-        return self.get_items_for_mapping('weekly')
+        return self.get_item_list('cycle', 'weekly')
 
     @property
     def _monthly_items(self) -> list:
-        return self.get_items_for_mapping('monthly')
+        return self.get_item_list('cycle', 'monthly')
 
     @property
     def _yearly_items(self) -> list:
-        return self.get_items_for_mapping('yearly')
+        return self.get_item_list('cycle', 'yearly')
 
     @property
     def _static_items(self) -> list:
-        return self.get_items_for_mapping('static')
+        return self.get_item_list('cycle', 'static')
 
     @property
     def _admin_items(self) -> list:
-        return self.get_items_for_mapping('admin')
+        return self.get_item_list('database_addon', 'admin')
 
     @property
     def _info_items(self) -> list:
-        return self.get_items_for_mapping('info')
+        return self.get_item_list('database_addon', 'info')
 
     @property
     def _database_items(self) -> list:
-        return self.get_items_for_mapping('database')
+        return self.get_item_list('database_addon', 'database')
 
     @property
     def _ondemand_items(self) -> list:
