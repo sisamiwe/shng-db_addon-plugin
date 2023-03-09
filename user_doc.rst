@@ -13,7 +13,7 @@ database_addon
    :align: left
 
 Was macht das Plugin?
----------------------
+=====================
 
 Das Plugin bietet eine Funktionserweiterung zum Database Plugin und ermöglicht die einfache Auswertung von Messdaten.
 Basierend auf den Daten in der Datenbank können bspw. Auswertungen zu Verbrauch (heute, gestern, ...) oder zu Minimal-
@@ -49,7 +49,8 @@ Bsp:
 
 
 Anforderungen
--------------
+=============
+
 Es muss das Database Plugin konfiguriert und aktiv sein. In den Plugin Parametern ist der Name der Konfiguration des
 Database-Plugins anzugeben. Damit ist auch eine etwaig definierte Instanz des Database-Plugins definiert.
 Die Konfiguration des DatabaseAddon-Plugin erfolgt automatisch bei Start.
@@ -74,28 +75,29 @@ Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den exi
 
 
 Konfiguration
--------------
+=============
 
 plugin.yaml
-^^^^^^^^^^^
+-----------
 
 Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
 
 
 items.yaml
-^^^^^^^^^^
+----------
 
 Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
 
 
 Funktionen
-^^^^^^^^^^
+----------
 
 Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
 
 
 Hinweise
---------
+========
+
  - Das Plugin startet die Berechnungen der Werte nach einer gewissen (konfigurierbaren) Zeit (Attribut `startup_run_delay`) nach dem Start von shNG, um den Startvorgang nicht zu beeinflussen.
  - Bei Start werden automatisch nur die Items berechnet, für das das Attribute `database_addon_startup` gesetzt wurde. Alle anderen Items werden erst zu konfigurierten Zeit berechnet. Über das WebIF kann die Berechnung aller definierten Items ausgelöst werden.
  - Für sogenannte `on_change` Items, also Items, deren Berechnung bis zum Jetzt (bspw. verbrauch-heute) gehen, wird die Berechnung immer bei eintreffen eines neuen Wertes gestartet. Zu Reduktion der Belastung auf die Datenbank werden die Werte für das Ende der letzten Periode gecached.
@@ -109,10 +111,10 @@ Hinweise
 
 
 Beispiele
----------
+=========
 
 Verbrauch
-^^^^^^^^^
+---------
 
 Soll bspw. der Verbrauch von Wasser ausgewertet werden, so ist dies wie folgt möglich:
 
@@ -134,7 +136,7 @@ Die Werte des Wasserzählerstandes werden in die Datenbank geschrieben und darau
 'db_addon.verbrauch_1' und 'db_addon.verbrauch_2' stellen entsprechende Items für die Verbrauchsauswerten zur Verfügung.
 
 minmax
-^^^^^^
+------
 
 Soll bspw. die minimalen und maximalen Temperaturen ausgewertet werden, kann dies so umgesetzt werden:
 
@@ -158,7 +160,7 @@ Die Temperaturwerte werden in die Datenbank geschrieben und darauf basierend aus
 
 
 Web Interface
--------------
+=============
 
 Das WebIF stellt neben der Ansicht verbundener Items und deren Parameter und Werte auch Funktionen für die
 Administration des Plugins bereit.
@@ -177,13 +179,13 @@ aufgrund vieler Leseanfragen führen.
 
 
 DatabaseAddOn Items
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 Dieser Reiter des Webinterface zeigt die Items an, für die ein DatabaseAddon Attribut konfiguriert ist.
 
 
 DatabaseAddOn Maintenance
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
 
 Das Webinterface zeigt detaillierte Informationen über die im Plugin verfügbaren Daten an.
 Dies dient der Maintenance bzw. Fehlersuche. Dieser Tab ist nur bei Log-Level "Debug" verfügbar.
