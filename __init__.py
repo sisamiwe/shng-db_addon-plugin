@@ -773,6 +773,7 @@ class DatabaseAddOn(SmartPlugin):
     def gruenlandtemperatursumme(self, item: Item, year: Union[int, str]) -> Union[int, None]:
         """
         Query database for gruenlandtemperatursumme for given year or year/month
+        https://de.wikipedia.org/wiki/Gr%C3%BCnlandtemperatursumme
 
         :param item: item object or item_id for which the query should be done
         :param year: year the gruenlandtemperatursumme should be calculated for

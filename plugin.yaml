@@ -141,7 +141,7 @@ item_attributes:
             - 'minmax_jahr_minus1_min'                      #num    yearly      Minimalwert Vorjahr (aktuelles Jahr -1 Jahr)
             - 'minmax_jahr_minus1_max'                      #num    yearly      Maximalwert Vorjahr (aktuelles Jahr -1 Jahr)
             - 'minmax_jahr_minus1_avg'                      #num    yearly      Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr)
-            # series
+            # Serie
             - 'serie_minmax_monat_min_15m'                  #list   monthly     monatlicher Minimalwert der letzten 15 Monate (gleitend)
             - 'serie_minmax_monat_max_15m'                  #list   monthly     monatlicher Maximalwert der letzten 15 Monate (gleitend)
             - 'serie_minmax_monat_avg_15m'                  #list   monthly     monatlicher Mittelwert der letzten 15 Monate (gleitend)
@@ -161,10 +161,10 @@ item_attributes:
             - 'serie_kaeltesumme_monat_24m'                 #list   monthly     monatliche Kältesumme der letzten 24 Monate
             - 'serie_tagesmittelwert_stunde_0d'             #list   daily       Stundenmittelwert für den aktuellen Tag
             - 'serie_tagesmittelwert_tag_stunde_30d'        #list   daily       Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde
-            # general
+            # Allgemein
             - 'general_oldest_value'                        #num    ------      Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut
             - 'general_oldest_log'                          #list   ------      Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut
-            # complex                       Hinweis: database_addon_params needed
+            # Komplex                       Hinweis: database_addon_params needed
             - 'kaeltesumme'                                 #num    daily       Berechnet die Kältesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'waermesumme'                                 #num    daily       Berechnet die Wärmesumme für einen Zeitraum, database_addon_params: (year=mandatory, month=optional)
             - 'gruenlandtempsumme'                          #num    daily       Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params: (year=mandatory)
@@ -326,7 +326,7 @@ item_attributes:
                Berechnungszyklus = jährlich'
             - 'Durchschnittswert Vorjahr (aktuelles Jahr -1 Jahr) -> num \n
                Berechnungszyklus = jährlich'
-            # series
+            # Serie
             - 'monatlicher Minimalwert der letzten 15 Monate (gleitend) -> list \n
                Berechnungszyklus = monatlich'
             - 'monatlicher Maximalwert der letzten 15 Monate (gleitend) -> list \n
@@ -365,15 +365,15 @@ item_attributes:
                Berechnungszyklus = täglich'
             - 'Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde) -> list \n
                Berechnungszyklus = täglich'
-            # 
+            # Allgemein
             - 'Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut -> num'
             - 'Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut -> list'
-            #
+            # Komplex
             - 'Berechnet die Kältesumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional, month=optional) -> num \n
                Berechnungszyklus = täglich'
             - 'Berechnet die Wärmesumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional, month=optional) -> num \n
                Berechnungszyklus = täglich'
-            - 'Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional) -> num \n
+            - 'Berechnet die Grünlandtemperatursumme für einen Zeitraum, database_addon_params sind für die Definition des Zeitraums notwendig (year=optional) siehe https://de.wikipedia.org/wiki/Gr%C3%BCnlandtemperatursumme -> num \n
                Berechnungszyklus = täglich'
             - 'Berechnet die Tagesmitteltemperatur auf basis der stündlichen Durchschnittswerte eines Tages für die angegebene Anzahl von Tagen (days=optional) -> num \n
                Berechnungszyklus = täglich'
@@ -381,6 +381,7 @@ item_attributes:
                Berechnungszyklus = group'
 
         valid_list_item_type:
+            # Verbrauch
             - num 
             - num 
             - num 
@@ -410,7 +411,7 @@ item_attributes:
             - num 
             - num 
             - num 
-
+            # Zaehlerstand
             - num 
             - num 
             - num 
@@ -421,7 +422,7 @@ item_attributes:
             - num 
             - num 
             - num 
-
+            # Wertehistorie min/max
             - num 
             - num 
             - num 
@@ -460,7 +461,7 @@ item_attributes:
             - num 
             - num 
             - num 
-
+            # Serie
             - list
             - list
             - list
@@ -480,11 +481,10 @@ item_attributes:
             - list
             - list
             - list
-
+            # Allgemein
             - num 
             - list
-            - str
-
+            # Komplex
             - num 
             - num 
             - num 
