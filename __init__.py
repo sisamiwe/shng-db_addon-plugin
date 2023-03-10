@@ -184,6 +184,48 @@ class DatabaseAddOn(SmartPlugin):
                         can be sent to the knx with a knx write function within the knx plugin.
         """
 
+        def get_database_item() -> Item:
+            """
+            Returns item from shNG config which is an item with database attribut valid for current db_addon item
+            """
+
+            _lookup_item = item
+
+            for i in range(3):
+                if self.has_iattr(_lookup_item.conf, self.item_attribute_search_str):
+                    return _lookup_item
+                else:
+                    self.logger.debug(f"Attribut '{self.item_attribute_search_str}' has not been found for item={item.path()} {i + 1} level above item.")
+                    _lookup_item = _lookup_item.return_parent()
+
+        def get_database_addon_item() -> bool:
+            """
+            Returns item from shNG config which is item with database_addon attribut valid for database item
+
+            """
+
+            for child in item.return_children():
+                if _check_database_addon_fct(child):
+                    return True
+
+                for child_child in child.return_children():
+                    if _check_database_addon_fct(child_child):
+                        return True
+
+                    for child_child_child in child_child.return_children():
+                        if _check_database_addon_fct(child_child_child):
+                            return True
+
+            return False
+
+        def _check_database_addon_fct(check_item) -> bool:
+            if self.has_iattr(check_item.conf, 'database_addon_fct'):
+                __database_addon_fct = self.get_iattr_value(check_item.conf, 'database_addon_fct').lower()
+                if onchange_attribute(__database_addon_fct):
+                    self.logger.debug(f"database_addon item for database item {item.id()} found.")
+                    return True
+            return False
+
         # handle all items with database_addon_fct
         if self.has_iattr(item.conf, 'database_addon_fct'):
 
@@ -205,7 +247,7 @@ class DatabaseAddOn(SmartPlugin):
                 _database_addon_ignore_value = None
 
             # get database item
-            _database_item = self._get_database_item(item)
+            _database_item = get_database_item()
 
             # return if no database_item
             if _database_item is None:
@@ -333,7 +375,7 @@ class DatabaseAddOn(SmartPlugin):
             return self.update_item
 
         # Reference to 'update_item' für alle Items mit Attribut 'database', um die on_change Items zu berechnen
-        elif self.has_iattr(item.conf, self.item_attribute_search_str) and self._get_database_addon_item(item):
+        elif self.has_iattr(item.conf, self.item_attribute_search_str) and get_database_addon_item():
             self.logger.debug(f"reference to update_item for item '{item}' will be set due to on-change")
             self.add_item(item, config_data_dict={'database_addon': 'database'})
             return self.update_item
@@ -1452,59 +1494,6 @@ class DatabaseAddOn(SmartPlugin):
         else:
             item_id = None
         return item_id
-
-    def _get_database_item(self, item: Item) -> Item:
-        """
-        Returns item from shNG config which is item with database attribut valid for current db_addon item
-
-        :param item: item, the corresponding database item should be looked for
-
-        """
-
-        _database_item = None
-        _lookup_item = item
-
-        for i in range(3):
-            if self.has_iattr(_lookup_item.conf, self.item_attribute_search_str):
-                _database_item = _lookup_item
-                break
-            else:
-                self.logger.debug(f"Attribut '{self.item_attribute_search_str}' has not been found for item={item.path()} {i+1} level above item.")
-                _lookup_item = _lookup_item.return_parent()
-
-        return _database_item
-
-    def _get_database_addon_item(self, item: Item) -> bool:
-        """
-        Returns item from shNG config which is item with database_addon attribut valid for database item
-
-        :param item: item, the corresponding database_addon item should be looked for
-
-        """
-
-        self.logger.debug(f"_get_database_addon_item called for item {item.id()}")
-
-        def _check_database_addon_fct(check_item):
-            if self.has_iattr(check_item.conf, 'database_addon_fct'):
-                _database_addon_fct = self.get_iattr_value(check_item.conf, 'database_addon_fct').lower()
-                if onchange_attribute(_database_addon_fct):
-                    self.logger.debug(f"database_addon item for database item {item.id()} found.")
-                    return True
-            return False
-
-        for child in item.return_children():
-            if _check_database_addon_fct(child):
-                return True
-
-            for child_child in child.return_children():
-                if _check_database_addon_fct(child_child):
-                    return True
-
-                for child_child_child in child_child.return_children():
-                    if _check_database_addon_fct(child_child_child):
-                        return True
-
-        return False
 
     def _handle_query_result(self, query_result: Union[list, None]) -> list:
         """

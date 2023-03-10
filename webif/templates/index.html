@@ -1,7 +1,8 @@
 {% extends "base_plugin.html" %}
 
 {% set logo_frame = false %}
-
+{% set row_count = true %}
+{% set initial_update = true %}
 <!-- set update_interval to a value > 0 (in milliseconds) to enable periodic data updates -->
 {% set update_interval = [(((10 * item_count) / 1000) | round | int) * 1000, 5000]|max %}
 
@@ -65,7 +66,7 @@
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
-
+            $('#maintable').DataTable().draw(false);
             shngInsertText('queue_length', objResponse['queue_length'], null, 2);
             shngInsertText('active_queue_item', objResponse['active_queue_item'], null, 2);
 
@@ -269,9 +270,7 @@
 
 <!-- Content block for the first tab of the Webinterface -->
 {% block bodytab1 %}
-<script>
-    shngGetUpdatedData();
-</script>
+
 <div class="container-fluid m-2 table-resize">
 	<table id="maintable" class="dataTableAdditional">
         <tbody>
