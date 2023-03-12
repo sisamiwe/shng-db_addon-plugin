@@ -578,7 +578,7 @@ class DatabaseAddOn(SmartPlugin):
         # handle kaeltesumme
         elif _database_addon_fct == 'kaeltesumme':
             _database_addon_params = item_config['params']
-            _database_addon_params['item'] = item_config['database_item']
+            _database_addon_params['_database_item'] = item_config['database_item']
 
             if self.execute_debug:
                 self.logger.debug(f"handle_ondemand: {_database_addon_fct=} detected; {_database_addon_params=}")
@@ -588,7 +588,7 @@ class DatabaseAddOn(SmartPlugin):
         # handle waermesumme
         elif _database_addon_fct == 'waermesumme':
             _database_addon_params = item_config['params']
-            _database_addon_params['item'] = item_config['database_item']
+            _database_addon_params['_database_item'] = item_config['database_item']
 
             if self.execute_debug:
                 self.logger.debug(f"handle_ondemand: {_database_addon_fct=} detected; {_database_addon_params=}")
@@ -598,7 +598,7 @@ class DatabaseAddOn(SmartPlugin):
         # handle gruenlandtempsumme
         elif _database_addon_fct == 'gruenlandtempsumme':
             _database_addon_params = item_config['params']
-            _database_addon_params['item'] = item_config['database_item']
+            _database_addon_params['_database_item'] = item_config['database_item']
 
             if self.execute_debug:
                 self.logger.debug(f"handle_ondemand: {_database_addon_fct=} detected; {_database_addon_params=}")
@@ -608,7 +608,7 @@ class DatabaseAddOn(SmartPlugin):
         # handle tagesmitteltemperatur
         elif _database_addon_fct == 'tagesmitteltemperatur':
             _database_addon_params = item_config['params']
-            _database_addon_params['item'] = item_config['database_item']
+            _database_addon_params['_database_item'] = item_config['database_item']
 
             if self.execute_debug:
                 self.logger.debug(f"handle_ondemand: {_database_addon_fct=} detected; {_database_addon_params=}")
@@ -618,7 +618,7 @@ class DatabaseAddOn(SmartPlugin):
         # handle db_request
         elif _database_addon_fct == 'db_request':
             _database_addon_params = item_config['params']
-            _database_addon_params['item'] = item_config['database_item']
+            _database_addon_params['îtem'] = item_config['database_item']
 
             if self.execute_debug:
                 self.logger.debug(f"handle_ondemand: {_database_addon_fct=} detected with {_database_addon_params=}")

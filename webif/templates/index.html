@@ -62,7 +62,14 @@
 			var objResponse = JSON.parse(response);
 			myProto = document.getElementById(dataSet);
 			for (item in objResponse['items']) {
-                shngInsertText(item+'_value', objResponse['items'][item]['value'], 'maintable', 5);
+			    value = String(objResponse['items'][item]['value'])
+
+                var length = 20;
+                var new_value = value.length > length ?
+                    value.substring(0, length - 3) + " ..." :
+                    value;
+
+                shngInsertText(item+'_value', new_value, 'maintable', 5);
                 shngInsertText(item+'_last_update', objResponse['items'][item]['last_update'], 'maintable');
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
@@ -104,20 +111,20 @@
           pageLength: webif_pagelength,
           columnDefs: [
           {
-  					title: '',
-  					targets: [0], "className": ""
+            title: '',
+            targets: [0], "className": ""
   				},
           {
-  					title: '{{ _('Item') }}',
-  					targets: [1], "className": "item"
+            title: '{{ _('Item') }}',
+            targets: [1], "className": "item"
   				},
           {
-  					title: '{{ _('Typ') }}',
-  					targets: [2], "className": "type"
+            title: '{{ _('Typ') }}',
+            targets: [2], "className": "type"
   				},
           {
-  					title: '{{ _('AddOn Attribute') }}',
-  					targets: [3], "className": "attribute"
+            title: '{{ _('AddOn Attribute') }}',
+            targets: [3], "className": "attribute"
   				},
           {
             title: '{{ _('Update Cycle') }}',
@@ -128,7 +135,7 @@
             targets: [5], "className": "init"
           },
           {
-            title: '{{ _('Wert') }}',
+            title: '{{ _('Wert') }}', 
             targets: [6], "className": "truncate value"
           },
           {
