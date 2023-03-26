@@ -73,8 +73,8 @@ class WebInterface(SmartPluginWebIf):
         return tmpl.render(p=self.plugin,
                            webif_pagelength=self.plugin.get_parameter_value('webif_pagelength'),
                            suspended='true' if self.plugin.suspended else 'false',
-                           items=self.plugin.get_item_list('database_addon', 'function'),
-                           item_count=len(self.plugin.get_item_list('database_addon', 'function')),
+                           items=self.plugin.get_item_list('db_addon', 'function'),
+                           item_count=len(self.plugin.get_item_list('db_addon', 'function')),
                            plugin_shortname=self.plugin.get_shortname(),
                            plugin_version=self.plugin.get_version(),
                            plugin_info=self.plugin.get_info(),
@@ -96,7 +96,7 @@ class WebInterface(SmartPluginWebIf):
             data = dict()
             data['items'] = {}
 
-            for item in self.plugin.get_item_list('database_addon', 'function'):
+            for item in self.plugin.get_item_list('db_addon', 'function'):
                 data['items'][item.id()] = {}
                 data['items'][item.id()]['value'] = item.property.value
                 data['items'][item.id()]['last_update'] = item.property.last_update.strftime('%d.%m.%Y %H:%M:%S')
@@ -104,7 +104,7 @@ class WebInterface(SmartPluginWebIf):
 
             data['plugin_suspended'] = self.plugin.suspended
             data['maintenance'] = True if self.plugin.log_level == 10 else False
-            data['queue_length'] = self.plugin.queue_backlog
+            data['queue_length'] = self.plugin.queue_backlog()
             data['active_queue_item'] = self.plugin.active_queue_item
 
             try:

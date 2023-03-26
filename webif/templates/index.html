@@ -64,7 +64,7 @@
 			for (item in objResponse['items']) {
 			    value = String(objResponse['items'][item]['value'])
 
-                var length = 20;
+                var length = 40;
                 var new_value = value.length > length ?
                     value.substring(0, length - 3) + " ..." :
                     value;
@@ -74,7 +74,8 @@
                 shngInsertText(item+'_last_change', objResponse['items'][item]['last_change'], 'maintable');
             }
             $('#maintable').DataTable().draw(false);
-            shngInsertText('queue_length', objResponse['queue_length'], null, 2);
+            item_count = String(objResponse['queue_length']) + ' Items';
+            shngInsertText('queue_length', item_count, null, 2);
             shngInsertText('active_queue_item', objResponse['active_queue_item'], null, 2);
 
       if (objResponse['plugin_suspended'] === false) {
@@ -232,10 +233,10 @@
 			{% endif %}
         {% endfor %}
         <tr>
-            <td class="py-1" width="150px"><strong>{{ _('aktives Item') }}</strong></td>
+            <td class="py-1" width="150px"><strong>{{ _('Item in Berechnung') }}</strong></td>
             <td class="py-1" id="active_queue_item">{{ p.active_queue_item }}</td>
             <td class="py-1" width="150px"><strong>{{ _('Arbeitsvorrat') }}</strong></td>
-            <td class="py-1" id="queue_length" colspan="3">{{ p.queue_backlog }} items </td>
+            <td class="py-1" id="queue_length" colspan="3">{{ p.queue_backlog }} {{ _('Items') }} </td>
         </tr>
 	</tbody>
 </table>
@@ -266,7 +267,6 @@
 {% endif %}
 {% set tab3title = "<strong>" ~ plugin_shortname ~ " API/Doku</strong>" %}
 
-
 <!-- Set the tab that will be visible on start, if another tab that 1 is wanted (1 - 3) -->
 {% if item_count > 0 %}
 	{% set start_tab = 1 %}
@@ -289,7 +289,7 @@
                     <td class="py-1">{{ p.get_item_config(item._path)['attribute'] }}</td>
                     <td class="py-1" style="text-align: center">{{ _(p.get_item_config(item)['cycle']|string) }}</td>
                     <td class="py-1" style="text-align: center">{% if p.get_item_config(item)['startup'] %}{{ _('Ja') }}{% else %}{{ _('Nein') }}{% endif %}</td>
-                    <td class="py-1" id="{{ item._path }}_value" style="text-align: right">.{{ item._value | float }}</td>
+                    <td class="py-1" id="{{ item._path }}_value" style="text-align: right">{{ item._value | float }}</td>
                     <td class="py-1" id="{{ item._path }}_last_update" style="text-align: center">{{ item.property.last_update.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                     <td class="py-1" id="{{ item._path }}_last_change" style="text-align: center">{{ item.property.last_change.strftime('%d.%m.%Y %H:%M:%S') }}</td>
                 </tr>
@@ -317,43 +317,43 @@
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('10_daily_items') }}</td>
-                <td class="py-1">{{ len(p._daily_items) }}</td>
-                <td class="py-1">{{ p._daily_items }}</td>
+                <td class="py-1">{{ len(p._daily_items()) }}</td>
+                <td class="py-1">{{ p._daily_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('11_weekly_items') }}</td>
-                <td class="py-1">{{ len(p._weekly_items) }}</td>
-                <td class="py-1">{{ p._weekly_items }}</td>
+                <td class="py-1">{{ len(p._weekly_items()) }}</td>
+                <td class="py-1">{{ p._weekly_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('12_monthly_items') }}</td>
-                <td class="py-1">{{ len(p._monthly_items) }}</td>
-                <td class="py-1">{{ p._monthly_items }}</td>
+                <td class="py-1">{{ len(p._monthly_items()) }}</td>
+                <td class="py-1">{{ p._monthly_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('13_yearly_items') }}</td>
-                <td class="py-1">{{ len(p._yearly_items) }}</td>
-                <td class="py-1">{{ p._yearly_items }}</td>
+                <td class="py-1">{{ len(p._yearly_items()) }}</td>
+                <td class="py-1">{{ p._yearly_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('14_onchange_items') }}</td>
-                <td class="py-1">{{ len(p._onchange_items) }}</td>
-                <td class="py-1">{{ p._onchange_items }}</td>
+                <td class="py-1">{{ len(p._onchange_items()) }}</td>
+                <td class="py-1">{{ p._onchange_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('15_startup_items') }}</td>
-                <td class="py-1">{{ len(p._startup_items) }}</td>
-                <td class="py-1">{{ p._startup_items }}</td>
+                <td class="py-1">{{ len(p._startup_items()) }}</td>
+                <td class="py-1">{{ p._startup_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('17_database_items') }}</td>
-                <td class="py-1">{{ len(p._database_items) }}</td>
-                <td class="py-1">{{ p._database_items }}</td>
+                <td class="py-1">{{ len(p._database_items()) }}</td>
+                <td class="py-1">{{ p._database_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('16_static_items') }}</td>
-                <td class="py-1">{{ len(p._static_items) }}</td>
-                <td class="py-1">{{ p._static_items }}</td>
+                <td class="py-1">{{ len(p._static_items()) }}</td>
+                <td class="py-1">{{ p._static_items() }}</td>
             </tr>
             <tr><td></td>
                 <td class="py-1">{{ _('32_item_cache') }}</td>
@@ -437,6 +437,7 @@
                         <tr>
                             <th>{{_('Item Attributwert')}}</th>
                             <th>{{_('Item_Type')}}</th>
+                            <th>{{_('Berechnung')}}</th>
                             <th>{{_('Beschreibung')}}</th>
                         </tr>
                     </thead>
@@ -445,7 +446,8 @@
                             <tr>
                                 <td class="py-1">{{ entry }}</td>
                                 <td class="py-1">{% if 'valid_list_item_type' in itemdefinitions_dict %} {{ itemdefinitions_dict.valid_list_item_type[loop.index0] }} {% else %} {{_('-')}} {% endif %}</td>
-                                <td class="py-1">{% if 'valid_list_description' in itemdefinitions_dict %} {{ itemdefinitions_dict.valid_list_description[loop.index0] |string }} {% else %} {{_('-')}} {% endif %}</td>
+                                <td class="py-1">{% if 'valid_list_calculation' in itemdefinitions_dict %} {{ _(itemdefinitions_dict.valid_list_calculation[loop.index0] | string) }} {% else %} {{_('-')}} {% endif %}</td>
+                                <td class="py-1">{% if 'valid_list_description' in itemdefinitions_dict %} {{ itemdefinitions_dict.valid_list_description[loop.index0] | string }} {% else %} {{_('-')}} {% endif %}</td>
                             </tr>
                          {% endfor %}
                     </tbody>
@@ -490,5 +492,6 @@
           {% endif %}
         </div>
     {% endfor %}
+    </div>
 </div>
 {% endblock bodytab3 %}
