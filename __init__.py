@@ -1740,7 +1740,7 @@ class DatabaseAddOn(SmartPlugin):
 
             # create list of list like database query response
             temp_list = _create_list_timestamp_minmaxtemp()
-            self.logger.warning(f"{temp_list=}")
+            self.logger.debug(f"{temp_list=}")
             return temp_list
 
         else:
