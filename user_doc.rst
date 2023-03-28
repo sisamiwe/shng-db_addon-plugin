@@ -1,9 +1,10 @@
+
 .. index:: Plugins; db_addon (Datenbank Unterstützung)
 .. index:: db_addon
 
-==============
+========
 db_addon
-==============
+========
 
 .. image:: webif/static/img/plugin_logo.png
    :alt: plugin logo
@@ -12,8 +13,6 @@ db_addon
    :scale: 50 %
    :align: left
 
-Was macht das Plugin?
-=====================
 
 Das Plugin bietet eine Funktionserweiterung zum Database Plugin und ermöglicht die einfache Auswertung von Messdaten.
 Basierend auf den Daten in der Datenbank können bspw. Auswertungen zu Verbrauch (heute, gestern, ...) oder zu Minimal-
@@ -47,6 +46,7 @@ Bsp:
                 type: num
                 db_addon_fct: heute_minus1_max
 
+|
 
 Anforderungen
 =============
@@ -59,9 +59,20 @@ Die Konfiguration des DatabaseAddon-Plugin erfolgt automatisch bei Start.
 Hinweis: Das Plugin selbst ist aktuell nicht multi-instance fähig. Das bedeutet, dass das Plugin aktuell nur eine Instanz
 des Database-Plugin abgebunden werden kann.
 
+|
+
+Konfiguration
+=============
+
+Diese Plugin Parameter und die Informationen zur Item-spezifischen Konfiguration des Plugins sind
+unter :doc:`/plugins_doc/config/db_addon` beschrieben.
+
+mysql Datenbank
+---------------
 
 Bei Verwendung von mysql sollten einige Variablen der Datenbank angepasst werden, so dass die komplexeren Anfragen
 ohne Fehler bearbeitet werden.
+
 Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den existierenden ergänzen.
 
 
@@ -73,27 +84,7 @@ Dazu folgenden Block am Ende der Datei */etc/mysql/my.cnf* einfügen bzw den exi
     wait_timeout = 28800
     interactive_timeout = 28800
 
-
-Konfiguration
-=============
-
-plugin.yaml
------------
-
-Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
-
-
-items.yaml
-----------
-
-Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
-
-
-Funktionen
-----------
-
-Bitte die Dokumentation lesen, die aus den Metadaten der plugin.yaml erzeugt wurde.
-
+|
 
 Hinweise
 ========
@@ -109,6 +100,7 @@ Hinweise
  - Das Plugin enthält sehr ausführliche Logginginformation. Bei unerwartetem Verhalten, den LogLevel entsprechend anpassen, um mehr information zu erhalten.
  - Berechnungen des Plugins können im WebIF unterbrochen werden. Auch das gesamte Plugin kann pausiert werden. Dies kann be starker Systembelastung nützlich sein.
 
+|
 
 Beispiele
 =========
@@ -158,6 +150,7 @@ Soll bspw. die minimalen und maximalen Temperaturen ausgewertet werden, kann die
 Die Temperaturwerte werden in die Datenbank geschrieben und darauf basierend ausgewertet. Die structs
 'db_addon.minmax_1' und 'db_addon.minmax_2' stellen entsprechende Items für die min/max Auswertung zur Verfügung.
 
+|
 
 Web Interface
 =============
@@ -178,14 +171,63 @@ Achtung: Das Auslösen einer kompletten Neuberechnung aller Items kann zu einer 
 aufgrund vieler Leseanfragen führen.
 
 
-DatabaseAddOn Items
--------------------
+db_addon Items
+--------------
 
 Dieser Reiter des Webinterface zeigt die Items an, für die ein DatabaseAddon Attribut konfiguriert ist.
 
 
-DatabaseAddOn Maintenance
--------------------------
+db_addon Maintenance
+--------------------
 
 Das Webinterface zeigt detaillierte Informationen über die im Plugin verfügbaren Daten an.
 Dies dient der Maintenance bzw. Fehlersuche. Dieser Tab ist nur bei Log-Level "Debug" verfügbar.
+
+
+Erläuterungen zu Temperatursummen
+=================================
+
+
+Grünlandtemperatursumme
+-----------------------
+
+Beim Grünland wird die Wärmesumme nach Ernst und Loeper benutzt, um den Vegetationsbeginn und somit den Termin von Düngungsmaßnahmen zu bestimmen. 
+Dabei erfolgt die Aufsummierung der Tagesmitteltemperaturen über 0 °C, wobei der Januar mit 0.5 und der Februar mit 0.75 gewichtet wird. 
+Bei einer Wärmesumme von 200 Grad ist eine Düngung angesagt.
+
+siehe: https://www.woellsdorf-wetter.de/info/agrarmeteorologie.html
+
+
+Wachstumsgradtag
+----------------
+Der Begriff Wachstumsgradtage (WGT) ist ein Überbegriff für verschiedene Größen. 
+Gemeinsam ist ihnen, daß zur Berechnung eine Lufttemperatur von einem Schwellenwert subtrahiert wird. 
+Je nach Fragestellung und Pflanzenart werden der Schwellenwert unterschiedlich gewählt und die Temperatur unterschiedlich bestimmt. 
+Verfügbar sind die Berechnung über "einfachen Durchschnitt der Tagestemperaturen" und "modifizierten Durchschnitt der Tagestemperaturen".
+
+siehe https://de.wikipedia.org/wiki/Wachstumsgradtag
+
+
+Wärmesumme
+----------
+
+Die Wärmesumme soll eine Aussage über den Sommer und die Pflanzenreife liefern. Es gibt keine eindeutige Definition dier Größe "Wärmesumme".
+Berechnet wird die Wärmesumme als Summe aller Tagesmitteltemperaturen über einem Schwellenwert ab dem 1.1. des Jahres. 
+
+siehe https://de.wikipedia.org/wiki/W%C3%A4rmesumme
+
+
+Kältesumme
+----------
+
+Die Kältesumme soll eine Aussage über die Härte des Winters liefern. 
+Berechnet wird die Kältesumme als Summe aller negtiven Tagesmitteltemperaturenab dem 21.9. des Jahres bis 31.3. des Folgejahres. 
+
+siehe https://de.wikipedia.org/wiki/K%C3%A4ltesumme
+
+
+
+Tagesmitteltemperatur
+---------------------
+
+Die Tagesmitteltemperatur wird auf Basis der stündlichen Durchschnittswerte eines Tages (aller in der DB enthaltenen Datensätze) für die angegebene Anzahl von Tagen (days=optional) berechnet.

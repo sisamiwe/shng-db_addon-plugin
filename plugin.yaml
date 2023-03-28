@@ -275,11 +275,11 @@ item_attributes:
             - 'Stundenmittelwert pro Tag der letzten 30 Tage (bspw. zur Berechnung der Tagesmitteltemperatur basierend auf den Mittelwert der Temperatur pro Stunde'
             - 'Ausgabe des ältesten Wertes des entsprechenden "Parent-Items" mit database Attribut'
             - 'Ausgabe des Timestamp des ältesten Eintrages des entsprechenden "Parent-Items" mit database Attribut'
-            - 'Berechnet die Kältesumme für einen Zeitraum, db_addon_params: (year=mandatory, month=optional)'
-            - 'Berechnet die Wärmesumme für einen Zeitraum, db_addon_params: (year=mandatory, month=optional)'
+            - 'Berechnet die Kältesumme für einen Zeitraum, db_addon_params: (year=mandatory: int, month=optional: str)'
+            - 'Berechnet die Wärmesumme für einen Zeitraum, db_addon_params: (year=mandatory: int, month=optional: str, threshold=optional: int)'
             - 'Berechnet die Grünlandtemperatursumme für einen Zeitraum, db_addon_params: (year=mandatory)'
             - 'Berechnet die Tagesmitteltemperatur auf Basis der stündlichen Durchschnittswerte eines Tages für die angegebene Anzahl von Tagen (timeframe=day, count=integer)'
-            - 'Berechnet die Wachstumsgradtage auf Basis der stündlichen Durchschnittswerte eines Tages für das laufende Jahr mit an Angabe des Temperaturschwellenwertes (threshold=Schwellentemperatur)'
+            - 'Berechnet die Wachstumsgradtage auf Basis der stündlichen Durchschnittswerte eines Tages für das laufende Jahr mit an Angabe des Temperaturschwellenwertes (threshold=Schwellentemperatur: int)'
             - 'Abfrage der DB: db_addon_params: (func=mandatory, item=mandatory, timespan=mandatory, start=optional, end=optional, count=optional, group=optional, group2=optional)'
         valid_list_item_type:
             - 'num'
@@ -551,6 +551,12 @@ item_attributes:
         description:
             de: 'Wert der bei Abfrage bzw. Auswertung der Datenbank für diese Item ignoriert werden soll'
             en: 'Value which will be ignored at database query'
+
+    db_addon_database_item:
+        type: str
+        description:
+            de: 'Optional: Pfad des zu verwendenden Items mit Database Attribut'
+            en: 'Optional: Path of item with database attribut to be used'
 
 item_structs:
     verbrauch_1:
