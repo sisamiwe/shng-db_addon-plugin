@@ -48,14 +48,6 @@ MONTH = 'month'
 YEAR = 'year'
 
 
-# Changes:
-    # - allow db_addon item to be written in database itself
-    # - interoduce new parameter to configure database-item explicitely
-    # - add methods to calculate tagesmitteltemperatur
-    # - change Wärmesumme to use whole year
-    # - introduce Wachstumsgradtage
-
-
 class DatabaseAddOn(SmartPlugin):
     """
     Main class of the Plugin. Does all plugin specific stuff and provides the update functions for the items
@@ -1436,6 +1428,7 @@ class DatabaseAddOn(SmartPlugin):
             if raw_data == [[None, None]]:
                 return
 
+            # akkumulieren alle negativen Werte
             ks = 0
             for entry in raw_data:
                 if entry[1] < 0:
@@ -1503,9 +1496,10 @@ class DatabaseAddOn(SmartPlugin):
             if raw_data == [[None, None]]:
                 return
 
+            # akkumulieren alle Werte, größer/gleich Schwellenwert
             ws = 0
             for entry in raw_data:
-                if entry[1] > threshold:
+                if entry[1] >= threshold:
                     ws += entry[1]
             return int(round(ws, 0))
 
@@ -1556,16 +1550,17 @@ class DatabaseAddOn(SmartPlugin):
             if raw_data == [[None, None]]:
                 return
 
+            # akkumulieren alle Werte, größer/gleich Schwellenwert, im Januar gewichtet mit 50%, im Februar mit 75%
             try:
                 gts = 0
                 for entry in raw_data:
-                    dt = datetime.datetime.fromtimestamp(entry[0] / 1000)
+                    timestamp, value = entry
+                    dt = datetime.datetime.fromtimestamp(timestamp / 1000)
                     if dt.month == 1:
-                        gts += (entry[1] * 0.5)
+                        value = value * 0.5
                     elif dt.month == 2:
-                        gts += (entry[1] * 0.75)
-                    else:
-                        gts += entry[1]
+                        value = value * 0.75
+                    gts += value
                 return int(round(gts, 0))
             except Exception as e:
                 self.logger.error(f"Error {e} occurred during calculation of gruenlandtemperatursumme with {raw_data=} for {database_item.path()=}")
@@ -1618,29 +1613,29 @@ class DatabaseAddOn(SmartPlugin):
             if raw_data == [[None, None]]:
                 return
 
-        # Die Berechnung des einfachen Durchschnitts.
+        # Die Berechnung des einfachen Durchschnitts // akkumuliere positive Differenz aus Mittelwert aus Tagesminimaltempertur und Tagesmaximaltemperatur limitiert auf 30°C und Schwellenwert
         if method == 0:
             self.logger.info(f"Caluclate 'Wachstumsgradtag' according to 'Berechnung des einfachen Durchschnitts'.")
-            wgt = 0
+            wgte = 0
             for entry in raw_data:
-                timestamp = entry[0]
-                min_val = entry[1]
-                max_val = entry[2]
-                wgt += ((min_val + max(30, max_val) / 2) - threshold)
-            return wgt
+                timestamp, min_val, max_val = entry
+                wgt = ((min_val + min(30, max_val) / 2) - threshold)
+                if wgt > 0:
+                    wgte += wgt
+            return int(round(wgte, 0))
 
-        # Die modifizierte Berechnung des einfachen Durchschnitts.
+        # Die modifizierte Berechnung des einfachen Durchschnitts. // akkumuliere positive Differenz aus Mittelwert aus Tagesminimaltempertur mit mind Schwellentemperatur und Tagesmaximaltemperatur limitiert auf 30°C und Schwellenwert
         elif method == 1:
             self.logger.info(f"Caluclate 'Wachstumsgradtag' according to 'Modifizierte Berechnung des einfachen Durchschnitts'.")
-            wgt = 0
+            wgte = 0
             for entry in raw_data:
-                timestamp = entry[0]
-                min_val = entry[1]
-                max_val = entry[2]
-                wgt += ((min(threshold, min_val) + max(30, max_val) / 2) - threshold)
-            return wgt
+                timestamp, min_val, max_val = entry
+                wgt = ((max(threshold, min_val) + min(30.0, max_val) / 2) - threshold)
+                if wgt > 0:
+                    wgte += wgt
+            return int(round(wgte, 0))
         else:
-            self.logger.info(f"Method for 'Wachstumsgradtag' Calculation not defined.'")
+            self.logger.info(f"Method for 'Wachstumsgradtag' calculation not defined.'")
 
     def _prepare_temperature_list(self, database_item: Item, start: int, end: int = 0, ignore_value=None, version: str = 'hour') -> list:
 
@@ -2342,7 +2337,7 @@ class DatabaseAddOn(SmartPlugin):
         query = 'SELECT sqlite_version()' if self.db_driver.lower() == 'sqlite3' else 'SELECT VERSION()'
         return self._fetchone(query)[0]
 
-    def _get_db_connect_timeout(self) -> str:
+    def _get_db_connect_timeout(self) -> list:
         """
         Query database timeout
         """
@@ -2350,7 +2345,7 @@ class DatabaseAddOn(SmartPlugin):
         query = "SHOW GLOBAL VARIABLES LIKE 'connect_timeout'"
         return self._fetchone(query)
 
-    def _get_db_net_read_timeout(self) -> str:
+    def _get_db_net_read_timeout(self) -> list:
         """
         Query database timeout net_read_timeout
         """
@@ -2380,7 +2375,7 @@ class DatabaseAddOn(SmartPlugin):
 
         return self._query(self._db.fetchall, query, params, cur)
 
-    def _query(self, fetch, query: str, params: dict = None, cur=None) -> list:
+    def _query(self, fetch, query: str, params: dict = None, cur=None) -> Union[None, list]:
         if params is None:
             params = {}
 

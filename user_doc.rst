@@ -21,10 +21,13 @@ Diese Auswertungen werden zyklisch zum Tageswechsel, Wochenwechsel, Monatswechse
 der Funktion erzeugt.
 Um die Zugriffe auf die Datenbank zu minimieren, werden diverse Daten zwischengespeichert.
 
-Die Items mit einem DatabaseAddon-Attribut müssen im gleichen Pfad sein, wie das Item, für das das Database Attribut
-konfiguriert ist.
-Bedeutet: Die Items mit dem DatabaseAddon-Attribute müssen Kinder oder Kindeskinder oder Kindeskinderkinder des Items
-sein, für das das Database Attribut konfiguriert ist
+Sind Items mit einem DatabaseAddon-Attribut im gleichen Pfad, wie das Item, für das das Database Attribut
+konfiguriert ist, wird dieses Item automatisch ermittelt. Bedeutet: Sind die Items mit dem DatabaseAddon-Attribute Kinder
+oder Kindeskinder oder Kindeskinderkinder des Items, für das das Database Attribut konfiguriert ist, wird dieses automatisch
+ermittelt.
+
+Alternativ kann mit dem Attribute "db_addon_database_item"  auch der absolute Pfad des Items angegeben werden,  für das
+das Database Attribut konfiguriert ist.
 
 Bsp:
 
@@ -45,6 +48,12 @@ Bsp:
             gestern_max:
                 type: num
                 db_addon_fct: heute_minus1_max
+
+
+    tagesmitteltemperatur_gestern:
+        type: num
+        db_addon_fct: heute_minus1_avg
+        db_addon_database_item: 'temperatur'
 
 |
 
@@ -195,7 +204,7 @@ Beim Grünland wird die Wärmesumme nach Ernst und Loeper benutzt, um den Vegeta
 Dabei erfolgt die Aufsummierung der Tagesmitteltemperaturen über 0 °C, wobei der Januar mit 0.5 und der Februar mit 0.75 gewichtet wird. 
 Bei einer Wärmesumme von 200 Grad ist eine Düngung angesagt.
 
-siehe: https://www.woellsdorf-wetter.de/info/agrarmeteorologie.html
+siehe: https://de.wikipedia.org/wiki/Gr%C3%BCnlandtemperatursumme
 
 
 Wachstumsgradtag
