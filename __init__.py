@@ -1619,7 +1619,7 @@ class DatabaseAddOn(SmartPlugin):
             wgte = 0
             for entry in raw_data:
                 timestamp, min_val, max_val = entry
-                wgt = ((min_val + min(30, max_val) / 2) - threshold)
+                wgt = (((min_val + min(30, max_val)) / 2) - threshold)
                 if wgt > 0:
                     wgte += wgt
             return int(round(wgte, 0))
@@ -1630,7 +1630,7 @@ class DatabaseAddOn(SmartPlugin):
             wgte = 0
             for entry in raw_data:
                 timestamp, min_val, max_val = entry
-                wgt = ((max(threshold, min_val) + min(30.0, max_val) / 2) - threshold)
+                wgt = (((max(threshold, min_val) + min(30.0, max_val)) / 2) - threshold)
                 if wgt > 0:
                     wgte += wgt
             return int(round(wgte, 0))
